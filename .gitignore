@@ -1,0 +1,26 @@
+# .NET Core
+[Bb]in/
+[Oo]bj/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.userprefs
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.db
+*.opendb
+
+# Runtime Data
+appsettings.Local.json
+appsettings.Development.json
+secrets.json
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
