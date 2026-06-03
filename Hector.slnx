@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Framework/">
+    <Project Path="src/Framework/Hector.BuildingBlocks.Domain/Hector.BuildingBlocks.Domain.csproj" />
+  </Folder>
+</Solution>
