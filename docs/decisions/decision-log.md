@@ -10,3 +10,4 @@
 | ADR-0006 | [Domain Exception Hierarchy](/docs/adr/0006-domain-exceptions.md) | Accepted | 2026-06-03 |
 | ADR-0007 | [Guard Pattern for Domain Invariants](/docs/adr/0007-guard-pattern-for-domain-invariants.md) | Accepted | 2026-06-03 |
 | ADR-0008 | [Use Strongly Typed IDs](/docs/adr/0008-strongly-typed-ids.md) | Accepted | 2026-06-03 |
+| ADR-0009 | [Strongly Typed IDs Enhancement](/docs/adr/0009-strongly-typed-ids-enhancement.md) | Accepted | 2026-06-03 |

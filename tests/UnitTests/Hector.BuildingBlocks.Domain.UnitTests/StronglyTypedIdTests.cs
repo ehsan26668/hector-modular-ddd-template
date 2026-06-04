@@ -67,19 +67,42 @@ public sealed class StronglyTypedIdTests
         testId.Equals(anotherTestId).Should().BeFalse();
     }
 
+    [Fact]
+    public void StronglyTypedId_Should_Implicitly_Convert_To_Value()
+    {
+        // Arrange
+        var value = Guid.NewGuid();
+        var id = new TestId(value);
+
+        // Act
+        Guid convertedValue = id;
+
+        // Assert
+        convertedValue.Should().Be(value);
+    }
+
+    [Fact]
+    public void GuidBaseId_Should_Work_Correctly()
+    {
+        // Act
+        var id = new GuidBaseId(Guid.NewGuid());
+
+        // Assert
+        id.Should().BeAssignableTo<StronglyTypedId<Guid>>();
+    }
+
     private sealed class TestId : StronglyTypedId<Guid>
     {
-        public TestId(Guid value)
-            : base(value)
-        {
-        }
+        public TestId(Guid value) : base(value) { }
     }
 
     private sealed class AnotherTestId : StronglyTypedId<Guid>
     {
-        public AnotherTestId(Guid value)
-            : base(value)
-        {
-        }
+        public AnotherTestId(Guid value) : base(value) { }
+    }
+
+    private sealed class GuidBaseId : StronglyTypedId
+    {
+        public GuidBaseId(Guid value) : base(value){} 
     }
 }

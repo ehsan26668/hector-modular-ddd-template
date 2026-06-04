@@ -11,6 +11,8 @@ public abstract class StronglyTypedId<TValue> : ValueObject
         Value = value;
     }
 
+    public static implicit operator TValue(StronglyTypedId<TValue> id) => id.Value;
+
     protected override IEnumerable<object?> GetEqualityComponents()
     {
         yield return Value;
@@ -19,5 +21,12 @@ public abstract class StronglyTypedId<TValue> : ValueObject
     public override string ToString()
     {
         return Value.ToString() ?? string.Empty;
+    }
+}
+
+public abstract class StronglyTypedId : StronglyTypedId<Guid>
+{
+    protected StronglyTypedId(Guid value) : base(value)
+    {
     }
 }
