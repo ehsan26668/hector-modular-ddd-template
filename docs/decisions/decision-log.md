@@ -11,3 +11,4 @@
 | ADR-0007 | [Guard Pattern for Domain Invariants](/docs/adr/0007-guard-pattern-for-domain-invariants.md) | Accepted | 2026-06-03 |
 | ADR-0008 | [Use Strongly Typed IDs](/docs/adr/0008-strongly-typed-ids.md) | Accepted | 2026-06-03 |
 | ADR-0009 | [Strongly Typed IDs Enhancement](/docs/adr/0009-strongly-typed-ids-enhancement.md) | Accepted | 2026-06-03 |
+| ADR-0010 | [Advanced Capabilities for Strongly Typed IDs](/docs/adr/0010-advanced-strongly-typed-id-capabilities.md) | Accepted | 2026-06-03 |
