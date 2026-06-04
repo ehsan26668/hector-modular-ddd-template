@@ -1,20 +1,48 @@
-# ADR-0003: Adopt TDD for Building Blocks
+# ADR 0003: Adopt Test-Driven Development (TDD) for Building Blocks
 
-**Status:** Accepted
-**Date:** 2026-06-03
+## Status
+
+Accepted
 
 ## Context
 
-به منظور تضمین پایداری و صحت کدهای زیرساختی (Framework)، نیاز به یک مکانیزم تایید خودکار داریم.
+The Building Blocks layer contains foundational domain abstractions such as Entity, ValueObject, AggregateRoot, and domain exception handling.
+
+These components are critical to the integrity of the entire system. Any defect or incorrect assumption at this level can propagate across all modules.
+
+To ensure correctness, stability, and long-term maintainability, we need a disciplined approach to developing these core abstractions.
 
 ## Decision
 
-تمامی اجزای `Hector.BuildingBlocks` باید با رویکرد Test-Driven Development توسعه یابند. 
+We will adopt Test-Driven Development (TDD) for implementing all Building Blocks domain components.
 
-- پوشش تست (Code Coverage) برای BuildingBlocks باید بالای ۹۵٪ باشد.
-- تست‌ها باید به عنوان مستندات زنده (Living Documentation) عمل کنند.
+The development cycle will follow:
+
+- Write a failing test
+- Implement the minimal code required to pass the test
+- Refactor while keeping tests green
+
+Unit tests will:
+
+- Validate domain invariants
+- Verify equality logic (especially for ValueObjects)
+- Ensure identity semantics for Entities
+- Cover edge cases and invalid states
+
+All Building Blocks must have accompanying unit tests before being considered complete.
 
 ## Consequences
 
-- **Pros:** کاهش باگ‌های رگرسیون، طراحی بهتر APIها، اطمینان بالا در هنگام ریفکتور.
-- **Cons:** افزایش زمان اولیه توسعه.
+Positive:
+
+- High confidence in core abstractions
+- Early detection of design flaws
+- Improved domain modeling discipline
+- Safer refactoring over time
+- Living documentation through tests
+
+Negative:
+
+- Slower initial development speed
+- Requires strong testing discipline
+- Developers must be comfortable with TDD practices

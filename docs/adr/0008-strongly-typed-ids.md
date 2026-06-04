@@ -1,4 +1,4 @@
-# ADR 0008: Strongly Typed IDs
+# ADR 0008: Use Strongly Typed IDs
 
 ## Status
 
@@ -6,39 +6,38 @@ Accepted
 
 ## Context
 
-Using primitive types such as Guid, int, or string for entity identifiers can lead to a problem known as Primitive Obsession.
+Using primitive types such as Guid, int, or string for entity identifiers can lead to accidental misuse. For example, it is possible to pass a CustomerId where an OrderId is expected if both are represented as Guid.
 
-For example, different identifiers like OrderId, CustomerId, and ProductId may all be represented as Guid. This makes it possible to accidentally pass the wrong identifier type to a method or constructor, causing subtle bugs that the compiler cannot detect.
+This weak typing reduces type safety and increases the risk of subtle bugs, especially in large systems with many aggregates.
 
-To improve type safety and better express domain concepts, identifiers should be represented as explicit domain types rather than primitive values.
+To improve type safety and better express domain intent, identifiers should be modeled as dedicated domain types rather than primitive values.
 
 ## Decision
 
-Entity identifiers will be implemented using Strongly Typed ID Value Objects.
+We will introduce Strongly Typed IDs for entity identifiers.
 
-Each identifier will be represented as its own type that wraps the underlying primitive value.
+A base abstraction named StronglyTypedId will be implemented to encapsulate the underlying identifier value. Specific identifier types will derive from this base type to represent identities for different aggregates.
 
-**Excample:**
+Example conceptual identifiers:
 
-CustomerId will wrap a Guid value instead of directly using Guid.
+    OrderId
+    CustomerId
+    ProductId
 
-These identifiers will behave like Value Objects and support equality comparison.
+These identifiers wrap the underlying primitive value (typically Guid) while providing strong typing at compile time.
 
-**Excample:**
-
-CustomerId customerId = new CustomerId(Guid.NewGuid());
-
-Entities will then use these types instead of primitive IDs.
-
-**Excample:**
-
-```text
-Entity<CustomerId>
-```
+Entities and aggregates will use these types instead of primitive identifiers.
 
 ## Consequences
 
-* **Positive:** Prevents mixing identifiers from different aggregates.
-* **Positive:** Improves type safety across the domain model.
-* **Positive:** Eliminates primitive obsession for entity identifiers.
-* **Negative:** Slightly more verbose code due to additional ID types.
+Positive:
+
+- Stronger compile-time type safety
+- Prevents accidental identifier misuse across aggregates
+- Improves expressiveness of the domain model
+- Better alignment with DDD tactical patterns
+
+Negative:
+
+- Additional types must be created for each entity identifier
+- Requires mapping configuration when working with persistence frameworks such as Entity Framework

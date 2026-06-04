@@ -1,26 +1,47 @@
-# ADR-0002: Initialize Modular Monolith Project Structure
+# ADR 0002: Initialize Project Structure for Modular DDD
 
-**Status:** Accepted
-**Date:** 2026-06-03
+## Status
+
+Accepted
 
 ## Context
 
-The project requires a scalable architecture that supports Domain-Driven Design (DDD) principles, module isolation, and clean separation of concerns. We need a standardized directory layout to enforce these boundaries physically.
+The project aims to follow Domain-Driven Design (DDD) with a modular and scalable architecture.
+
+Without a well-defined structure from the beginning, the codebase may become tightly coupled, difficult to maintain, and resistant to change. We need a clear separation of concerns aligned with DDD tactical patterns and clean architecture principles.
+
+The structure must:
+
+- Support modular growth
+- Enforce domain isolation
+- Enable independent testing
+- Prevent accidental coupling between layers
 
 ## Decision
 
-We have adopted a Modular Monolith folder structure:
+We will initialize the solution using a modular structure aligned with DDD and Clean Architecture principles.
 
-- `src/Framework/`: Contains reusable Building Blocks (Domain, Application, Persistence, etc.).
-- `src/Modules/`: Contains business-specific modules, each implementing its own internal Clean Architecture.
-- `src/Hosts/`: Contains entry points (API, Worker).
-- `tests/`: Categorized by test type (Unit, Integration, Architecture).
+The solution will include:
+
+- A dedicated BuildingBlocks layer for shared domain abstractions
+- Explicit Domain layer projects
+- Separate Unit Test projects per layer/module
+- Centralized dependency management using Directory.Build.props and Directory.Packages.props
+- Solution-level configuration via a single solution file
+
+Each module will evolve independently while respecting domain boundaries.
 
 ## Consequences
 
-- **Pros:** Clear boundaries, improved maintainability, easy path to microservices in the future.
-- **Cons:** Slightly more initial setup overhead compared to a flat project structure.
+Positive:
 
-## Alternatives
+- Clear separation of concerns
+- High cohesion within modules
+- Reduced coupling between layers
+- Improved scalability and maintainability
+- Easier unit testing and CI integration
 
-- Flat structure: Rejected, as it leads to "big ball of mud" and lack of module boundaries.
+Negative:
+
+- Slightly higher initial setup complexity
+- Requires architectural discipline to prevent boundary violations

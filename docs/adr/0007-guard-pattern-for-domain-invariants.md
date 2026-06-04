@@ -1,4 +1,4 @@
-# ADR 0007: Guard Pattern for Domain Invariants
+# ADR 0007: Use Guard Pattern for Domain Invariants
 
 ## Status
 
@@ -6,35 +6,38 @@ Accepted
 
 ## Context
 
-Domain models must enforce business invariants to keep entities and aggregates in a valid state.
+Domain models must protect their invariants to ensure the system always remains in a valid state.
 
-Without a consistent approach, validation logic such as null checks or empty string checks can lead to repetitive boilerplate code scattered across the domain model. This reduces readability and makes the core business logic harder to understand.
+Without explicit validation at the domain boundary, invalid data may enter entities, value objects, or aggregates. This can lead to inconsistent domain behavior and difficult-to-trace bugs.
 
-Since the domain already defines a dedicated exception hierarchy (DomainException and BusinessRuleViolationException), we need a standardized mechanism to validate invariants and throw the appropriate exceptions.
+Scattering validation logic across constructors and methods also leads to duplication and reduces readability. A consistent mechanism is required to express domain preconditions clearly and concisely.
 
 ## Decision
 
-Introduce a static utility class named Ensure inside the Domain layer.
+We will adopt the Guard Pattern to enforce domain invariants.
 
-The Ensure class will provide guard methods that validate domain invariants and throw BusinessRuleViolationException when a rule is violated.
+A centralized utility class named Ensure will provide guard methods used throughout the domain layer to validate inputs and protect invariants.
 
-Typical guard methods include:
+These guards will be used inside constructors, factory methods, and domain behaviors to prevent invalid states.
 
-* Ensure.NotNull(value, message)
-* Ensure.NotEmpty(value, message)
-* Ensure.True(condition, message)
+Example:
 
-These guards will be used inside Entities, Value Objects, and Aggregate Roots to enforce business rules in a concise and readable manner.
+    Ensure.NotNull(value, nameof(value));
+    Ensure.NotEmpty(name, nameof(name));
+    Ensure.NotDefault(id, nameof(id));
 
-**Excample:**
-
-```text
-Ensure.NotEmpty(name, "Name cannot be empty.");
-```
+When a rule is violated, the guard will throw a domain exception.
 
 ## Consequences
 
-* **Positive:** Improves readability of domain logic by removing repetitive validation code.
-* **Positive:** Centralizes invariant validation logic.
-* **Positive:** Ensures all rule violations consistently throw domain-specific exceptions.
-* **Negative:** Adds a small abstraction layer that developers must consistently use instead of manual validation.
+Positive:
+
+- Clear and consistent validation across the domain
+- Reduced duplication of validation logic
+- Improved readability of domain code
+- Strong protection of domain invariants
+
+Negative:
+
+- Additional abstraction layer for simple validations
+- Developers must follow the guard usage convention consistently
