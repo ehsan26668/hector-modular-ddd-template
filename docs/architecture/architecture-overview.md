@@ -89,6 +89,21 @@ Infrastructure
 ↑  
 Host  
 
+## Domain Kernel
+
+The Domain layer contains the core building blocks:
+
+```text
+- Entity<TId>
+- ValueObject
+- AggregateRoot<TId>
+- IDomainEvent
+- DomainEventBase
+```
+
+Aggregate roots collect domain events internally.
+Events are dispatched after persistence by the infrastructure layer.
+
 ## Domain Layer
 
 The Domain layer contains the core business logic.
@@ -179,6 +194,7 @@ ModuleName
  ├─ Application
  └─ Infrastructure
 ```
+
 Responsibilities:
 
 Domain  
