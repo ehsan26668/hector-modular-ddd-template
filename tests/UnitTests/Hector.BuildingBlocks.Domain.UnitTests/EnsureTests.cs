@@ -79,4 +79,31 @@ public sealed class EnsureTests
         // Assert
         act.Should().NotThrow();
     }
+
+    [Fact]
+    public void NotDefault_Should_Throw_When_Value_Is_Default()
+    {
+        // Arrange
+        var value = Guid.Empty;
+
+        // Act
+        var act = () => Ensure.NotDefault(value, "Value cannot be default");
+
+        // Assert
+        act.Should().Throw<BusinessRuleViolationException>()
+            .WithMessage("Value cannot be default");
+    }
+
+    [Fact]
+    public void NotDefault_Should_Not_Throw_When_Value_Is_Not_Default()
+    {
+        // Arrange
+        var value = Guid.NewGuid();
+
+        // Act
+        var act = () => Ensure.NotDefault(value, "Value cannot be default");
+
+        // Assert
+        act.Should().NotThrow();
+    }
 }

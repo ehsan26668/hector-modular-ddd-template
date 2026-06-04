@@ -18,6 +18,14 @@ public static class Ensure
         }
     }
 
+    public static void NotDefault<T>(T value, string message)
+    {
+        if (EqualityComparer<T>.Default.Equals(value, default!))
+        {
+            throw new BusinessRuleViolationException(message);
+        }
+    }
+
     public static void True(bool condition, string message)
     {
         if (!condition)
