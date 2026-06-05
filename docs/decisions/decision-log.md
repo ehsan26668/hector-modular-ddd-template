@@ -14,3 +14,4 @@
 | ADR-0010 | [Advanced Capabilities for Strongly Typed IDs](/docs/adr/0010-advanced-strongly-typed-id-capabilities.md) | Accepted | 2026-06-03 |
 | ADR-0011 | [Eliminate Boilerplate in Strongly Typed IDs Using Self-Referencing Generics](/docs/adr/0011-eliminate-boilerplate-in-strongly-typed-ids-using-self-referencing-generics.md) | Accepted | 2026-06-03 |
 | ADR-0012 | [Automated Persistence Mapping for Strongly Typed IDs](/docs/adr/0012-automated-persistence-mapping-for-strongly-typed-ids.md) | Accepted | 2026-06-03 |
+| ADR-0013 | [Base DbContext and Domain Event Dispatch Strategy](/docs/adr/0013-base-dbcontext-and-domain-event-dispatch-strategy.md) | Accepted | 2026-06-03 |
