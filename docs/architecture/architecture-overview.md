@@ -1,25 +1,24 @@
-
 # Architecture Overview
 
 ## Vision
 
 This repository provides a reusable template for building enterprise‑grade .NET applications based on the following architectural principles:
 
-- Domain‑Driven Design (DDD)  
-- Clean Architecture  
-- Modular Monolith  
-- CQRS  
+- Domain‑Driven Design (DDD)
+- Clean Architecture
+- Modular Monolith
+- CQRS
 - Test‑Driven Development (TDD)
 
 The goal of this project is to provide a production‑ready application template that enables developers to quickly bootstrap new systems with a consistent architecture and a solid technical foundation.
 
 The template focuses on:
 
-- maintainability  
-- scalability  
-- testability  
-- clear architectural boundaries  
-- reusable building blocks  
+- maintainability
+- scalability
+- testability
+- clear architectural boundaries
+- reusable building blocks
 
 ## Architectural Style
 
@@ -27,10 +26,10 @@ The system follows a Modular Monolith architecture where each module implements 
 
 Key characteristics:
 
-- Each module contains its own domain and application logic  
-- Modules are isolated and communicate via contracts or events  
-- Shared infrastructure is provided through reusable building blocks  
-- The architecture supports gradual evolution toward microservices if needed  
+- Each module contains its own domain and application logic
+- Modules are isolated and communicate via contracts or events
+- Shared infrastructure is provided through reusable building blocks
+- The architecture supports gradual evolution toward microservices if needed
 
 ## Solution Structure
 
@@ -68,11 +67,11 @@ These components act as an internal application framework.
 
 They provide:
 
-- Domain abstractions  
-- Application abstractions  
-- Persistence infrastructure  
-- Messaging infrastructure  
-- Observability components  
+- Domain abstractions
+- Application abstractions
+- Persistence infrastructure
+- Messaging infrastructure
+- Observability components
 
 The goal is to avoid duplication and provide consistent architectural patterns across modules.
 
@@ -102,7 +101,7 @@ Core building blocks include:
     IDomainEvent
     DomainEventBase
 
-Aggregate roots collect domain events internally.  
+Aggregate roots collect domain events internally.
 Events are dispatched after successful persistence by the infrastructure layer.
 
 ## Domain Layer
@@ -111,19 +110,19 @@ The Domain layer contains the core business logic.
 
 Characteristics:
 
-- Pure domain model  
-- No dependency on infrastructure frameworks  
-- Independent from EF Core or ASP.NET  
+- Pure domain model
+- No dependency on infrastructure frameworks
+- Independent from EF Core or ASP.NET
 
 Typical contents:
 
-- Entities  
-- Value Objects  
-- Aggregates  
-- Domain Events  
-- Domain Services  
-- Repository interfaces  
-- Business rules  
+- Entities
+- Value Objects
+- Aggregates
+- Domain Events
+- Domain Services
+- Repository interfaces
+- Business rules
 
 ## Application Layer
 
@@ -131,21 +130,25 @@ The Application layer defines the use cases of the system.
 
 Responsibilities:
 
-- orchestrate domain logic  
-- define commands and queries  
-- coordinate application workflows  
+- orchestrate domain logic
+- define commands and queries
+- coordinate application workflows
 
 Typical contents:
 
-- Commands  
-- Queries  
-- Command handlers  
-- Query handlers  
-- DTOs  
-- Validators  
-- Pipeline behaviors  
+- Commands
+- Queries
+- Command handlers
+- Query handlers
+- DTOs
+- Validators
+- Pipeline behaviors
 
-CQRS is implemented using MediatR.
+CQRS is implemented using an internal mediator implementation provided by the Hector.BuildingBlocks.Application framework.
+
+The mediator is responsible for dispatching commands and queries to their corresponding handlers.
+
+It also supports pipeline behaviors that allow cross‑cutting concerns such as validation, logging, and transaction management to be implemented transparently.
 
 ## Infrastructure Layer
 
@@ -153,16 +156,16 @@ The Infrastructure layer provides implementations for external dependencies.
 
 Examples:
 
-- authentication providers  
-- email services  
-- file storage  
-- external APIs  
-- integration services  
+- authentication providers
+- email services
+- file storage
+- external APIs
+- integration services
 
 Infrastructure depends on:
 
-- Application  
-- Domain  
+- Application
+- Domain
 
 but never the other way around.
 
@@ -172,14 +175,14 @@ Persistence handles data storage concerns.
 
 This layer includes:
 
-- EF Core DbContext  
-- entity configurations  
-- repository implementations  
-- Unit of Work  
-- database migrations  
-- Outbox pattern  
-- auditing  
-- soft delete  
+- EF Core DbContext
+- entity configurations
+- repository implementations
+- Unit of Work
+- database migrations
+- Outbox pattern
+- auditing
+- soft delete
 
 The persistence implementation is replaceable.
 
@@ -196,13 +199,13 @@ Each module follows a consistent structure:
 
 Responsibilities:
 
-Domain  
+Domain
 contains business rules, aggregates, and domain events.
 
-Application  
+Application
 contains use cases, commands, queries, and orchestration logic.
 
-Infrastructure  
+Infrastructure
 contains persistence implementations and external integrations.
 
 ## Hosts
@@ -215,17 +218,17 @@ Two primary hosts are defined.
 
 Responsibilities:
 
-- expose HTTP endpoints  
-- handle authentication and authorization  
-- manage HTTP pipeline  
-- expose OpenAPI documentation  
-- API versioning  
-- health checks  
+- expose HTTP endpoints
+- handle authentication and authorization
+- manage HTTP pipeline
+- expose OpenAPI documentation
+- API versioning
+- health checks
 
 Technology stack:
 
-- ASP.NET Core  
-- Minimal APIs  
+- ASP.NET Core
+- Minimal APIs
 
 ## Worker Host
 
@@ -233,10 +236,10 @@ The Worker host is responsible for background processing.
 
 Typical responsibilities:
 
-- Outbox processing  
-- integration event handling  
-- background jobs  
-- scheduled tasks  
+- Outbox processing
+- integration event handling
+- background jobs
+- scheduled tasks
 
 ## Communication Between Modules
 
@@ -244,9 +247,9 @@ Modules should remain loosely coupled.
 
 Recommended communication patterns:
 
-- application service calls  
-- domain events  
-- integration events  
+- application service calls
+- domain events
+- integration events
 
 Direct database access between modules is not allowed.
 
@@ -263,18 +266,18 @@ Test projects are organized as:
 
 Unit tests
 
-- focus on domain logic  
-- test aggregates and business rules  
+- focus on domain logic
+- test aggregates and business rules
 
 Integration tests
 
-- test persistence  
-- test API behavior  
+- test persistence
+- test API behavior
 
 Architecture tests
 
-- enforce dependency rules  
-- ensure architectural boundaries are respected  
+- enforce dependency rules
+- ensure architectural boundaries are respected
 
 ## Cross‑Cutting Concerns
 
@@ -282,35 +285,35 @@ Cross‑cutting concerns are implemented through BuildingBlocks.
 
 These include:
 
-- Logging (Serilog)  
-- Observability (OpenTelemetry)  
-- Validation  
-- Exception handling  
-- Transactions  
-- Authorization  
-- Authentication  
-- Auditing  
-- Soft delete  
-- Correlation IDs  
-- Idempotency  
+- Logging (Serilog)
+- Observability (OpenTelemetry)
+- Validation
+- Exception handling
+- Transactions
+- Authorization
+- Authentication
+- Auditing
+- Soft delete
+- Correlation IDs
+- Idempotency
 
 ## Design Principles
 
 The architecture follows several core principles.
 
-High cohesion  
+High cohesion
 modules encapsulate their own domain logic.
 
-Loose coupling  
+Loose coupling
 modules interact via contracts and events.
 
-Infrastructure independence  
+Infrastructure independence
 domain logic does not depend on infrastructure frameworks.
 
-Testability  
+Testability
 all layers are designed to be easily testable.
 
-Explicit boundaries  
+Explicit boundaries
 module boundaries are strictly enforced.
 
 ## Future Evolution
@@ -319,11 +322,11 @@ The architecture is designed to evolve.
 
 Possible future extensions:
 
-- microservice extraction  
-- distributed messaging  
-- event streaming  
-- multi‑tenancy support  
-- distributed caching  
-- service mesh integration  
+- microservice extraction
+- distributed messaging
+- event streaming
+- multi‑tenancy support
+- distributed caching
+- service mesh integration
 
 The modular structure enables gradual evolution without rewriting the system.
