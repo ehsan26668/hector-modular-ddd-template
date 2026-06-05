@@ -1,9 +1,9 @@
 namespace Hector.BuildingBlocks.Domain.Primitives;
 
-public abstract class AggregateRoot<TId> : Entity<TId>
+public abstract class AggregateRoot<TId> : Entity<TId>, IHasDomainEvents
     where TId : notnull
 {
-    private readonly List<IDomainEvent> _domainEvents = new();
+    private readonly List<IDomainEvent> _domainEvents = [];
 
     protected AggregateRoot(TId id) : base(id)
     {
