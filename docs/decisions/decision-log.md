@@ -16,3 +16,4 @@
 | ADR-0012 | [Automated Persistence Mapping for Strongly Typed IDs](/docs/adr/0012-automated-persistence-mapping-for-strongly-typed-ids.md) | Accepted | 2026-06-03 |
 | ADR-0013 | [Base DbContext and Domain Event Dispatch Strategy](/docs/adr/0013-base-dbcontext-and-domain-event-dispatch-strategy.md) | Accepted | 2026-06-03 |
 | ADR-0014 | [Adopt Internal Mediator for CQRS](/docs/adr/0014-adopt-internal-mediator-for-CQRS.md) | Accepted | 2026-06-03 |
+| ADR-0015 | [Implement Mediator-Based Domain Event Dispatcher in Persistence](/docs/adr/0015-implement-mediator-based-domain-event-dispatcher.md) | Accepted | 2026-06-03 |
