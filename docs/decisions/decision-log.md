@@ -18,3 +18,4 @@
 | ADR-0014 | [Adopt Internal Mediator for CQRS](/docs/adr/0014-adopt-internal-mediator-for-CQRS.md) | Accepted | 2026-06-03 |
 | ADR-0015 | [Implement Mediator-Based Domain Event Dispatcher in Persistence](/docs/adr/0015-implement-mediator-based-domain-event-dispatcher.md) | Accepted | 2026-06-03 |
 | ADR-0016 | [Integrate Domain Event Dispatching with EF Core Save Pipeline](/docs/adr/0016-integrate-domain-event-dispatching-with-ef-core-save-pipeline.md) | Accepted | 2026-06-03 |
+| ADR-0017 | [Standardize Feature Module Structure](/docs/adr/0017-standardize-feature-module-structure.md) | Proposed | 2026-06-03 |
