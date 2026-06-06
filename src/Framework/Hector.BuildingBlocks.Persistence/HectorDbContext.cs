@@ -19,10 +19,8 @@ public abstract class HectorDbContext : DbContext
         CancellationToken cancellationToken = default)
     {
         var domainEvents = ChangeTracker
-            .Entries()
-            .Where(entry => entry.Entity is IHasDomainEvents)
-            .Select(entry => (IHasDomainEvents)entry.Entity)
-            .SelectMany(entity => entity.GetDomainEvents())
+            .Entries<IHasDomainEvents>()
+            .SelectMany(entry => entry.Entity.GetDomainEvents())
             .ToArray();
 
         var result = await base.SaveChangesAsync(cancellationToken);
@@ -32,22 +30,19 @@ public abstract class HectorDbContext : DbContext
             await _domainEventDispatcher.DispatchAsync(domainEvents, cancellationToken);
         }
 
-        ClearDomainEvents();
+        foreach (var entry in ChangeTracker.Entries<IHasDomainEvents>())
+        {
+            entry.Entity.ClearDomainEvents();
+        }
 
         return result;
     }
 
     private void ClearDomainEvents()
     {
-        var entities = ChangeTracker
-            .Entries()
-            .Where(entry => entry.Entity is IHasDomainEvents)
-            .Select(entry => entry.Entity)
-            .Cast<IHasDomainEvents>();
-
-        foreach (var entity in entities)
+        foreach (var entry in ChangeTracker.Entries<IHasDomainEvents>())
         {
-            entity.ClearDomainEvents();
+            entry.Entity.ClearDomainEvents();
         }
     }
 }
