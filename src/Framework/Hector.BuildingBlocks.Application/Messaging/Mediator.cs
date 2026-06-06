@@ -6,6 +6,8 @@ namespace Hector.BuildingBlocks.Application.Messaging;
 
 internal sealed class Mediator : IMediator
 {
+    private const string HandleAsyncMethodName = "HandleAsync";
+
     private readonly IServiceProvider _serviceProvider;
 
     private static readonly ConcurrentDictionary<(Type request, Type response), Type> _handlerTypeCache = new();
@@ -36,7 +38,7 @@ internal sealed class Mediator : IMediator
         var handleMethod = _handlerMethodCache.GetOrAdd(key, static t =>
             typeof(IRequestHandler<,>)
                 .MakeGenericType(t.request, t.response)
-                .GetMethod(nameof(IRequestHandler<IRequest<TResponse>, TResponse>.HandleAsync))!);
+                .GetMethod(HandleAsyncMethodName)!);
 
         // ✅ 4. Resolve behaviors
         var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(requestType, responseType);
@@ -73,7 +75,7 @@ internal sealed class Mediator : IMediator
         var behaviorType = behavior.GetType();
 
         var method = _behaviorMethodCache.GetOrAdd(behaviorType, static t =>
-            t.GetMethod("HandleAsync")!);
+            t.GetMethod(HandleAsyncMethodName)!);
 
         return () =>
         {
