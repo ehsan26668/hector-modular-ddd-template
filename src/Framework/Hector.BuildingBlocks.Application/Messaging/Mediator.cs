@@ -10,9 +10,7 @@ internal sealed class Mediator : IMediator
 
     private readonly IServiceProvider _serviceProvider;
 
-    private static readonly ConcurrentDictionary<(Type request, Type response), Type> _handlerTypeCache = new();
-
-    private static readonly ConcurrentDictionary<(Type request, Type response), HandlerInvoker> _handlerInvokerCache = new();
+    private static readonly ConcurrentDictionary<(Type request, Type response), HandlerMetadata> _handlerMetadataCache = new();
 
     private static readonly ConcurrentDictionary<Type, BehaviorInvoker> _behaviorInvokerCache = new();
 
@@ -29,13 +27,11 @@ internal sealed class Mediator : IMediator
         var responseType = typeof(TResponse);
         var key = (requestType, responseType);
 
-        var handlerType = _handlerTypeCache.GetOrAdd(key, static t =>
-            typeof(IRequestHandler<,>).MakeGenericType(t.request, t.response));
+        var handlerMetadata = _handlerMetadataCache.GetOrAdd(
+            key,
+            static t => CreateHandlerMetadata(t.request, t.response));
 
-        var handlerInstance = _serviceProvider.GetRequiredService(handlerType);
-
-        var handlerInvoker = _handlerInvokerCache.GetOrAdd(key, static t =>
-            CompileHandlerInvoker(t.request, t.response));
+        var handlerInstance = _serviceProvider.GetRequiredService(handlerMetadata.HandlerType);
 
         var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(requestType, responseType);
 
@@ -46,7 +42,7 @@ internal sealed class Mediator : IMediator
 
         RequestHandlerDelegate<TResponse> handlerDelegate = () =>
         {
-            var task = (Task<TResponse>)handlerInvoker(
+            var task = (Task<TResponse>)handlerMetadata.Invoker(
                 handlerInstance,
                 request,
                 cancellationToken);
@@ -90,20 +86,33 @@ internal sealed class Mediator : IMediator
         };
     }
 
-    private static HandlerInvoker CompileHandlerInvoker(
+    private static HandlerMetadata CreateHandlerMetadata(
         Type requestType,
         Type responseType)
     {
-        var handlerInterfaceType = typeof(IRequestHandler<,>)
+        var handlerType = typeof(IRequestHandler<,>)
             .MakeGenericType(requestType, responseType);
 
-        var method = handlerInterfaceType.GetMethod(HandleAsyncMethodName)!;
+        var invoker = CompileHandlerInvoker(
+            handlerType,
+            requestType);
+
+        return new HandlerMetadata(
+            handlerType,
+            invoker);
+    }
+
+    private static HandlerInvoker CompileHandlerInvoker(
+        Type handlerType,
+        Type requestType)
+    {
+        var method = handlerType.GetMethod(HandleAsyncMethodName)!;
 
         var handlerParameter = Expression.Parameter(typeof(object), "handler");
         var requestParameter = Expression.Parameter(typeof(object), "request");
         var cancellationTokenParameter = Expression.Parameter(typeof(CancellationToken), "cancellationToken");
 
-        var handlerCast = Expression.Convert(handlerParameter, handlerInterfaceType);
+        var handlerCast = Expression.Convert(handlerParameter, handlerType);
         var requestCast = Expression.Convert(requestParameter, requestType);
 
         var call = Expression.Call(
@@ -158,6 +167,21 @@ internal sealed class Mediator : IMediator
                 nextParameter,
                 cancellationTokenParameter)
             .Compile();
+    }
+
+    private sealed class HandlerMetadata
+    {
+        public HandlerMetadata(
+            Type handlerType,
+            HandlerInvoker invoker)
+        {
+            HandlerType = handlerType;
+            Invoker = invoker;
+        }
+
+        public Type HandlerType { get; }
+
+        public HandlerInvoker Invoker { get; }
     }
 
     private delegate object HandlerInvoker(
