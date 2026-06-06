@@ -97,6 +97,84 @@ public sealed class MediatorTests
             "First:After");
     }
 
+    [Fact]
+    public async Task Should_Invoke_All_NotificationHandlers()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var executionOrder = new List<string>();
+
+        services.AddSingleton(executionOrder);
+
+        services.AddTransient<INotificationHandler<TestNotification>, FirstNotificationHandler>();
+        services.AddTransient<INotificationHandler<TestNotification>, SecondNotificationHandler>();
+
+        services.AddSingleton<IMediator, Mediator>();
+
+        var provider = services.BuildServiceProvider();
+        var mediator = provider.GetRequiredService<IMediator>();
+
+        var notification = new TestNotification();
+
+        // Act
+        await mediator.PublishAsync(notification);
+
+        // Assert
+        executionOrder.Should().Equal(
+            "FirstHandler",
+            "SecondHandler");
+    }
+
+    [Fact]
+    public async Task Should_Invoke_NotificationHandlers_In_Registration_Order()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var executionOrder = new List<string>();
+
+        services.AddSingleton(executionOrder);
+
+        services.AddTransient<INotificationHandler<TestNotification>, FirstNotificationHandler>();
+        services.AddTransient<INotificationHandler<TestNotification>, SecondNotificationHandler>();
+        services.AddTransient<INotificationHandler<TestNotification>, ThirdNotificationHandler>();
+
+        services.AddSingleton<IMediator, Mediator>();
+
+        var provider = services.BuildServiceProvider();
+        var mediator = provider.GetRequiredService<IMediator>();
+
+        // Act
+        await mediator.PublishAsync(new TestNotification());
+
+        // Assert
+        executionOrder.Should().Equal(
+            "FirstHandler",
+            "SecondHandler",
+            "ThirdHandler");
+    }
+
+    [Fact]
+    public async Task Should_Not_Throw_When_No_NotificationHandler_IsRegistered()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        services.AddSingleton<IMediator, Mediator>();
+
+        var provider = services.BuildServiceProvider();
+        var mediator = provider.GetRequiredService<IMediator>();
+
+        var notification = new TestNotification();
+
+        // Act
+        var act = async () => await mediator.PublishAsync(notification);
+
+        // Assert
+        await act.Should().NotThrowAsync();
+    }
+
+    #region Test Fixtures
+
     private sealed record TestCommand(string Name) : ICommand<string>;
 
     private sealed class TestCommandHandler
@@ -192,4 +270,67 @@ public sealed class MediatorTests
             return response;
         }
     }
+
+    private sealed class TestNotification : INotification
+    {
+    }
+
+    private sealed class FirstNotificationHandler
+        : INotificationHandler<TestNotification>
+    {
+        private readonly List<string> _executionOrder;
+
+        public FirstNotificationHandler(List<string> executionOrder)
+        {
+            _executionOrder = executionOrder;
+        }
+
+        public Task HandleAsync(
+        TestNotification notification,
+        CancellationToken cancellationToken)
+        {
+            _executionOrder.Add("FirstHandler");
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class SecondNotificationHandler
+    : INotificationHandler<TestNotification>
+    {
+        private readonly List<string> _executionOrder;
+
+        public SecondNotificationHandler(List<string> executionOrder)
+        {
+            _executionOrder = executionOrder;
+        }
+
+        public Task HandleAsync(
+            TestNotification notification,
+            CancellationToken cancellationToken)
+        {
+            _executionOrder.Add("SecondHandler");
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class ThirdNotificationHandler
+        : INotificationHandler<TestNotification>
+    {
+        private readonly List<string> _executionOrder;
+
+        public ThirdNotificationHandler(List<string> executionOrder)
+        {
+            _executionOrder = executionOrder;
+        }
+
+        public Task HandleAsync(
+            TestNotification notification,
+            CancellationToken cancellationToken)
+        {
+            _executionOrder.Add("ThirdHandler");
+            return Task.CompletedTask;
+        }
+    }
+
+    #endregion
 }

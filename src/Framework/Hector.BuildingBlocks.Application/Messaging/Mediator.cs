@@ -11,7 +11,7 @@ internal sealed class Mediator : IMediator
     private readonly IServiceProvider _serviceProvider;
 
     private static readonly ConcurrentDictionary<(Type request, Type response), HandlerMetadata> _handlerMetadataCache = new();
-
+    private static readonly ConcurrentDictionary<Type, NotificationHandlerMetadata> _notificationHandlerMetadataCache = new();
     private static readonly ConcurrentDictionary<Type, BehaviorInvoker> _behaviorInvokerCache = new();
 
     public Mediator(IServiceProvider serviceProvider)
@@ -62,6 +62,33 @@ internal sealed class Mediator : IMediator
         return await handlerDelegate();
     }
 
+    public async Task PublishAsync<TNotification>(
+        TNotification notification,
+        CancellationToken cancellationToken = default)
+        where TNotification : INotification
+    {
+        var notificationType = notification.GetType();
+
+        var handlerMetadata = _notificationHandlerMetadataCache.GetOrAdd(
+            notificationType,
+            static t => CreateNotificationHandlerMetadata(t));
+
+        var handlerInstances = _serviceProvider
+            .GetServices(handlerMetadata.HandlerType)
+            .Cast<object>()
+            .ToList();
+
+        foreach (var handler in handlerInstances)
+        {
+            var task = (Task)handlerMetadata.Invoker(
+                handler,
+                notification,
+                cancellationToken);
+
+            await task;
+        }
+    }
+
     private static RequestHandlerDelegate<TResponse> WrapBehavior<TResponse>(
         object behavior,
         RequestHandlerDelegate<TResponse> next,
@@ -86,25 +113,21 @@ internal sealed class Mediator : IMediator
         };
     }
 
-    private static HandlerMetadata CreateHandlerMetadata(
-        Type requestType,
-        Type responseType)
+    private static HandlerMetadata CreateHandlerMetadata(Type requestType, Type responseType)
     {
-        var handlerType = typeof(IRequestHandler<,>)
-            .MakeGenericType(requestType, responseType);
-
-        var invoker = CompileHandlerInvoker(
-            handlerType,
-            requestType);
-
-        return new HandlerMetadata(
-            handlerType,
-            invoker);
+        var handlerType = typeof(IRequestHandler<,>).MakeGenericType(requestType, responseType);
+        var invoker = CompileHandlerInvoker(handlerType, requestType);
+        return new HandlerMetadata(handlerType, invoker);
     }
 
-    private static HandlerInvoker CompileHandlerInvoker(
-        Type handlerType,
-        Type requestType)
+    private static NotificationHandlerMetadata CreateNotificationHandlerMetadata(Type notificationType)
+    {
+        var handlerType = typeof(INotificationHandler<>).MakeGenericType(notificationType);
+        var invoker = CompileNotificationInvoker(handlerType, notificationType);
+        return new NotificationHandlerMetadata(handlerType, invoker);
+    }
+
+    private static HandlerInvoker CompileHandlerInvoker(Type handlerType, Type requestType)
     {
         var method = handlerType.GetMethod(HandleAsyncMethodName)!;
 
@@ -115,27 +138,32 @@ internal sealed class Mediator : IMediator
         var handlerCast = Expression.Convert(handlerParameter, handlerType);
         var requestCast = Expression.Convert(requestParameter, requestType);
 
-        var call = Expression.Call(
-            handlerCast,
-            method,
-            requestCast,
-            cancellationTokenParameter);
-
+        var call = Expression.Call(handlerCast, method, requestCast, cancellationTokenParameter);
         var resultCast = Expression.Convert(call, typeof(object));
 
-        return Expression
-            .Lambda<HandlerInvoker>(
-                resultCast,
-                handlerParameter,
-                requestParameter,
-                cancellationTokenParameter)
-            .Compile();
+        return Expression.Lambda<HandlerInvoker>(resultCast, handlerParameter, requestParameter, cancellationTokenParameter).Compile();
+    }
+
+    private static NotificationInvoker CompileNotificationInvoker(Type handlerType, Type notificationType)
+    {
+        var method = handlerType.GetMethod(HandleAsyncMethodName)!;
+
+        var handlerParameter = Expression.Parameter(typeof(object), "handler");
+        var notificationParameter = Expression.Parameter(typeof(object), "notification");
+        var cancellationTokenParameter = Expression.Parameter(typeof(CancellationToken), "cancellationToken");
+
+        var handlerCast = Expression.Convert(handlerParameter, handlerType);
+        var notificationCast = Expression.Convert(notificationParameter, notificationType);
+
+        var call = Expression.Call(handlerCast, method, notificationCast, cancellationTokenParameter);
+        var resultCast = Expression.Convert(call, typeof(object));
+
+        return Expression.Lambda<NotificationInvoker>(resultCast, handlerParameter, notificationParameter, cancellationTokenParameter).Compile();
     }
 
     private static BehaviorInvoker CompileBehaviorInvoker(Type behaviorType)
     {
         var method = behaviorType.GetMethod(HandleAsyncMethodName)!;
-
         var parameters = method.GetParameters();
 
         var requestType = parameters[0].ParameterType;
@@ -150,48 +178,35 @@ internal sealed class Mediator : IMediator
         var requestCast = Expression.Convert(requestParameter, requestType);
         var nextCast = Expression.Convert(nextParameter, nextType);
 
-        var call = Expression.Call(
-            behaviorCast,
-            method,
-            requestCast,
-            nextCast,
-            cancellationTokenParameter);
-
+        var call = Expression.Call(behaviorCast, method, requestCast, nextCast, cancellationTokenParameter);
         var resultCast = Expression.Convert(call, typeof(object));
 
-        return Expression
-            .Lambda<BehaviorInvoker>(
-                resultCast,
-                behaviorParameter,
-                requestParameter,
-                nextParameter,
-                cancellationTokenParameter)
-            .Compile();
+        return Expression.Lambda<BehaviorInvoker>(resultCast, behaviorParameter, requestParameter, nextParameter, cancellationTokenParameter).Compile();
     }
 
     private sealed class HandlerMetadata
     {
-        public HandlerMetadata(
-            Type handlerType,
-            HandlerInvoker invoker)
+        public HandlerMetadata(Type handlerType, HandlerInvoker invoker)
         {
             HandlerType = handlerType;
             Invoker = invoker;
         }
-
         public Type HandlerType { get; }
-
         public HandlerInvoker Invoker { get; }
     }
 
-    private delegate object HandlerInvoker(
-        object handler,
-        object request,
-        CancellationToken cancellationToken);
+    private sealed class NotificationHandlerMetadata
+    {
+        public NotificationHandlerMetadata(Type handlerType, NotificationInvoker invoker)
+        {
+            HandlerType = handlerType;
+            Invoker = invoker;
+        }
+        public Type HandlerType { get; }
+        public NotificationInvoker Invoker { get; }
+    }
 
-    private delegate object BehaviorInvoker(
-        object behavior,
-        object request,
-        object next,
-        CancellationToken cancellationToken);
+    private delegate object HandlerInvoker(object handler, object request, CancellationToken cancellationToken);
+    private delegate object NotificationInvoker(object handler, object notification, CancellationToken cancellationToken);
+    private delegate object BehaviorInvoker(object behavior, object request, object next, CancellationToken cancellationToken);
 }
