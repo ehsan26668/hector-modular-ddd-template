@@ -13,5 +13,6 @@
   <Folder Name="/tests/UnitTests/">
     <Project Path="tests/UnitTests/Hector.BuildingBlocks.Application.UnitTests/Hector.BuildingBlocks.Application.UnitTests.csproj" />
     <Project Path="tests/UnitTests/Hector.BuildingBlocks.Domain.UnitTests/Hector.BuildingBlocks.Domain.UnitTests.csproj" />
+    <Project Path="tests/UnitTests/Hector.BuildingBlocks.Persistence.UnitTests/Hector.BuildingBlocks.Persistence.UnitTests.csproj" />
   </Folder>
 </Solution>

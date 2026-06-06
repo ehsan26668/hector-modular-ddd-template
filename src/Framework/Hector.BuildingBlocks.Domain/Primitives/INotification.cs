@@ -1,5 +1,5 @@
 namespace Hector.BuildingBlocks.Domain.Primitives;
 
-public interface IDomainEvent : INotification
+public interface INotification
 {
 }

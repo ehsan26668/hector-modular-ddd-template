@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Hector.BuildingBlocks.Application.Messaging;
+using Hector.BuildingBlocks.Domain.Primitives;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Hector.BuildingBlocks.Application.UnitTests.Messaging;

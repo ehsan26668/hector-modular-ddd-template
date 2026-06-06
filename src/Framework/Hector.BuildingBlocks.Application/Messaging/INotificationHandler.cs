@@ -1,3 +1,5 @@
+using Hector.BuildingBlocks.Domain.Primitives;
+
 namespace Hector.BuildingBlocks.Application.Messaging;
 
 public interface INotificationHandler<in TNotification>

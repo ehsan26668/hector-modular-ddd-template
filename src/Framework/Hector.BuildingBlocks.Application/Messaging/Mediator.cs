@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
+using Hector.BuildingBlocks.Domain.Primitives;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Hector.BuildingBlocks.Application.Messaging;

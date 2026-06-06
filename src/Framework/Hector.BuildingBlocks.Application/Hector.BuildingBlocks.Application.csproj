@@ -17,4 +17,8 @@
     </AssemblyAttribute>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Hector.BuildingBlocks.Domain\Hector.BuildingBlocks.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
