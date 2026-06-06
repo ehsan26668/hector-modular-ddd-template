@@ -5,6 +5,20 @@
     <Project Path="src/Framework/Hector.BuildingBlocks.Domain/Hector.BuildingBlocks.Domain.csproj" />
     <Project Path="src/Framework/Hector.BuildingBlocks.Persistence/Hector.BuildingBlocks.Persistence.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Projects/" />
+  <Folder Name="/src/Modules/Projects/Application/">
+    <Project Path="src/Modules/Projects/Application/Hector.Modules.Projects.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Projects/Contracts/">
+    <Project Path="src/Modules/Projects/Contracts/Hector.Modules.Projects.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Projects/Domain/">
+    <Project Path="src/Modules/Projects/Domain/Hector.Modules.Projects.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Projects/Infrastructure/">
+    <Project Path="src/Modules/Projects/Infrastructure/Hector.Modules.Projects.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/IntegrationTests/" />
   <Folder Name="/tests/IntegrationTests/Hector.BuildingBlocks.Persistence.IntegrationTests/">
