@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Hector.BuildingBlocks.Application.Messaging;
@@ -6,91 +8,80 @@ internal sealed class Mediator : IMediator
 {
     private readonly IServiceProvider _serviceProvider;
 
+    private static readonly ConcurrentDictionary<(Type request, Type response), Type> _handlerTypeCache = new();
+    private static readonly ConcurrentDictionary<(Type request, Type response), MethodInfo> _handlerMethodCache = new();
+    private static readonly ConcurrentDictionary<Type, MethodInfo> _behaviorMethodCache = new();
+
     public Mediator(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
 
     public async Task<TResponse> SendAsync<TResponse>(
-    IRequest<TResponse> request,
-    CancellationToken cancellationToken = default)
+        IRequest<TResponse> request,
+        CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(request);
-
         var requestType = request.GetType();
         var responseType = typeof(TResponse);
+        var key = (requestType, responseType);
 
-        var handlerSpecificType = typeof(IRequestHandler<,>)
-            .MakeGenericType(requestType, responseType);
+        // ✅ 1. Cache handler type
+        var handlerType = _handlerTypeCache.GetOrAdd(key, static t =>
+            typeof(IRequestHandler<,>).MakeGenericType(t.request, t.response));
 
-        var handler = _serviceProvider.GetRequiredService(handlerSpecificType);
+        // ✅ 2. Resolve handler instance
+        var handlerInstance = _serviceProvider.GetRequiredService(handlerType);
 
-        RequestHandlerDelegate<TResponse> requestHandlerDelegate = () =>
-        {
-            var handlerMethodInfo = handlerSpecificType.GetMethod(
-                nameof(IRequestHandler<IRequest<TResponse>, TResponse>.HandleAsync));
+        // ✅ 3. Cache HandleAsync method
+        var handleMethod = _handlerMethodCache.GetOrAdd(key, static t =>
+            typeof(IRequestHandler<,>)
+                .MakeGenericType(t.request, t.response)
+                .GetMethod(nameof(IRequestHandler<IRequest<TResponse>, TResponse>.HandleAsync))!);
 
-            if (handlerMethodInfo is null)
-            {
-                throw new InvalidOperationException(
-                    $"Could not find HandleAsync method on handler type {handlerSpecificType.FullName}");
-            }
-
-            var result = handlerMethodInfo.Invoke(handler, [request, cancellationToken]);
-
-            if (result is null)
-            {
-                throw new InvalidOperationException(
-                    $"Handler for request type {requestType.Name} returned null.");
-            }
-
-            return (Task<TResponse>)result;
-        };
-
-        var pipelineSpecificType = typeof(IPipelineBehavior<,>)
-            .MakeGenericType(requestType, responseType);
+        // ✅ 4. Resolve behaviors
+        var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(requestType, responseType);
 
         var behaviors = _serviceProvider
-            .GetServices(pipelineSpecificType)
-            .Where(behavior => behavior is not null)
-            .Reverse();
+            .GetServices(behaviorType)
+            .Cast<object>()
+            .ToList();
 
-        RequestHandlerDelegate<TResponse> currentDelegate = requestHandlerDelegate;
-
-        foreach (var behavior in behaviors)
+        // ✅ 5. Core handler delegate
+        RequestHandlerDelegate<TResponse> handlerDelegate = () =>
         {
-            var behaviorInstance = behavior
-                ?? throw new InvalidOperationException(
-                    $"Resolved null pipeline behavior for request type {requestType.Name}.");
+            var task = (Task<TResponse>)handleMethod.Invoke(
+                handlerInstance, new object[] { request, cancellationToken })!;
 
-            var behaviorMethodInfo = behaviorInstance
-                .GetType()
-                .GetMethod(nameof(IPipelineBehavior<IRequest<TResponse>, TResponse>.HandleAsync));
+            return task;
+        };
 
-            if (behaviorMethodInfo is null)
-            {
-                throw new InvalidOperationException(
-                    $"Could not find HandleAsync method on pipeline behavior type {behaviorInstance.GetType().FullName}");
-            }
-
-            var nextDelegate = currentDelegate;
-
-            currentDelegate = () =>
-            {
-                var result = behaviorMethodInfo.Invoke(
-                    behaviorInstance,
-                    [request, nextDelegate, cancellationToken]);
-
-                if (result is null)
-                {
-                    throw new InvalidOperationException(
-                        $"Pipeline behavior for request type {requestType.Name} returned null.");
-                }
-
-                return (Task<TResponse>)result;
-            };
+        // ✅ 6. Build pipeline chain (reverse order)
+        foreach (var behavior in Enumerable.Reverse(behaviors))
+        {
+            handlerDelegate = WrapBehavior(behavior, handlerDelegate, request, cancellationToken);
         }
 
-        return await currentDelegate();
+        return await handlerDelegate();
+    }
+
+    private static RequestHandlerDelegate<TResponse> WrapBehavior<TResponse>(
+        object behavior,
+        RequestHandlerDelegate<TResponse> next,
+        object request,
+        CancellationToken cancellationToken)
+    {
+        var behaviorType = behavior.GetType();
+
+        var method = _behaviorMethodCache.GetOrAdd(behaviorType, static t =>
+            t.GetMethod("HandleAsync")!);
+
+        return () =>
+        {
+            var task = (Task<TResponse>)method.Invoke(
+                behavior,
+                new object[] { request, next, cancellationToken })!;
+
+            return task;
+        };
     }
 }
