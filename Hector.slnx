@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/" />
   <Folder Name="/src/Framework/">
+    <Project Path="src/Framework/Hector.BuildingBlocks.Application/Hector.BuildingBlocks.Application.csproj" />
     <Project Path="src/Framework/Hector.BuildingBlocks.Domain/Hector.BuildingBlocks.Domain.csproj" />
     <Project Path="src/Framework/Hector.BuildingBlocks.Persistence/Hector.BuildingBlocks.Persistence.csproj" />
   </Folder>
@@ -10,6 +11,7 @@
     <Project Path="tests/IntegrationTests/Hector.BuildingBlocks.Persistence.IntegrationTests/Hector.BuildingBlocks.Persistence.IntegrationTests.csproj" />
   </Folder>
   <Folder Name="/tests/UnitTests/">
+    <Project Path="tests/UnitTests/Hector.BuildingBlocks.Application.UnitTests/Hector.BuildingBlocks.Application.UnitTests.csproj" />
     <Project Path="tests/UnitTests/Hector.BuildingBlocks.Domain.UnitTests/Hector.BuildingBlocks.Domain.UnitTests.csproj" />
   </Folder>
 </Solution>

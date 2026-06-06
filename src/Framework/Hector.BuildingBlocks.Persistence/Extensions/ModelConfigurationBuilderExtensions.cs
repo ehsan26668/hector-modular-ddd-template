@@ -13,7 +13,7 @@ public static class ModelConfigurationBuilderExtensions
     {
         if (assembliesToScan.Length == 0)
         {
-            assembliesToScan = new[] { typeof(IStronglyTypedId).Assembly };
+            assembliesToScan = [typeof(IStronglyTypedId).Assembly];
         }
 
         foreach (var assembly in assembliesToScan)
