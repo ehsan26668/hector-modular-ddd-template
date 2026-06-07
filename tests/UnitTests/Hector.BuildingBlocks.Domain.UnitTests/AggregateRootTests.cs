@@ -3,7 +3,7 @@ using Hector.BuildingBlocks.Domain.Primitives;
 
 namespace Hector.BuildingBlocks.Domain.UnitTests;
 
-public class AggregateRootTests
+public sealed class AggregateRootTests
 {
     [Fact]
     public void RaiseDomainEvent_Should_Add_Event_To_Collection()
@@ -16,7 +16,10 @@ public class AggregateRootTests
         aggregate.Raise(domainEvent);
 
         // Assert
-        aggregate.GetDomainEvents().Should().Contain(domainEvent);
+        ((IHasDomainEvents)aggregate)
+            .GetDomainEvents()
+            .Should()
+            .Contain(domainEvent);
     }
 
     [Fact]
@@ -32,18 +35,21 @@ public class AggregateRootTests
         aggregate.ClearDomainEvents();
 
         // Assert
-        aggregate.GetDomainEvents().Should().BeEmpty();
+        ((IHasDomainEvents)aggregate)
+            .GetDomainEvents()
+            .Should()
+            .BeEmpty();
     }
 
     internal sealed class TestAggregate : AggregateRoot<Guid>
     {
         public TestAggregate(Guid id) : base(id) { }
 
-        public void Raise(IDomainEvent domainEvent)
+        public void Raise(TestDomainEvent domainEvent)
         {
             RaiseDomainEvent(domainEvent);
         }
     }
 
-    internal record TestDomainEvent : IDomainEvent;
+    internal sealed record TestDomainEvent : DomainEventBase;
 }

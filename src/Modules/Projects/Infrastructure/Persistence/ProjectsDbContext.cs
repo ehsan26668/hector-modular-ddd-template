@@ -1,5 +1,4 @@
 using Hector.BuildingBlocks.Persistence;
-using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.Modules.Projects.Domain;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,9 +8,8 @@ public class ProjectsDbContext : HectorDbContext
 {
     public ProjectsDbContext(
         DbContextOptions<ProjectsDbContext> options,
-        IDomainEventDispatcher domainEventDispatcher,
         IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider)
-        : base(options, domainEventDispatcher, stronglyTypedIdAssemblyProvider)
+        : base(options, stronglyTypedIdAssemblyProvider)
     {
     }
 

@@ -2,7 +2,7 @@ namespace Hector.BuildingBlocks.Domain.Primitives;
 
 public interface IHasDomainEvents
 {
-    IReadOnlyCollection<IDomainEvent> GetDomainEvents();
+    IReadOnlyCollection<DomainEventBase> GetDomainEvents();
 
     void ClearDomainEvents();
 }

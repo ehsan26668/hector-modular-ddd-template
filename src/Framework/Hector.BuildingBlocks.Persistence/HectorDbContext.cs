@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
@@ -7,17 +8,39 @@ namespace Hector.BuildingBlocks.Persistence;
 
 public abstract class HectorDbContext : DbContext
 {
-    private readonly IDomainEventDispatcher _domainEventDispatcher;
     private readonly IStronglyTypedIdAssemblyProvider _stronglyTypedIdAssemblyProvider;
 
     protected HectorDbContext(
         DbContextOptions options,
-        IDomainEventDispatcher domainEventDispatcher,
         IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider)
         : base(options)
     {
-        _domainEventDispatcher = domainEventDispatcher;
         _stronglyTypedIdAssemblyProvider = stronglyTypedIdAssemblyProvider;
+    }
+
+    // ✅ ثبت OutboxMessage در مدل
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<OutboxMessage>(builder =>
+        {
+            builder.HasKey(x => x.Id);
+
+            builder.Property(x => x.Type)
+                .IsRequired();
+
+            builder.Property(x => x.Content)
+                .IsRequired();
+
+            builder.Property(x => x.OccurredOn)
+                .IsRequired();
+
+            builder.Property(x => x.ProcessedOn)
+                .IsRequired(false);
+        });
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -42,30 +65,39 @@ public abstract class HectorDbContext : DbContext
         }
     }
 
-    public override async Task<int> SaveChangesAsync(
-        CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        var domainEventEntries = ChangeTracker
+        var domainEntities = ChangeTracker
             .Entries<IHasDomainEvents>()
-            .Where(entry => entry.Entity.GetDomainEvents().Count > 0)
-            .ToArray();
+            .Select(entry => entry.Entity)
+            .ToList();
 
-        var domainEvents = domainEventEntries
-            .SelectMany(entry => entry.Entity.GetDomainEvents())
-            .ToArray();
+        var domainEvents = domainEntities
+            .SelectMany(entity => entity.GetDomainEvents())
+            .ToList();
 
-        var result = await base.SaveChangesAsync(cancellationToken);
+        var outboxMessages = domainEvents
+            .Select(domainEvent => new OutboxMessage
+            {
+                Id = Guid.NewGuid(),
+                OccurredOn = domainEvent.OccurredOnUtc,
+                Type = domainEvent.GetType().FullName!,
+                Content = JsonSerializer.Serialize(domainEvent, domainEvent.GetType())
+            })
+            .ToList();
 
-        if (domainEvents.Length == 0)
+        if (outboxMessages.Count > 0)
         {
-            return result;
+            await OutboxMessages.AddRangeAsync(outboxMessages, cancellationToken);
         }
 
-        await _domainEventDispatcher.DispatchAsync(domainEvents, cancellationToken);
+        // ✅ اول Commit انجام می‌شود
+        var result = await base.SaveChangesAsync(cancellationToken);
 
-        foreach (var entry in domainEventEntries)
+        // ✅ فقط در صورت موفقیت، eventها پاک می‌شوند
+        foreach (var entity in domainEntities)
         {
-            entry.Entity.ClearDomainEvents();
+            entity.ClearDomainEvents();
         }
 
         return result;
@@ -74,9 +106,7 @@ public abstract class HectorDbContext : DbContext
     private static bool IsConcreteStronglyTypedId(Type type)
     {
         if (type.IsAbstract || type.IsGenericTypeDefinition || !type.IsClass)
-        {
             return false;
-        }
 
         var current = type.BaseType;
 

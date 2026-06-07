@@ -3,18 +3,18 @@ namespace Hector.BuildingBlocks.Domain.Primitives;
 public abstract class AggregateRoot<TId> : Entity<TId>, IHasDomainEvents
     where TId : notnull
 {
-    private readonly List<IDomainEvent> _domainEvents = [];
+    private readonly List<DomainEventBase> _domainEvents = [];
 
     protected AggregateRoot(TId id) : base(id)
     {
     }
 
-    public IReadOnlyCollection<IDomainEvent> GetDomainEvents()
+    IReadOnlyCollection<DomainEventBase> IHasDomainEvents.GetDomainEvents()
     {
         return _domainEvents.AsReadOnly();
     }
 
-    protected void RaiseDomainEvent(IDomainEvent domainEvent)
+    protected void RaiseDomainEvent(DomainEventBase domainEvent)
     {
         _domainEvents.Add(domainEvent);
     }
