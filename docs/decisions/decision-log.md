@@ -21,3 +21,4 @@
 | ADR-0017 | [Standardize Feature Module Structure](/docs/adr/0017-standardize-feature-module-structure.md) | Accepted | 2026-06-03 |
 | ADR-0018 | [Domain Identity Generation Policy](/docs/adr/0018-domain-identity-generation-policy.md) | Accepted | 2026-06-03 |
 | ADR-0019 | [Simplify StronglyTypedId and Use Assembly Scanning](/docs/adr/0019-simplify-strongly-typed-id-and-use-assembly-scanning.md) | Accepted | 2026-06-03 |
+| ADR-0020 | [Adopt One DbContext per Feature Module](/docs/adr/0020-adopt-one-dbcontext-per-feature-module.md) | Accepted | 2026-06-07 |
