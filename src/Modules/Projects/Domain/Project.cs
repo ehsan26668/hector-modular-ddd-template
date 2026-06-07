@@ -17,8 +17,6 @@ public sealed class Project : AggregateRoot<ProjectId>
     {
         Ensure.NotEmpty(name, "Project name cannot be empty");
 
-        var id = ProjectId.New();
-
-        return new Project(id, name);
+        return new Project(ProjectId.New(), name);
     }
 }

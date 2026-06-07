@@ -1,6 +1,3 @@
-using FluentAssertions;
-using Hector.BuildingBlocks.Domain.Primitives;
-
 namespace Hector.Modules.Projects.Domain.UnitTests;
 
 public sealed class ProjectTests
