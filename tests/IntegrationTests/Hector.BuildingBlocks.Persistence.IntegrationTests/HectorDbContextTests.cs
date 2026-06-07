@@ -1,13 +1,16 @@
+using System.Reflection;
 using FluentAssertions;
 using Hector.BuildingBlocks.Domain.Primitives;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NSubstitute;
 
 namespace Hector.BuildingBlocks.Persistence.IntegrationTests;
 
 public class HectorDbContextTests
 {
+    private static readonly IStronglyTypedIdAssemblyProvider StronglyTypedIdAssemblyProvider =
+        new TestStronglyTypedIdAssemblyProvider();
+
     [Fact]
     public async Task SaveChangesAsync_ShouldDispatchDomainEvents()
     {
@@ -17,11 +20,15 @@ public class HectorDbContextTests
             .UseSqlite("DataSource=:memory:")
             .Options;
 
-        await using var context = new TestDbContext(options, dispatcher);
+        await using var context = new TestDbContext(
+            options,
+            dispatcher,
+            StronglyTypedIdAssemblyProvider);
+
         await context.Database.OpenConnectionAsync();
         await context.Database.EnsureCreatedAsync();
 
-        var aggregate = new TestAggregate(TestAggregateId.Create(Guid.NewGuid()));
+        var aggregate = new TestAggregate(TestAggregateId.New());
         aggregate.RaiseTestEvent();
 
         context.Add(aggregate);
@@ -43,11 +50,15 @@ public class HectorDbContextTests
             .UseSqlite("DataSource=:memory:")
             .Options;
 
-        await using var context = new TestDbContext(options, dispatcher);
+        await using var context = new TestDbContext(
+            options,
+            dispatcher,
+            StronglyTypedIdAssemblyProvider);
+
         await context.Database.OpenConnectionAsync();
         await context.Database.EnsureCreatedAsync();
 
-        var aggregate = new TestAggregate(TestAggregateId.Create(Guid.NewGuid()));
+        var aggregate = new TestAggregate(TestAggregateId.New());
         aggregate.RaiseTestEvent();
 
         context.Add(aggregate);
@@ -66,9 +77,12 @@ public class HectorDbContextTests
             .UseSqlite("DataSource=:memory:")
             .Options;
 
-        var context = new FailingDbContext(options, dispatcher);
+        await using var context = new FailingDbContext(
+            options,
+            dispatcher,
+            StronglyTypedIdAssemblyProvider);
 
-        var aggregate = new TestAggregate(TestAggregateId.Create(Guid.NewGuid()));
+        var aggregate = new TestAggregate(TestAggregateId.New());
         aggregate.RaiseTestEvent();
 
         context.Add(aggregate);
@@ -77,7 +91,9 @@ public class HectorDbContextTests
             context.SaveChangesAsync());
 
         await dispatcher.DidNotReceive()
-            .DispatchAsync(Arg.Any<IEnumerable<IDomainEvent>>(), Arg.Any<CancellationToken>());
+            .DispatchAsync(
+                Arg.Any<IEnumerable<IDomainEvent>>(),
+                Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -89,9 +105,12 @@ public class HectorDbContextTests
             .UseSqlite("DataSource=:memory:")
             .Options;
 
-        var context = new FailingDbContext(options, dispatcher);
+        await using var context = new FailingDbContext(
+            options,
+            dispatcher,
+            StronglyTypedIdAssemblyProvider);
 
-        var aggregate = new TestAggregate(TestAggregateId.Create(Guid.NewGuid()));
+        var aggregate = new TestAggregate(TestAggregateId.New());
         aggregate.RaiseTestEvent();
 
         context.Add(aggregate);
@@ -108,18 +127,24 @@ public class HectorDbContextTests
         var dispatcher = Substitute.For<IDomainEventDispatcher>();
 
         dispatcher
-            .DispatchAsync(Arg.Any<IEnumerable<IDomainEvent>>(), Arg.Any<CancellationToken>())
+            .DispatchAsync(
+                Arg.Any<IEnumerable<IDomainEvent>>(),
+                Arg.Any<CancellationToken>())
             .Returns(_ => throw new InvalidOperationException("Dispatch failed"));
 
         var options = new DbContextOptionsBuilder<TestDbContext>()
             .UseSqlite("DataSource=:memory:")
             .Options;
 
-        await using var context = new TestDbContext(options, dispatcher);
+        await using var context = new TestDbContext(
+            options,
+            dispatcher,
+            StronglyTypedIdAssemblyProvider);
+
         await context.Database.OpenConnectionAsync();
         await context.Database.EnsureCreatedAsync();
 
-        var aggregate = new TestAggregate(TestAggregateId.Create(Guid.NewGuid()));
+        var aggregate = new TestAggregate(TestAggregateId.New());
         aggregate.RaiseTestEvent();
 
         context.Add(aggregate);
@@ -135,8 +160,9 @@ public sealed class TestDbContext : HectorDbContext
 {
     public TestDbContext(
         DbContextOptions<TestDbContext> options,
-        IDomainEventDispatcher dispatcher)
-        : base(options, dispatcher)
+        IDomainEventDispatcher dispatcher,
+        IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider)
+        : base(options, dispatcher, stronglyTypedIdAssemblyProvider)
     {
     }
 
@@ -146,17 +172,10 @@ public sealed class TestDbContext : HectorDbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        var converter = new ValueConverter<TestAggregateId, Guid>(
-            id => id.Value,
-            value => TestAggregateId.Create(value));
-
         modelBuilder.Entity<TestAggregate>(builder =>
         {
             builder.HasKey(x => x.Id);
-
-            builder.Property(x => x.Id)
-                   .HasConversion(converter)
-                   .ValueGeneratedNever();
+            builder.Property(x => x.Id).ValueGeneratedNever();
         });
     }
 }
@@ -164,9 +183,10 @@ public sealed class TestDbContext : HectorDbContext
 public sealed class FailingDbContext : HectorDbContext
 {
     public FailingDbContext(
-        DbContextOptions options,
-        IDomainEventDispatcher dispatcher)
-        : base(options, dispatcher)
+        DbContextOptions<FailingDbContext> options,
+        IDomainEventDispatcher dispatcher,
+        IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider)
+        : base(options, dispatcher, stronglyTypedIdAssemblyProvider)
     {
     }
 
@@ -176,17 +196,10 @@ public sealed class FailingDbContext : HectorDbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        var converter = new ValueConverter<TestAggregateId, Guid>(
-            id => id.Value,
-            value => TestAggregateId.Create(value));
-
         modelBuilder.Entity<TestAggregate>(builder =>
         {
             builder.HasKey(x => x.Id);
-
-            builder.Property(x => x.Id)
-                   .HasConversion(converter)
-                   .ValueGeneratedNever();
+            builder.Property(x => x.Id).ValueGeneratedNever();
         });
     }
 
@@ -216,25 +229,29 @@ public sealed class TestAggregate : AggregateRoot<TestAggregateId>
 public sealed record TestDomainEvent(TestAggregateId AggregateId)
     : DomainEventBase;
 
-public sealed class TestAggregateId
-    : StronglyTypedIdCrtp<TestAggregateId>,
-      IStronglyTypedId<TestAggregateId>
+public sealed class TestAggregateId : StronglyTypedId<TestAggregateId>
 {
-    private TestAggregateId(Guid value)
-        : base(value)
+    private TestAggregateId(Guid value) : base(value)
     {
     }
 
-    private TestAggregateId()
-        : base(Guid.Empty)
+    public static TestAggregateId New()
+        => CreateNew(v => new TestAggregateId(v));
+
+    internal static TestAggregateId From(Guid value)
+        => FromExisting(value, v => new TestAggregateId(v));
+}
+
+public sealed class TestStronglyTypedIdAssemblyProvider
+    : IStronglyTypedIdAssemblyProvider
+{
+    public IReadOnlyCollection<Assembly> GetAssemblies()
     {
+        return new[]
+        {
+            typeof(TestAggregateId).Assembly
+        };
     }
-
-    public static TestAggregateId Create(Guid value)
-        => new(value);
-
-    public static TestAggregateId CreateEmpty()
-        => new(Guid.Empty);
 }
 
 #endregion

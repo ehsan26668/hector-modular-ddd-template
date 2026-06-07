@@ -1,41 +1,42 @@
 namespace Hector.BuildingBlocks.Domain.Primitives;
 
-public abstract class StronglyTypedId<TValue> : ValueObject
-    where TValue : notnull
+/// <summary>
+/// Base class for strongly typed identifiers based on Guid (v7).
+/// Fully domain-safe and persistence-friendly.
+/// </summary>
+public abstract class StronglyTypedId<TSelf> : ValueObject
+    where TSelf : StronglyTypedId<TSelf>
 {
-    public TValue Value { get; }
+    public Guid Value { get; }
 
-    protected StronglyTypedId(TValue value)
+    protected StronglyTypedId(Guid value)
     {
-        Ensure.NotDefault(value, "Strongly typed id value cannot be default.");
+        if (value == Guid.Empty)
+            throw new ArgumentException("StronglyTypedId cannot be empty.", nameof(value));
+
         Value = value;
     }
 
-    protected StronglyTypedId(TValue value, bool isEmpty)
-    {
-        Value = value;
-    }
+    /// <summary>
+    /// Used by concrete types to generate new identifiers (Guid v7).
+    /// </summary>
+    protected static TSelf CreateNew(Func<Guid, TSelf> factory)
+        => factory(Guid.CreateVersion7());
 
-    public static implicit operator TValue(StronglyTypedId<TValue> id) => id.Value;
+    /// <summary>
+    /// Used for rehydration from persistence layer.
+    /// </summary>
+    protected static TSelf FromExisting(Guid value, Func<Guid, TSelf> factory)
+        => factory(value);
 
     protected override IEnumerable<object?> GetEqualityComponents()
     {
         yield return Value;
     }
 
+    public static implicit operator Guid(StronglyTypedId<TSelf> id)
+        => id.Value;
+
     public override string ToString()
-    {
-        return Value.ToString() ?? string.Empty;
-    }
-}
-
-public abstract class StronglyTypedId : StronglyTypedId<Guid>
-{
-    protected StronglyTypedId(Guid value) : base(value)
-    {
-    }
-
-    protected StronglyTypedId(Guid value, bool isEmpty) : base(value, isEmpty)
-    {
-    }
+        => Value.ToString();
 }

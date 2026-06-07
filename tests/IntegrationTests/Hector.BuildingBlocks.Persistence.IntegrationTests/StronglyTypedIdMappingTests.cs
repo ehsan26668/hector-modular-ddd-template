@@ -1,18 +1,19 @@
 using Hector.BuildingBlocks.Domain.Primitives;
-using Hector.BuildingBlocks.Persistence.Extensions;
+using Hector.BuildingBlocks.Persistence.Converters;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 namespace Hector.BuildingBlocks.Persistence.IntegrationTests;
 
-public sealed class TestOrderId : StronglyTypedIdCrtp<TestOrderId>, IStronglyTypedId<TestOrderId>
+public sealed class TestOrderId : StronglyTypedId<TestOrderId>
 {
     private TestOrderId(Guid value) : base(value) { }
 
-    private TestOrderId() : base(Guid.Empty) { }
+    public static TestOrderId New()
+        => CreateNew(v => new TestOrderId(v));
 
-    public static TestOrderId Create(Guid value) => new(value);
-    public static TestOrderId CreateEmpty() => new(Guid.Empty);
+    internal static TestOrderId From(Guid value)
+        => FromExisting(value, v => new TestOrderId(v));
 }
 
 public class TestOrder
@@ -21,7 +22,7 @@ public class TestOrder
     public string OrderNumber { get; set; } = null!;
 }
 
-#region DbContext
+#region DbContexts
 
 public class TestDbContextWithoutConvention : DbContext
 {
@@ -32,6 +33,11 @@ public class TestDbContextWithoutConvention : DbContext
         var connection = new SqliteConnection("DataSource=:memory:");
         connection.Open();
         optionsBuilder.UseSqlite(connection);
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<TestOrder>().HasKey(x => x.Id);
     }
 }
 
@@ -48,7 +54,19 @@ public class TestDbContextWithConvention : DbContext
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
-        configurationBuilder.RegisterStronglyTypedIdConventions(typeof(TestOrderId).Assembly);
+        // 1. پیدا کردن همه کلاس‌هایی که از StronglyTypedId<> ارث می‌برند در اسمبلی تست
+        var stronglyTypedIdTypes = typeof(TestOrderId).Assembly.GetTypes()
+            .Where(t => !t.IsAbstract && !t.IsInterface &&
+                        t.BaseType != null &&
+                        t.BaseType.IsGenericType &&
+                        t.BaseType.GetGenericTypeDefinition() == typeof(StronglyTypedId<>));
+
+        // 2. ثبت converter برای هر کدام به صورت جداگانه
+        foreach (var type in stronglyTypedIdTypes)
+        {
+            var converterType = typeof(StronglyTypedIdValueConverter<>).MakeGenericType(type);
+            configurationBuilder.Properties(type).HaveConversion(converterType);
+        }
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -57,33 +75,28 @@ public class TestDbContextWithConvention : DbContext
     }
 }
 
+
 #endregion
 
 public sealed class StronglyTypedIdMappingTests
 {
     [Fact]
-    public void EfCore_Should_Fail_To_Map_StronglyTypedId_Without_Converter()
+    public void EfCore_Should_Fail_To_Map_StronglyTypedId_Without_Convention()
     {
-        // Arrange
         using var context = new TestDbContextWithoutConvention();
 
-        // Act
         var action = () => context.Model;
 
-        // Assert
         Assert.Throws<InvalidOperationException>(action);
     }
 
     [Fact]
-    public void EfCore_Should_Map_StronglyTypedId_With_Converter()
+    public void EfCore_Should_Map_StronglyTypedId_With_Convention()
     {
-        // Arrange
         using var context = new TestDbContextWithConvention();
 
-        // Act
         var exception = Record.Exception(() => context.Model);
 
-        // Assert
         Assert.Null(exception);
     }
 }

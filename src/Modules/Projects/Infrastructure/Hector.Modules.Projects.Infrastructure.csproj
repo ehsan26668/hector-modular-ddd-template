@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Framework\Hector.BuildingBlocks.Persistence\Hector.BuildingBlocks.Persistence.csproj" />
     <ProjectReference Include="..\Application\Hector.Modules.Projects.Application.csproj" />
     <ProjectReference Include="..\Domain\Hector.Modules.Projects.Domain.csproj" />
   </ItemGroup>

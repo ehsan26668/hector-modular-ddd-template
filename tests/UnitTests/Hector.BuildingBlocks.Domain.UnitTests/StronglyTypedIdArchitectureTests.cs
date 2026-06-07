@@ -11,32 +11,32 @@ public class StronglyTypedIdArchitectureTests
         typeof(ValueObject).Assembly;
 
     [Fact]
-    public void StronglyTypedId_Types_Should_Be_Sealed()
+    public void StronglyTypedId_Concrete_Types_Should_Be_Sealed()
     {
-        // Arrange
         var result = Types.InAssembly(DomainAssembly)
             .That()
-            .Inherit(typeof(StronglyTypedIdCrtp<>))
+            .Inherit(typeof(StronglyTypedId<>))
+            .And()
+            .AreNotAbstract()
             .Should()
             .BeSealed()
             .GetResult();
 
-        // Assert
         result.IsSuccessful.Should().BeTrue();
     }
 
     [Fact]
-    public void StronglyTypedId_Types_Should_Reside_In_Primitives_Namespace()
+    public void StronglyTypedId_Base_Class_Should_Be_Abstract()
     {
-        // Arrange
-        var result = Types.InAssembly(DomainAssembly)
-            .That()
-            .Inherit(typeof(StronglyTypedIdCrtp<>))
-            .Should()
-            .ResideInNamespace("Hector.BuildingBlocks.Domain.Primitives")
-            .GetResult();
+        typeof(StronglyTypedId<>).IsAbstract.Should().BeTrue();
+    }
 
-        // Assert
-        result.IsSuccessful.Should().BeTrue();
+    [Fact]
+    public void StronglyTypedId_Should_Reside_In_Primitives_Namespace()
+    {
+        typeof(StronglyTypedId<>)
+            .Namespace
+            .Should()
+            .Be("Hector.BuildingBlocks.Domain.Primitives");
     }
 }

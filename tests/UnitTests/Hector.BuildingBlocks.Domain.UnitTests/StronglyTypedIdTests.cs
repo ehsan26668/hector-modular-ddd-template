@@ -6,196 +6,153 @@ namespace Hector.BuildingBlocks.Domain.UnitTests;
 public sealed class StronglyTypedIdTests
 {
     [Fact]
-    public void StronglyTypedId_Should_Expose_Value()
+    public void StronglyTypedId_Value_Should_Be_Exposed()
     {
         // Arrange
-        var value = Guid.NewGuid();
+        var guid = Guid.NewGuid();
 
         // Act
-        var id = new TestId(value);
-
-        // Assert
-        id.Value.Should().Be(value);
-    }
-
-    [Fact]
-    public void StronglyTypedId_Should_Be_Equal_When_Values_Are_Equal()
-    {
-        // Arrange
-        var value = Guid.NewGuid();
-
-        var id1 = new TestId(value);
-        var id2 = new TestId(value);
-
-
-        // Assert
-        id1.Should().Be(id2);
-    }
-
-    [Fact]
-    public void StronglyTypedId_Should_Not_Be_Equal_When_Values_Are_Different()
-    {
-        // Arrange
-        var id1 = new TestId(Guid.NewGuid());
-        var id2 = new TestId(Guid.NewGuid());
-
-        // Assert
-        id1.Should().NotBe(id2);
-    }
-
-    [Fact]
-    public void StronglyTypedId_Should_Throw_When_Value_Is_Default()
-    {
-        // Act
-        var act = () => new TestId(Guid.Empty);
-
-        // Assert
-        act.Should().Throw<BusinessRuleViolationException>()
-            .WithMessage("Strongly typed id value cannot be default.");
-    }
-
-    [Fact]
-    public void Different_StronglyTypedId_Types_Should_Not_Be_Equal_Even_When_Values_Are_Equal()
-    {
-        // Arrange
-        var value = Guid.NewGuid();
-
-        var testId = new TestId(value);
-        var anotherTestId = new AnotherTestId(value);
-
-        // Assert
-        testId.Equals(anotherTestId).Should().BeFalse();
-    }
-
-    [Fact]
-    public void StronglyTypedId_Should_Implicitly_Convert_To_Value()
-    {
-        // Arrange
-        var value = Guid.NewGuid();
-        var id = new TestId(value);
-
-        // Act
-        Guid convertedValue = id;
-
-        // Assert
-        convertedValue.Should().Be(value);
-    }
-
-    [Fact]
-    public void GuidBaseId_Should_Work_Correctly()
-    {
-        // Act
-        var id = new GuidBaseId(Guid.NewGuid());
-
-        // Assert
-        id.Should().BeAssignableTo<StronglyTypedId<Guid>>();
-    }
-
-    // ===============================
-    // ADR-0010 Advanced Capabilities
-    // ===============================
-
-    [Fact]
-    public void StronglyTypedId_New_Should_Create_New_Id_With_Uuid7()
-    {
-        // Arrange & Act
-        var id = AdvancedTestId.New();
-
-        // Assert
-        id.Value.Should().NotBe(Guid.Empty);
-
-        var version = (id.Value.ToByteArray()[7] >> 4) & 0x0F;
-        version.Should().Be(7);
-    }
-
-    [Fact]
-    public void StronglyTypedId_Empty_Should_Return_Empty_Id()
-    {
-        // Arrange & Act
-        var id = AdvancedTestId.Empty;
-
-        // Assert
-        id.Value.Should().Be(Guid.Empty);
-    }
-
-    [Fact]
-    public void StronglyTypedId_Parse_Should_Create_Id_From_String()
-    {
-        // Arrange
-        var guid = Guid.CreateVersion7();
-        var text = guid.ToString();
-
-        // Act
-        var id = AdvancedTestId.Parse(text);
+        var id = TestId.From(guid);
 
         // Assert
         id.Value.Should().Be(guid);
     }
 
     [Fact]
-    public void StronglyTypedId_TryParse_Should_Return_True_For_Valid_Value()
+    public void StronglyTypedId_Should_Be_Equal_When_Values_Are_Equal()
     {
-        // Arrange
-        var guid = Guid.CreateVersion7().ToString();
+        var guid = Guid.NewGuid();
 
-        // Act
-        var result = AdvancedTestId.TryParse(guid, out var id);
+        var id1 = TestId.From(guid);
+        var id2 = TestId.From(guid);
 
-        // Assert
-        result.Should().BeTrue();
-        id.Should().NotBeNull();
-        id!.Value.ToString().Should().Be(guid);
+        id1.Should().Be(id2);
     }
 
     [Fact]
-    public void StronglyTypedId_TryParse_Should_Return_False_For_Invalid_Value()
+    public void StronglyTypedId_Should_Not_Be_Equal_When_Values_Are_Different()
     {
-        // Arrange & Act
+        var id1 = TestId.New();
+        var id2 = TestId.New();
+
+        id1.Should().NotBe(id2);
+    }
+
+    [Fact]
+    public void StronglyTypedId_Should_Throw_When_Creating_From_Empty()
+    {
+        Action act = () => TestId.From(Guid.Empty);
+
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*cannot be empty*");
+    }
+
+    [Fact]
+    public void Different_StronglyTypedId_Types_Should_Not_Be_Equal()
+    {
+        var guid = Guid.NewGuid();
+
+        var a = TestId.From(guid);
+        var b = AnotherTestId.From(guid);
+
+        a.Equals(b).Should().BeFalse();
+    }
+
+    [Fact]
+    public void StronglyTypedId_Should_Implicitly_Convert_To_Guid()
+    {
+        var id = TestId.New();
+
+        Guid guid = id;
+
+        guid.Should().Be(id.Value);
+    }
+
+    // =======================
+    // Guid v7 Tests
+    // =======================
+    [Fact]
+    public void StronglyTypedId_New_Should_Generate_Version7()
+    {
+        var id = TestId.New();
+
+        var version = (id.Value.ToByteArray()[7] >> 4) & 0x0F;
+
+        version.Should().Be(7);
+    }
+
+    // =======================
+    // Parse & TryParse
+    // =======================
+    [Fact]
+    public void StronglyTypedId_Parse_Should_Create_Id()
+    {
+        var guid = Guid.CreateVersion7();
+        var text = guid.ToString();
+
+        var id = AdvancedTestId.Parse(text);
+
+        id.Value.Should().Be(guid);
+    }
+
+    [Fact]
+    public void StronglyTypedId_TryParse_Should_Return_True_For_Valid()
+    {
+        var str = Guid.CreateVersion7().ToString();
+
+        var result = AdvancedTestId.TryParse(str, out var id);
+
+        result.Should().BeTrue();
+        id.Should().NotBeNull();
+        id!.Value.ToString().Should().Be(str);
+    }
+
+    [Fact]
+    public void StronglyTypedId_TryParse_Should_Return_False_For_Invalid()
+    {
         var result = AdvancedTestId.TryParse("invalid-guid", out var id);
 
-        // Assert
         result.Should().BeFalse();
         id.Should().BeNull();
     }
 
-    // ===============================
+    // =======================
     // Test Helper Types
-    // ===============================
-    private sealed class TestId : StronglyTypedId<Guid>
+    // =======================
+    private sealed class TestId : StronglyTypedId<TestId>
     {
-        public TestId(Guid value) : base(value) { }
+        private TestId(Guid value) : base(value) { }
+
+        public static TestId New()
+            => CreateNew(v => new TestId(v));
+
+        internal static TestId From(Guid value)
+            => FromExisting(value, v => new TestId(v));
     }
 
-    private sealed class AnotherTestId : StronglyTypedId<Guid>
+    private sealed class AnotherTestId : StronglyTypedId<AnotherTestId>
     {
-        public AnotherTestId(Guid value) : base(value) { }
+        private AnotherTestId(Guid value) : base(value) { }
+
+        internal static AnotherTestId From(Guid value)
+            => FromExisting(value, v => new AnotherTestId(v));
     }
 
-    private sealed class GuidBaseId : StronglyTypedId
-    {
-        public GuidBaseId(Guid value) : base(value){} 
-    }
-
-    private sealed class AdvancedTestId : StronglyTypedId
+    private sealed class AdvancedTestId : StronglyTypedId<AdvancedTestId>
     {
         private AdvancedTestId(Guid value) : base(value) { }
 
-        private AdvancedTestId(Guid value, bool isEmpty) : base(value, isEmpty) { }
-
         public static AdvancedTestId New()
-            => new(Guid.CreateVersion7());
+            => CreateNew(v => new AdvancedTestId(v));
 
-        public static AdvancedTestId Empty
-            => new(Guid.Empty, true);
+        public static AdvancedTestId Parse(string s)
+            => FromExisting(Guid.Parse(s), v => new AdvancedTestId(v));
 
-        public static AdvancedTestId Parse(string value)
-            => new(Guid.Parse(value));
-
-        public static bool TryParse(string value, out AdvancedTestId? id)
+        public static bool TryParse(string s, out AdvancedTestId? id)
         {
-            if (Guid.TryParse(value, out var guid))
+            if (Guid.TryParse(s, out var g))
             {
-                id = new AdvancedTestId(guid);
+                id = FromExisting(g, v => new AdvancedTestId(v));
                 return true;
             }
 
