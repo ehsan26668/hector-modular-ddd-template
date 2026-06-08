@@ -29,7 +29,7 @@ public sealed class OutboxPersistenceTests
         var messages = await context.OutboxMessages.ToListAsync();
 
         messages.Should().HaveCount(1);
-        messages[0].Type.Should().Be(typeof(TestDomainEvent).FullName);
+        messages[0].Type.Should().Be(typeof(TestDomainEvent).AssemblyQualifiedName);
         messages[0].ProcessedOn.Should().BeNull();
     }
 

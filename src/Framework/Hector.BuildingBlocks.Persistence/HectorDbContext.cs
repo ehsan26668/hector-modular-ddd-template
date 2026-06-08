@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Converters;
+using Hector.BuildingBlocks.Persistence.Outbox;
 using Microsoft.EntityFrameworkCore;
 
 namespace Hector.BuildingBlocks.Persistence;
@@ -81,7 +82,7 @@ public abstract class HectorDbContext : DbContext
             {
                 Id = Guid.NewGuid(),
                 OccurredOn = domainEvent.OccurredOnUtc,
-                Type = domainEvent.GetType().FullName!,
+                Type = domainEvent.GetType().AssemblyQualifiedName!,
                 Content = JsonSerializer.Serialize(domainEvent, domainEvent.GetType())
             })
             .ToList();

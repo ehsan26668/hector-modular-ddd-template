@@ -23,3 +23,4 @@
 | ADR-0019 | [Simplify StronglyTypedId and Use Assembly Scanning](/docs/adr/0019-simplify-strongly-typed-id-and-use-assembly-scanning.md) | Accepted | 2026-06-03 |
 | ADR-0020 | [Adopt One DbContext per Feature Module](/docs/adr/0020-adopt-one-dbcontext-per-feature-module.md) | Accepted | 2026-06-07 |
 | ADR-0021 | [Adopt Transactional Outbox for Domain Event Publishing](/docs/adr/0021-adopt-transactional-outbox-for-domain-events.md) | Accepted | 2026-06-07 |
+| ADR-0022 | [Implement Outbox Background Processor](/docs/adr/0022-outbox-background-processor.md) | Accepted | 2026-06-07 |
