@@ -24,3 +24,7 @@
 | ADR-0020 | [Adopt One DbContext per Feature Module](/docs/adr/0020-adopt-one-dbcontext-per-feature-module.md) | Accepted | 2026-06-07 |
 | ADR-0021 | [Adopt Transactional Outbox for Domain Event Publishing](/docs/adr/0021-adopt-transactional-outbox-for-domain-events.md) | Accepted | 2026-06-07 |
 | ADR-0022 | [Implement Outbox Background Processor](/docs/adr/0022-outbox-background-processor.md) | Accepted | 2026-06-07 |
+| ADR-0023 | [Adopt Inbox Pattern for Idempotent Event Handling](/docs/adr/0023-adopt-inbox-pattern-for-idempotent-event-handling.md) | Accepted | 2026-06-07 |
+| ADR-0024 | [Adopt Distributed Locking for Outbox Processor](/docs/adr/0024-adopt-distributed-locking-for-outbox-processor.md) | Accepted | 2026-06-07 |
+| ADR-0025 | [Introduce Outbox Cleanup and Retention Policy](/docs/adr/0025-outbox-cleanup-and-retention-policy.md) | Accepted | 2026-06-07 |
+| ADR-0026 | [Define Event Serialization Strategy](/docs/adr/0026-event-serialization-strategy.md) | Accepted | 2026-06-07 |
