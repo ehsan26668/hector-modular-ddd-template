@@ -9,6 +9,9 @@ It provides a clean architectural foundation with:
 - CQRS with an internal mediator
 - Strongly Typed IDs
 - Domain Events
+- Transactional Outbox
+- Inbox Pattern (Idempotent Consumers)
+- Background Event Processing
 - EF Core integration
 - High test coverage
 - Architecture Decision Records (ADR)
@@ -27,10 +30,12 @@ The project is designed as a **reference architecture and starter template** for
 - Domain Layer
 - Application Layer
 - Persistence Layer
-- Domain Event Pipeline
+- Domain Event & Messaging Pipeline
+- Transactional Outbox
+- Inbox Pattern
 - Strongly Typed ID Strategy
 - Feature Module Architecture
-- End‑to‑End Command Flow
+- End‑to‑End Flow
 - Testing Strategy
 - Architecture Decision Records
 - Trade‑offs
@@ -123,6 +128,21 @@ Domain Layer
         │
         ▼
 Persistence Layer
+        │
+        ▼
+Transactional Outbox
+        │
+        ▼
+Background Processor
+        │
+        ▼
+Mediator.PublishAsync
+        │
+        ▼
+Inbox Pattern
+        │
+        ▼
+Integration Event Handler
 ```
 
 Feature modules sit on top of the shared framework building blocks.

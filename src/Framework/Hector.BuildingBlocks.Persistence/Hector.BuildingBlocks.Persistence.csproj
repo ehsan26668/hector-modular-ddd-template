@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\tests\UnitTests\Hector.BuildingBlocks.Application.UnitTests\Hector.BuildingBlocks.Application.UnitTests.csproj" />
     <ProjectReference Include="..\Hector.BuildingBlocks.Application\Hector.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\Hector.BuildingBlocks.Domain\Hector.BuildingBlocks.Domain.csproj" />
   </ItemGroup>

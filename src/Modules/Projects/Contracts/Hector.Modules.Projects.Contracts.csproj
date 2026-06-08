@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Framework\Hector.BuildingBlocks.Application\Hector.BuildingBlocks.Application.csproj" />
+  </ItemGroup>
+
 </Project>
