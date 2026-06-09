@@ -6,4 +6,11 @@ public sealed class BusinessRuleViolationException : DomainException
         : base(message)
     {
     }
+
+    public BusinessRuleViolationException(
+        string message,
+        Exception innerException)
+        : base(message, innerException)
+    {
+    }
 }
