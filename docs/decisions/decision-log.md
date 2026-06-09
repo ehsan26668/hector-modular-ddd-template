@@ -28,3 +28,12 @@
 | ADR-0024 | [Adopt Distributed Locking for Outbox Processor](/docs/adr/0024-adopt-distributed-locking-for-outbox-processor.md) | Accepted | 2026-06-07 |
 | ADR-0025 | [Introduce Outbox Cleanup and Retention Policy](/docs/adr/0025-outbox-cleanup-and-retention-policy.md) | Accepted | 2026-06-07 |
 | ADR-0026 | [Define Event Serialization Strategy](/docs/adr/0026-event-serialization-strategy.md) | Accepted | 2026-06-07 |
+| ADR-0027 | [Domain Event to Integration Event Bridge](/docs/adr/0027-domain-event-to-integration-event-bridge.md) | Proposed | 2026-06-07 |
+| ADR-0028 | [Integration Event Bus Abstraction](/docs/adr/0028-integration-event-bus-abstraction.md) | Proposed | 2026-06-07 |
+| ADR-0029 | [Integration Event Versioning Strategy](/docs/adr/0029-integration-event-versioning-strategy.md) | Proposed | 2026-06-07 |
+| ADR-0030 | [Event Naming and Contract Stability Rules](/docs/adr/0030-event-naming-and-contract-stability-rules.md) | Proposed | 2026-06-07 |
+| ADR-0031 | [Event Schema Evolution Strategy](/docs/adr/0031-event-schema-evolution-strategy.md) | Proposed | 2026-06-07 |
+| ADR-0032 | [Event Metadata and Correlation Strategy](/docs/adr/0032-event-metadata-and-correlation-strategy.md) | Proposed | 2026-06-07 |
+| ADR-0033 | [Event Ordering and Delivery Guarantees](/docs/adr/0033-event-ordering-and-delivery-guarantees.md) | Proposed | 2026-06-07 |
+| ADR-0034 | [Dead Letter and Poison Message Handling](/docs/adr/0034-dead-letter-and-poison-message-handling.md) | Proposed | 2026-06-07 |
+| ADR-0035 | [Consumer Idempotency Strategy](/docs/adr/0035-consumer-idempotency-strategy.md) | Proposed | 2026-06-07 |
