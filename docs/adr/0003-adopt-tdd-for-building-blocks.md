@@ -6,43 +6,67 @@ Accepted
 
 ## Context
 
-The Building Blocks layer contains foundational domain abstractions such as Entity, ValueObject, AggregateRoot, and domain exception handling.
+The Building Blocks layer contains foundational abstractions that form the core of the architecture.  
+Examples include:
 
-These components are critical to the integrity of the entire system. Any defect or incorrect assumption at this level can propagate across all modules.
+- Entity
+- ValueObject
+- AggregateRoot
+- StronglyTypedId
+- Domain exceptions
+- Guard utilities
 
-To ensure correctness, stability, and long-term maintainability, we need a disciplined approach to developing these core abstractions.
+These components live inside the Framework layer, primarily in:
+
+- Hector.BuildingBlocks.Domain
+- Hector.BuildingBlocks.Application
+- Hector.BuildingBlocks.Persistence
+
+Because all feature modules depend on these abstractions, any defect or incorrect design decision in this layer can propagate throughout the entire system.
+
+Ensuring correctness, stability, and predictable behavior of these primitives is therefore critical.
 
 ## Decision
 
-We will adopt Test-Driven Development (TDD) for implementing all Building Blocks domain components.
+All Building Blocks components MUST be implemented using **Test-Driven Development (TDD)**.
 
-The development cycle will follow:
+The development workflow follows the classic TDD cycle:
 
-- Write a failing test
-- Implement the minimal code required to pass the test
-- Refactor while keeping tests green
+1. Write a failing unit test
+2. Implement the minimal code required to make the test pass
+3. Refactor the implementation while keeping tests green
 
-Unit tests will:
+Unit tests must validate:
 
-- Validate domain invariants
-- Verify equality logic (especially for ValueObjects)
-- Ensure identity semantics for Entities
-- Cover edge cases and invalid states
+- domain invariants
+- equality semantics for ValueObjects
+- identity semantics for Entities
+- behavior of AggregateRoot domain event handling
+- StronglyTypedId correctness
+- edge cases and invalid states
 
-All Building Blocks must have accompanying unit tests before being considered complete.
+Each Building Block must have comprehensive unit test coverage before it is considered complete.
+
+Tests are located in dedicated test projects such as:
+
+- `tests/UnitTests/Hector.BuildingBlocks.Domain.UnitTests`
+- `tests/UnitTests/Hector.BuildingBlocks.Application.UnitTests`
+- `tests/UnitTests/Hector.BuildingBlocks.Persistence.UnitTests`
+
+These tests act as executable specifications for the architectural primitives.
 
 ## Consequences
 
 Positive:
 
-- High confidence in core abstractions
-- Early detection of design flaws
-- Improved domain modeling discipline
-- Safer refactoring over time
-- Living documentation through tests
+- High confidence in the correctness of core abstractions
+- Early detection of design issues
+- Improved modeling discipline
+- Safer long-term refactoring
+- Tests serve as living documentation of expected behavior
 
 Negative:
 
-- Slower initial development speed
+- Slower initial implementation speed
 - Requires strong testing discipline
 - Developers must be comfortable with TDD practices

@@ -6,42 +6,111 @@ Accepted
 
 ## Context
 
-The project aims to follow Domain-Driven Design (DDD) with a modular and scalable architecture.
+The project is designed to follow Domain-Driven Design (DDD) with a modular architecture.
 
-Without a well-defined structure from the beginning, the codebase may become tightly coupled, difficult to maintain, and resistant to change. We need a clear separation of concerns aligned with DDD tactical patterns and clean architecture principles.
+Without a well-defined structure from the beginning, the codebase may quickly become tightly coupled, difficult to maintain, and resistant to change.
 
-The structure must:
+To maintain long-term architectural integrity, the solution must enforce:
 
-- Support modular growth
-- Enforce domain isolation
-- Enable independent testing
-- Prevent accidental coupling between layers
+- clear domain boundaries
+- separation of concerns
+- modular scalability
+- testability
+- strict dependency direction
+
+The project structure should reflect both **DDD tactical patterns** and **Clean Architecture layering** while remaining practical for real-world .NET development.
 
 ## Decision
 
-We will initialize the solution using a modular structure aligned with DDD and Clean Architecture principles.
+The solution SHALL adopt a **modular project structure** organized into two primary areas:
 
-The solution will include:
+- Framework (shared building blocks)
+- Modules (feature modules)
 
-- A dedicated BuildingBlocks layer for shared domain abstractions
-- Explicit Domain layer projects
-- Separate Unit Test projects per layer/module
-- Centralized dependency management using Directory.Build.props and Directory.Packages.props
-- Solution-level configuration via a single solution file
+### Framework (Building Blocks)
 
-Each module will evolve independently while respecting domain boundaries.
+Reusable infrastructure and abstractions are placed under:
+
+`src/Framework`
+
+This layer provides shared architectural primitives and consists of:
+
+- `Hector.BuildingBlocks.Domain`
+- `Hector.BuildingBlocks.Application`
+- `Hector.BuildingBlocks.Persistence`
+
+These projects provide reusable capabilities such as:
+
+- domain primitives
+- mediator abstractions
+- CQRS messaging contracts
+- persistence infrastructure
+- outbox and inbox reliability mechanisms
+
+### Feature Modules
+
+Business functionality is implemented as **independent feature modules** located under:
+
+`src/Modules/<FeatureName>`
+
+Each module follows Clean Architecture layering:
+
+```text
+<Feature>
+├── Domain
+├── Application
+├── Infrastructure
+└── Contracts
+```
+
+### Responsibilities
+
+**Domain**  
+Contains aggregates, entities, value objects, domain events, and repository interfaces.
+
+**Application**  
+Contains commands, queries, handlers, and application orchestration logic.
+
+**Infrastructure**  
+Contains EF Core persistence, repository implementations, and external integrations.
+
+**Contracts**  
+Contains integration events and public contracts used by other modules.
+
+### Testing Structure
+
+Tests are organized separately under:
+
+```text
+tests
+├── UnitTests
+└── IntegrationTests
+```
+
+Unit tests validate domain logic and application behavior.  
+Integration tests verify persistence, infrastructure behavior, and module interaction.
+
+### Centralized Build Configuration
+
+The solution uses centralized build and dependency configuration via:
+
+- `Directory.Build.props`
+- `Directory.Packages.props`
+
+This ensures consistent dependency management and build settings across the entire solution.
 
 ## Consequences
 
 Positive:
 
-- Clear separation of concerns
-- High cohesion within modules
-- Reduced coupling between layers
-- Improved scalability and maintainability
-- Easier unit testing and CI integration
+- Clear separation of architectural layers
+- Strong modular boundaries
+- Improved maintainability and scalability
+- Easier test isolation
+- Reusable architectural building blocks
 
 Negative:
 
-- Slightly higher initial setup complexity
-- Requires architectural discipline to prevent boundary violations
+- Higher initial structural complexity
+- Requires architectural discipline to maintain boundaries
+- Slightly increased solution size due to multiple projects

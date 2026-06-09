@@ -6,40 +6,55 @@ Accepted
 
 ## Context
 
-As the project evolves following Domain-Driven Design (DDD) principles, architectural and design decisions must be documented in a structured and traceable manner.
+As the project evolves following Domain‑Driven Design (DDD) and Clean Architecture principles, architectural and design decisions must be documented in a structured and traceable way.
 
-Without a formal decision log, important context behind technical choices (such as adopting TDD, Strongly Typed IDs, Guard Patterns, etc.) may be lost over time, especially as the team grows or the system becomes more complex.
+Without a formal decision log, the reasoning behind important technical choices (such as adopting TDD, Strongly Typed IDs, Guard Patterns, Outbox/Inbox messaging, etc.) may be lost over time.
 
-We need a lightweight, version-controlled, developer-friendly approach to document architectural decisions.
+This becomes especially problematic as:
+
+- the codebase grows
+- more developers contribute to the system
+- architectural constraints need to be preserved
+
+A lightweight, version‑controlled mechanism is required to document architectural decisions together with their context and trade‑offs.
 
 ## Decision
 
-We will adopt Architecture Decision Records (ADR) as the standard mechanism for documenting significant architectural and design decisions.
+The project SHALL adopt **Architecture Decision Records (ADR)** as the standard mechanism for documenting significant architectural decisions.
 
-Each ADR will:
+ADR documents SHALL:
 
-- Be stored as a Markdown file in the repository
-- Follow a consistent template
-- Be immutable once accepted (changes require a new ADR)
-- Be sequentially numbered (e.g., 0001, 0002, ...)
+- be stored as Markdown files in the repository
+- reside in the `docs/adr` directory
+- follow a consistent ADR template
+- be sequentially numbered (e.g., `0001`, `0002`, `0003`, ...)
+- remain immutable once their status becomes **Accepted**
 
-The template structure includes:
+If a decision needs to change, a **new ADR MUST be created** that supersedes the previous one.
 
-- Status
-- Context
-- Decision
-- Consequences (Positive and Negative)
+Each ADR SHALL contain the following sections:
+
+    Status
+    Context
+    Decision
+    Consequences
+
+The Consequences section MUST document both:
+
+    Positive outcomes
+    Negative trade-offs
 
 ## Consequences
 
 Positive:
 
-- Clear traceability of architectural decisions
-- Improved onboarding for new developers
-- Better long-term maintainability
-- Explicit documentation of trade-offs
+- Architectural decisions become explicit and traceable.
+- New developers can understand the reasoning behind design choices.
+- Architectural consistency is easier to maintain over time.
+- Trade‑offs are documented alongside decisions.
 
 Negative:
 
-- Additional discipline required to document decisions
-- Slight overhead when introducing new architectural changes
+- Developers must spend additional time documenting decisions.
+- Creating an ADR introduces a small process overhead when making architectural changes.
+`
