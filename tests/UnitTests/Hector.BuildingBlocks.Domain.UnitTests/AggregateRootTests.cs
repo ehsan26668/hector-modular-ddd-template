@@ -6,30 +6,32 @@ namespace Hector.BuildingBlocks.Domain.UnitTests;
 public sealed class AggregateRootTests
 {
     [Fact]
-    public void RaiseDomainEvent_Should_Add_Event_To_Collection()
+    public void Should_AddDomainEvent_ToCollection_When_ActionIsPerformed()
     {
         // Arrange
         var aggregate = new TestAggregate(Guid.NewGuid());
         var domainEvent = new TestDomainEvent();
 
         // Act
-        aggregate.Raise(domainEvent);
+        aggregate.Trigger(domainEvent);
 
         // Assert
         ((IHasDomainEvents)aggregate)
             .GetDomainEvents()
             .Should()
-            .Contain(domainEvent);
+            .ContainSingle()
+            .Which.Should()
+            .Be(domainEvent);
     }
 
     [Fact]
-    public void ClearDomainEvents_Should_Remove_All_Events()
+    public void Should_ClearDomainEvents_When_ClearIsCalled()
     {
         // Arrange
         var aggregate = new TestAggregate(Guid.NewGuid());
         var domainEvent = new TestDomainEvent();
 
-        aggregate.Raise(domainEvent);
+        aggregate.Trigger(domainEvent);
 
         // Act
         aggregate.ClearDomainEvents();
@@ -41,15 +43,13 @@ public sealed class AggregateRootTests
             .BeEmpty();
     }
 
-    internal sealed class TestAggregate : AggregateRoot<Guid>
+    private sealed class TestAggregate(Guid id) : AggregateRoot<Guid>(id)
     {
-        public TestAggregate(Guid id) : base(id) { }
-
-        public void Raise(TestDomainEvent domainEvent)
+        public void Trigger(TestDomainEvent domainEvent)
         {
             RaiseDomainEvent(domainEvent);
         }
     }
 
-    internal sealed record TestDomainEvent : DomainEventBase;
+    private sealed record TestDomainEvent : DomainEventBase;
 }
