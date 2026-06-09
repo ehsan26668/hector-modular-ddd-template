@@ -1,21 +1,21 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Hector.BuildingBlocks.Domain.Primitives;
 
 namespace Hector.BuildingBlocks.Persistence.Outbox;
 
-public sealed class SystemTextJsonOutboxEventSerializer : IOutboxEventSerializer
+public sealed class SystemTextJsonOutboxEventSerializer(
+    IOutboxEventTypeResolver typeResolver)
+    : IOutboxEventSerializer
 {
     private static readonly JsonSerializerOptions Options = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
-    private readonly IOutboxEventTypeResolver _typeResolver;
+    private static readonly ConcurrentDictionary<Type, Func<string, INotification>> DeserializerCache = new();
 
-    public SystemTextJsonOutboxEventSerializer(IOutboxEventTypeResolver typeResolver)
-    {
-        _typeResolver = typeResolver;
-    }
+    private readonly IOutboxEventTypeResolver _typeResolver = typeResolver;
 
     public INotification Deserialize(OutboxMessage message)
     {
@@ -24,21 +24,12 @@ public sealed class SystemTextJsonOutboxEventSerializer : IOutboxEventSerializer
         if (type is null)
         {
             throw new InvalidOperationException(
-                $"Outbox message typr '{message.Type}' could not be resolved.");
+                $"Outbox message type '{message.Type}' could not be resolved.");
         }
 
-        var domainEvent = JsonSerializer.Deserialize(
-            message.Content,
-            type,
-            Options) as INotification;
+        var deserializer = DeserializerCache.GetOrAdd(type, CreateDeserializer);
 
-        if (domainEvent is null)
-        {
-            throw new InvalidOperationException(
-                $"Outbox message {message.Id} deserialized to null.");
-        }
-
-        return domainEvent;
+        return deserializer(message.Content);
     }
 
     public string GetTypeName(INotification notification)
@@ -54,5 +45,21 @@ public sealed class SystemTextJsonOutboxEventSerializer : IOutboxEventSerializer
             notification,
             notification.GetType(),
             Options);
+    }
+
+    private static Func<string, INotification> CreateDeserializer(Type type)
+    {
+        return json =>
+        {
+            var result = JsonSerializer.Deserialize(json, type, Options);
+
+            if (result is not INotification notification)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to deserialize event type '{type.Name}'.");
+            }
+
+            return notification;
+        };
     }
 }

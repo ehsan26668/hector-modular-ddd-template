@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentAssertions;
 using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Outbox;
@@ -6,67 +7,80 @@ namespace Hector.BuildingBlocks.Persistence.UnitTests;
 
 public sealed class OutboxEventSerializationTests
 {
+    private static readonly IOutboxEventSerializer Serializer =
+        new SystemTextJsonOutboxEventSerializer(new CachedOutboxEventTypeResolver());
+
     [Fact]
-    public void Should_return_assembly_qualified_type_name_when_event_is_serialized()
+    public void Should_ReturnAssemblyQualifiedName_When_GetTypeNameIsCalled()
     {
         // Arrange
-        var serializer = new SystemTextJsonOutboxEventSerializer(
-            new CachedOutboxEventTypeResolver());
-
         var domainEvent = new TestDomainEvent();
 
         // Act
-        var typeName = serializer.GetTypeName(domainEvent);
+        var typeName = Serializer.GetTypeName(domainEvent);
 
         // Assert
         typeName.Should().Be(typeof(TestDomainEvent).AssemblyQualifiedName);
     }
 
     [Fact]
-    public void Should_deserialize_event_when_valid_outbox_message_is_provided()
+    public void Should_SerializeEvent_When_EventIsValid()
     {
         // Arrange
-        var serializer = new SystemTextJsonOutboxEventSerializer(
-            new CachedOutboxEventTypeResolver());
+        var domainEvent = new TestDomainEvent();
 
+        // Act
+        var json = Serializer.Serialize(domainEvent);
+
+        // Assert
+        json.Should().NotBeNullOrWhiteSpace();
+
+        var deserialized = JsonSerializer.Deserialize<TestDomainEvent>(json);
+
+        deserialized.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Should_DeserializeEvent_When_MessageIsValid()
+    {
+        // Arrange
         var domainEvent = new TestDomainEvent();
 
         var message = new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = serializer.GetTypeName(domainEvent),
-            Content = serializer.Serialize(domainEvent),
+            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Content = JsonSerializer.Serialize(domainEvent),
             OccurredOn = DateTime.UtcNow
         };
 
         // Act
-        var result = serializer.Deserialize(message);
+        var result = Serializer.Deserialize(message);
 
         // Assert
         result.Should().BeOfType<TestDomainEvent>();
     }
 
     [Fact]
-    public void Should_throw_exception_when_event_type_cannot_be_resolved()
+    public void Should_ThrowException_When_EventTypeCannotBeResolved()
     {
         // Arrange
-        var serializer = new SystemTextJsonOutboxEventSerializer(
-            new CachedOutboxEventTypeResolver());
-
         var message = new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = "Unknown.Type, Unknown.Assembly",
+            Type = "unknown.type",
             Content = "{}",
             OccurredOn = DateTime.UtcNow
         };
 
         // Act
-        var act = () => serializer.Deserialize(message);
+        var action = () => Serializer.Deserialize(message);
 
         // Assert
-        act.Should().Throw<InvalidOperationException>();
+        action.Should()
+            .Throw<InvalidOperationException>()
+            .WithMessage("*could not be resolved*");
     }
 
-    private sealed record TestDomainEvent : DomainEventBase;
+    internal sealed record TestDomainEvent : DomainEventBase;
 }
