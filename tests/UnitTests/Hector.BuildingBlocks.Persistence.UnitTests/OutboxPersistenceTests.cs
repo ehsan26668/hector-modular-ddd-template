@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Hector.BuildingBlocks.Domain.Primitives;
+using Hector.BuildingBlocks.Persistence.Outbox;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 
@@ -16,8 +17,10 @@ public sealed class OutboxPersistenceTests
             .Options;
 
         var assembblyProvider = Substitute.For<IStronglyTypedIdAssemblyProvider>();
+        var outboxSerializer = new SystemTextJsonOutboxEventSerializer(
+            new CachedOutboxEventTypeResolver());
 
-        await using var context = new TestDbContext(options, assembblyProvider);
+        await using var context = new TestDbContext(options, assembblyProvider, outboxSerializer);
 
         var aggregate = TestAggregate.Create();
         context.Aggregates.Add(aggregate);
@@ -37,8 +40,13 @@ public sealed class OutboxPersistenceTests
     {
         public TestDbContext(
             DbContextOptions options,
-            IStronglyTypedIdAssemblyProvider assemblyProvider)
-            : base(options, assemblyProvider) { }
+            IStronglyTypedIdAssemblyProvider assemblyProvider,
+            IOutboxEventSerializer outboxSerializer)
+            : base(
+                  options,
+                  assemblyProvider,
+                  outboxSerializer)
+        { }
 
         public DbSet<TestAggregate> Aggregates => Set<TestAggregate>();
     }

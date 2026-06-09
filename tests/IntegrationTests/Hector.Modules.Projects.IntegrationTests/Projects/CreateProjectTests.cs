@@ -9,6 +9,7 @@ using Hector.Modules.Projects.Infrastructure.Persistence;
 using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence;
 using System.Reflection;
+using Hector.BuildingBlocks.Persistence.Outbox;
 
 namespace Hector.Modules.Projects.IntegrationTests.Projects;
 
@@ -20,6 +21,8 @@ public class CreateProjectTests
         // Arrange
         var services = new ServiceCollection();
 
+        services.AddSingleton<IOutboxEventTypeResolver, CachedOutboxEventTypeResolver>();
+        services.AddSingleton<IOutboxEventSerializer, SystemTextJsonOutboxEventSerializer>();
         services.AddSingleton<IDomainEventDispatcher, FakeDomainEventDispatcher>();
         services.AddSingleton<IStronglyTypedIdAssemblyProvider, TestStronglyTypedIdAssemblyProvider>();
 

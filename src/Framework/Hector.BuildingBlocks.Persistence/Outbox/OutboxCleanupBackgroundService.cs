@@ -4,18 +4,18 @@ using Microsoft.Extensions.Logging;
 
 namespace Hector.BuildingBlocks.Persistence.Outbox;
 
-internal sealed class OutboxProcessorBackgroundService(
+internal sealed class OutboxCleanupBackgroundService(
     IServiceProvider serviceProvider,
     IPeriodicTimer timer,
-    ILogger<OutboxProcessorBackgroundService> logger)
+    ILogger<OutboxCleanupBackgroundService> logger)
     : PeriodicBackgroundService(serviceProvider, timer, logger)
 {
     protected override async Task ExecuteInScopeAsync(
         IServiceProvider serviceProvider,
         CancellationToken cancellationToken)
     {
-        var processor = serviceProvider.GetRequiredService<IOutboxProcessor>();
+        var cleaner = serviceProvider.GetRequiredService<IOutboxCleaner>();
 
-        await processor.ProcessAsync(cancellationToken);
+        await cleaner.CleanupAsync(cancellationToken);
     }
 }

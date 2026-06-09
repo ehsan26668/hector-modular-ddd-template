@@ -1,42 +1,41 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Hector.BuildingBlocks.Persistence.Outbox;
 
 public sealed class OutboxProcessor : IOutboxProcessor
 {
-    private const int BatchSize = 20;
-    private const int MaxRetryCount = 5;
-
-    private static readonly TimeSpan LockDuration = TimeSpan.FromMinutes(2);
-
     private readonly HectorDbContext _dbContext;
     private readonly IOutboxPublisher _publisher;
     private readonly ILogger<OutboxProcessor> _logger;
+    private readonly OutboxOptions _options;
 
     public OutboxProcessor(
         HectorDbContext dbContext,
         IOutboxPublisher publisher,
-        ILogger<OutboxProcessor> logger)
+        ILogger<OutboxProcessor> logger,
+        IOptions<OutboxOptions> options)
     {
         _dbContext = dbContext;
         _publisher = publisher;
         _logger = logger;
+        _options = options.Value;
     }
 
     public async Task ProcessAsync(CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
         var lockId = Guid.NewGuid();
-        var lockedUntil = now.Add(LockDuration);
+        var lockedUntil = now.Add(_options.LockDuration);
 
         var messageIds = await _dbContext.OutboxMessages
             .Where(m =>
                 m.ProcessedOn == null &&
-                m.RetryCount < MaxRetryCount &&
+                m.RetryCount < _options.MaxRetryCount &&
                 (m.LockedUntil == null || m.LockedUntil < now))
             .OrderBy(m => m.OccurredOn)
-            .Take(BatchSize)
+            .Take(_options.BatchSize)
             .Select(m => m.Id)
             .ToListAsync(cancellationToken);
 
@@ -49,7 +48,7 @@ public sealed class OutboxProcessor : IOutboxProcessor
             .Where(m =>
                 messageIds.Contains(m.Id) &&
                 m.ProcessedOn == null &&
-                m.RetryCount < MaxRetryCount &&
+                m.RetryCount < _options.MaxRetryCount &&
                 (m.LockedUntil == null || m.LockedUntil < now))
             .ExecuteUpdateAsync(
                 setters => setters

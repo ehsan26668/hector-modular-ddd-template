@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Text.Json;
 using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Converters;
 using Hector.BuildingBlocks.Persistence.Outbox;
@@ -10,16 +9,18 @@ namespace Hector.BuildingBlocks.Persistence;
 public abstract class HectorDbContext : DbContext
 {
     private readonly IStronglyTypedIdAssemblyProvider _stronglyTypedIdAssemblyProvider;
+    private readonly IOutboxEventSerializer _outboxSerializer;
 
     protected HectorDbContext(
         DbContextOptions options,
-        IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider)
+        IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider,
+        IOutboxEventSerializer outboxSerializer)
         : base(options)
     {
         _stronglyTypedIdAssemblyProvider = stronglyTypedIdAssemblyProvider;
+        _outboxSerializer = outboxSerializer;
     }
 
-    // ✅ ثبت OutboxMessage در مدل
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -82,8 +83,8 @@ public abstract class HectorDbContext : DbContext
             {
                 Id = Guid.NewGuid(),
                 OccurredOn = domainEvent.OccurredOnUtc,
-                Type = domainEvent.GetType().AssemblyQualifiedName!,
-                Content = JsonSerializer.Serialize(domainEvent, domainEvent.GetType())
+                Type = _outboxSerializer.GetTypeName(domainEvent),
+                Content = _outboxSerializer.Serialize(domainEvent)
             })
             .ToList();
 
@@ -92,10 +93,8 @@ public abstract class HectorDbContext : DbContext
             await OutboxMessages.AddRangeAsync(outboxMessages, cancellationToken);
         }
 
-        // ✅ اول Commit انجام می‌شود
         var result = await base.SaveChangesAsync(cancellationToken);
 
-        // ✅ فقط در صورت موفقیت، eventها پاک می‌شوند
         foreach (var entity in domainEntities)
         {
             entity.ClearDomainEvents();

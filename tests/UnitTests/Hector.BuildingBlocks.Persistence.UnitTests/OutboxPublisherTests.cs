@@ -25,10 +25,13 @@ public sealed class OutboxPublisherTests
 
         var messages = new List<OutboxMessage> { message };
 
+        var serializer = new SystemTextJsonOutboxEventSerializer(
+            new CachedOutboxEventTypeResolver());
+
         var publisher = new OutboxPublisher(
             mediator,
             NullLogger<OutboxPublisher>.Instance,
-            new CachedOutboxEventTypeResolver());
+            serializer);
 
         // Act
         await publisher.PublishAsync(messages);

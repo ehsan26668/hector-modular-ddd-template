@@ -12,13 +12,19 @@ public class HectorDbContextTests
     private static readonly IStronglyTypedIdAssemblyProvider StronglyTypedIdAssemblyProvider =
         new TestStronglyTypedIdAssemblyProvider();
 
+    private static readonly IOutboxEventSerializer outboxSerializer =
+        new SystemTextJsonOutboxEventSerializer(new CachedOutboxEventTypeResolver());
+
     private static async Task<TestDbContext> CreateContextAsync(SqliteConnection connection)
     {
         var options = new DbContextOptionsBuilder<TestDbContext>()
             .UseSqlite(connection)
             .Options;
 
-        var context = new TestDbContext(options, StronglyTypedIdAssemblyProvider);
+        var context = new TestDbContext(
+            options,
+            StronglyTypedIdAssemblyProvider,
+            outboxSerializer);
 
         await context.Database.EnsureCreatedAsync();
 
@@ -31,7 +37,10 @@ public class HectorDbContextTests
             .UseSqlite(connection)
             .Options;
 
-        var context = new FailingDbContext(options, StronglyTypedIdAssemblyProvider);
+        var context = new FailingDbContext(
+            options,
+            StronglyTypedIdAssemblyProvider,
+            outboxSerializer);
 
         await context.Database.EnsureCreatedAsync();
 
@@ -135,8 +144,9 @@ public sealed class TestDbContext : HectorDbContext
 {
     public TestDbContext(
         DbContextOptions<TestDbContext> options,
-        IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider)
-        : base(options, stronglyTypedIdAssemblyProvider)
+        IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider,
+        IOutboxEventSerializer outboxSerializer)
+        : base(options, stronglyTypedIdAssemblyProvider, outboxSerializer)
     {
     }
 
@@ -165,8 +175,9 @@ public sealed class FailingDbContext : HectorDbContext
 {
     public FailingDbContext(
         DbContextOptions<FailingDbContext> options,
-        IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider)
-        : base(options, stronglyTypedIdAssemblyProvider)
+        IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider,
+        IOutboxEventSerializer outboxSerializer)
+        : base(options, stronglyTypedIdAssemblyProvider, outboxSerializer)
     {
     }
 

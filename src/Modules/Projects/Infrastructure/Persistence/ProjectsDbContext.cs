@@ -1,4 +1,5 @@
 using Hector.BuildingBlocks.Persistence;
+using Hector.BuildingBlocks.Persistence.Outbox;
 using Hector.Modules.Projects.Domain;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,8 +9,9 @@ public class ProjectsDbContext : HectorDbContext
 {
     public ProjectsDbContext(
         DbContextOptions<ProjectsDbContext> options,
-        IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider)
-        : base(options, stronglyTypedIdAssemblyProvider)
+        IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider,
+        IOutboxEventSerializer outboxSerializer)
+        : base(options, stronglyTypedIdAssemblyProvider, outboxSerializer)
     {
     }
 

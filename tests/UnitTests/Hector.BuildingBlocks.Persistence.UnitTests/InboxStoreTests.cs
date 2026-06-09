@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Hector.BuildingBlocks.Persistence.Outbox;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 
@@ -15,8 +16,10 @@ public sealed class InboxStoreTests
             .Options;
 
         var assemblyProvider = Substitute.For<IStronglyTypedIdAssemblyProvider>();
+        var outboxSerializer = new SystemTextJsonOutboxEventSerializer(
+            new CachedOutboxEventTypeResolver());
 
-        await using var context = new TestDbContext(options, assemblyProvider);
+        await using var context = new TestDbContext(options, assemblyProvider, outboxSerializer);
 
         var store = new Inbox.EfCoreInboxStore(context);
 
@@ -36,8 +39,9 @@ public sealed class InboxStoreTests
     {
         public TestDbContext(
             DbContextOptions options,
-            IStronglyTypedIdAssemblyProvider assemblyProvider)
-            : base(options, assemblyProvider) { }
+            IStronglyTypedIdAssemblyProvider assemblyProvider,
+            IOutboxEventSerializer outboxSerializer)
+            : base(options, assemblyProvider, outboxSerializer) { }
 
         public DbSet<Inbox.InboxMessage> InboxMessages => Set<Inbox.InboxMessage>();
     }
