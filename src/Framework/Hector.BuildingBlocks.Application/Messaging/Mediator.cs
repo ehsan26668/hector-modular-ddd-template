@@ -5,75 +5,51 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Hector.BuildingBlocks.Application.Messaging;
 
-internal sealed class Mediator : IMediator
+internal sealed class Mediator(IServiceProvider serviceProvider) : IMediator
 {
     private const string HandleAsyncMethodName = "HandleAsync";
 
-    private readonly IServiceProvider _serviceProvider;
+    private static readonly ConcurrentDictionary<(Type RequestType, Type ResponseType), HandlerMetadata> HandlerMetadataCache = new();
+    private static readonly ConcurrentDictionary<Type, NotificationHandlerMetadata> NotificationHandlerMetadataCache = new();
+    private static readonly ConcurrentDictionary<Type, BehaviorInvoker> BehaviorInvokerCache = new();
 
-    private static readonly ConcurrentDictionary<(Type request, Type response), HandlerMetadata> _handlerMetadataCache = new();
-    private static readonly ConcurrentDictionary<Type, NotificationHandlerMetadata> _notificationHandlerMetadataCache = new();
-    private static readonly ConcurrentDictionary<Type, BehaviorInvoker> _behaviorInvokerCache = new();
-
-    public Mediator(IServiceProvider serviceProvider)
-    {
-        _serviceProvider = serviceProvider;
-    }
+    private readonly IServiceProvider _serviceProvider = serviceProvider
+        ?? throw new ArgumentNullException(nameof(serviceProvider));
 
     public async Task<TResponse> SendAsync<TResponse>(
         IRequest<TResponse> request,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(request);
+        cancellationToken.ThrowIfCancellationRequested();
+
         var requestType = request.GetType();
         var responseType = typeof(TResponse);
 
-        var handlerMetadata = _handlerMetadataCache.GetOrAdd(
+        var handlerMetadata = HandlerMetadataCache.GetOrAdd(
             (requestType, responseType),
-            static t => CreateHandlerMetadata(t.request, t.response));
+            static key => CreateHandlerMetadata(key.RequestType, key.ResponseType));
 
-        var handlerInstance = _serviceProvider.GetRequiredService(handlerMetadata.HandlerType);
-
-        var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(requestType, responseType);
-
-        var behaviors = _serviceProvider.GetServices(behaviorType);
+        var handler = _serviceProvider.GetRequiredService(handlerMetadata.HandlerType);
 
         RequestHandlerDelegate<TResponse> handlerDelegate = () =>
+            (Task<TResponse>)handlerMetadata.Invoker(handler, request, cancellationToken);
+
+        var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(requestType, responseType);
+        var behaviors = _serviceProvider
+            .GetServices(behaviorType)
+            .ToArray();
+
+        for (var index = behaviors.Length - 1; index >= 0; index--)
         {
-            return (Task<TResponse>)handlerMetadata.Invoker(
-                handlerInstance,
+            handlerDelegate = WrapBehavior(
+                behaviors[index]!,
+                handlerDelegate,
                 request,
                 cancellationToken);
-        };
-
-        if (behaviors is ICollection<object> collection)
-        {
-            var array = new object[collection.Count];
-            collection.CopyTo(array, 0);
-
-            for (int i = array.Length - 1; i >= 0; i--)
-            {
-                handlerDelegate = WrapBehavior(
-                    array[i]!, // Fixed CS8604
-                    handlerDelegate,
-                    request,
-                    cancellationToken);
-            }
-        }
-        else
-        {
-            // Fallback for non-collection enumerables (less efficient but safe)
-            var behaviorList = behaviors.Reverse().ToList();
-            foreach (var behavior in behaviorList)
-            {
-                handlerDelegate = WrapBehavior(
-                    behavior!,
-                    handlerDelegate,
-                    request,
-                    cancellationToken);
-            }
         }
 
-        return await handlerDelegate();
+        return await handlerDelegate().ConfigureAwait(false);
     }
 
     public async Task PublishAsync<TNotification>(
@@ -81,22 +57,27 @@ internal sealed class Mediator : IMediator
         CancellationToken cancellationToken = default)
         where TNotification : INotification
     {
+        ArgumentNullException.ThrowIfNull(notification);
+        cancellationToken.ThrowIfCancellationRequested();
+
         var notificationType = notification.GetType();
 
-        var handlerMetadata = _notificationHandlerMetadataCache.GetOrAdd(
+        var handlerMetadata = NotificationHandlerMetadataCache.GetOrAdd(
             notificationType,
-            static t => CreateNotificationHandlerMetadata(t));
+            static type => CreateNotificationHandlerMetadata(type));
 
-        var handlers = _serviceProvider.GetServices(handlerMetadata.HandlerType);
+        var handlers = _serviceProvider
+            .GetServices(handlerMetadata.HandlerType)
+            .ToArray();
 
         foreach (var handler in handlers)
         {
-            var task = (Task)handlerMetadata.Invoker(
+            var handlingTask = (Task)handlerMetadata.Invoker(
                 handler!,
-                notification!,
+                notification,
                 cancellationToken);
 
-            await task;
+            await handlingTask.ConfigureAwait(false);
         }
     }
 
@@ -106,21 +87,15 @@ internal sealed class Mediator : IMediator
         object request,
         CancellationToken cancellationToken)
     {
-        var behaviorType = behavior.GetType();
+        var behaviorInvoker = BehaviorInvokerCache.GetOrAdd(
+            behavior.GetType(),
+            static behaviorType => CompileBehaviorInvoker(behaviorType));
 
-        // Fixed syntax error here: added 't =>'
-        var behaviorInvoker = _behaviorInvokerCache.GetOrAdd(
-            behaviorType,
-            static t => CompileBehaviorInvoker(t));
-
-        return () =>
-        {
-            return (Task<TResponse>)behaviorInvoker(
-                behavior,
-                request,
-                next,
-                cancellationToken);
-        };
+        return () => (Task<TResponse>)behaviorInvoker(
+            behavior,
+            request,
+            next,
+            cancellationToken);
     }
 
     private static HandlerMetadata CreateHandlerMetadata(Type requestType, Type responseType)
@@ -141,94 +116,115 @@ internal sealed class Mediator : IMediator
 
     private static HandlerInvoker CompileHandlerInvoker(Type handlerType, Type requestType)
     {
-        var method = handlerType.GetMethod(HandleAsyncMethodName)!;
+        var method = handlerType.GetMethod(HandleAsyncMethodName)
+            ?? throw new InvalidOperationException(
+                $"Method '{HandleAsyncMethodName}' was not found on handler type '{handlerType.FullName}'.");
 
-        var handlerParam = Expression.Parameter(typeof(object), "handler");
-        var requestParam = Expression.Parameter(typeof(object), "request");
-        var ctParam = Expression.Parameter(typeof(CancellationToken), "ct");
+        var handlerParameter = Expression.Parameter(typeof(object), "handler");
+        var requestParameter = Expression.Parameter(typeof(object), "request");
+        var cancellationTokenParameter = Expression.Parameter(typeof(CancellationToken), "cancellationToken");
 
-        var handlerCast = Expression.Convert(handlerParam, handlerType);
-        var requestCast = Expression.Convert(requestParam, requestType);
+        var handlerCast = Expression.Convert(handlerParameter, handlerType);
+        var requestCast = Expression.Convert(requestParameter, requestType);
 
-        var call = Expression.Call(handlerCast, method, requestCast, ctParam);
-        var resultCast = Expression.Convert(call, typeof(object));
+        var methodCall = Expression.Call(
+            handlerCast,
+            method,
+            requestCast,
+            cancellationTokenParameter);
+
+        var castResult = Expression.Convert(methodCall, typeof(object));
 
         return Expression
-            .Lambda<HandlerInvoker>(resultCast, handlerParam, requestParam, ctParam)
+            .Lambda<HandlerInvoker>(
+                castResult,
+                handlerParameter,
+                requestParameter,
+                cancellationTokenParameter)
             .Compile();
     }
 
     private static NotificationInvoker CompileNotificationInvoker(Type handlerType, Type notificationType)
     {
-        var method = handlerType.GetMethod(HandleAsyncMethodName)!;
+        var method = handlerType.GetMethod(HandleAsyncMethodName)
+            ?? throw new InvalidOperationException(
+                $"Method '{HandleAsyncMethodName}' was not found on notification handler type '{handlerType.FullName}'.");
 
-        var handlerParam = Expression.Parameter(typeof(object), "handler");
-        var notificationParam = Expression.Parameter(typeof(object), "notification");
-        var ctParam = Expression.Parameter(typeof(CancellationToken), "ct");
+        var handlerParameter = Expression.Parameter(typeof(object), "handler");
+        var notificationParameter = Expression.Parameter(typeof(object), "notification");
+        var cancellationTokenParameter = Expression.Parameter(typeof(CancellationToken), "cancellationToken");
 
-        var handlerCast = Expression.Convert(handlerParam, handlerType);
-        var notificationCast = Expression.Convert(notificationParam, notificationType);
+        var handlerCast = Expression.Convert(handlerParameter, handlerType);
+        var notificationCast = Expression.Convert(notificationParameter, notificationType);
 
-        var call = Expression.Call(handlerCast, method, notificationCast, ctParam);
-        var resultCast = Expression.Convert(call, typeof(object));
+        var methodCall = Expression.Call(
+            handlerCast,
+            method,
+            notificationCast,
+            cancellationTokenParameter);
+
+        var castResult = Expression.Convert(methodCall, typeof(object));
 
         return Expression
-            .Lambda<NotificationInvoker>(resultCast, handlerParam, notificationParam, ctParam)
+            .Lambda<NotificationInvoker>(
+                castResult,
+                handlerParameter,
+                notificationParameter,
+                cancellationTokenParameter)
             .Compile();
     }
 
     private static BehaviorInvoker CompileBehaviorInvoker(Type behaviorType)
     {
-        var method = behaviorType.GetMethod(HandleAsyncMethodName)!;
-        var parameters = method.GetParameters();
+        var method = behaviorType.GetMethod(HandleAsyncMethodName)
+            ?? throw new InvalidOperationException(
+                $"Method '{HandleAsyncMethodName}' was not found on behavior type '{behaviorType.FullName}'.");
 
+        var parameters = method.GetParameters();
         var requestType = parameters[0].ParameterType;
         var nextType = parameters[1].ParameterType;
 
-        var behaviorParam = Expression.Parameter(typeof(object), "behavior");
-        var requestParam = Expression.Parameter(typeof(object), "request");
-        var nextParam = Expression.Parameter(typeof(object), "next");
-        var ctParam = Expression.Parameter(typeof(CancellationToken), "ct");
+        var behaviorParameter = Expression.Parameter(typeof(object), "behavior");
+        var requestParameter = Expression.Parameter(typeof(object), "request");
+        var nextParameter = Expression.Parameter(typeof(object), "next");
+        var cancellationTokenParameter = Expression.Parameter(typeof(CancellationToken), "cancellationToken");
 
-        var behaviorCast = Expression.Convert(behaviorParam, behaviorType);
-        var requestCast = Expression.Convert(requestParam, requestType);
-        var nextCast = Expression.Convert(nextParam, nextType);
+        var behaviorCast = Expression.Convert(behaviorParameter, behaviorType);
+        var requestCast = Expression.Convert(requestParameter, requestType);
+        var nextCast = Expression.Convert(nextParameter, nextType);
 
-        var call = Expression.Call(behaviorCast, method, requestCast, nextCast, ctParam);
-        var resultCast = Expression.Convert(call, typeof(object));
+        var methodCall = Expression.Call(
+            behaviorCast,
+            method,
+            requestCast,
+            nextCast,
+            cancellationTokenParameter);
+
+        var castResult = Expression.Convert(methodCall, typeof(object));
 
         return Expression
-            .Lambda<BehaviorInvoker>(resultCast, behaviorParam, requestParam, nextParam, ctParam)
+            .Lambda<BehaviorInvoker>(
+                castResult,
+                behaviorParameter,
+                requestParameter,
+                nextParameter,
+                cancellationTokenParameter)
             .Compile();
     }
 
-    private sealed class HandlerMetadata
+    private sealed class HandlerMetadata(Type handlerType, HandlerInvoker invoker)
     {
-        public HandlerMetadata(Type handlerType, HandlerInvoker invoker)
-        {
-            HandlerType = handlerType;
-            Invoker = invoker;
-        }
-
-        public Type HandlerType { get; }
-        public HandlerInvoker Invoker { get; }
+        public Type HandlerType { get; } = handlerType;
+        public HandlerInvoker Invoker { get; } = invoker;
     }
 
-    private sealed class NotificationHandlerMetadata
+    private sealed class NotificationHandlerMetadata(Type handlerType, NotificationInvoker invoker)
     {
-        public NotificationHandlerMetadata(Type handlerType, NotificationInvoker invoker)
-        {
-            HandlerType = handlerType;
-            Invoker = invoker;
-        }
-
-        public Type HandlerType { get; }
-        public NotificationInvoker Invoker { get; }
+        public Type HandlerType { get; } = handlerType;
+        public NotificationInvoker Invoker { get; } = invoker;
     }
 
     private delegate object HandlerInvoker(object handler, object request, CancellationToken cancellationToken);
-
     private delegate object NotificationInvoker(object handler, object notification, CancellationToken cancellationToken);
-
     private delegate object BehaviorInvoker(object behavior, object request, object next, CancellationToken cancellationToken);
 }

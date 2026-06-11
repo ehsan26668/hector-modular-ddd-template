@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Hector.BuildingBlocks.Application.Messaging;
-using Hector.BuildingBlocks.Domain.Primitives;
+using Hector.BuildingBlocks.Application.UnitTests.Infrastructure;
+using Hector.BuildingBlocks.Application.UnitTests.TestDoubles;
+
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Hector.BuildingBlocks.Application.UnitTests.Messaging;
@@ -11,86 +13,86 @@ public sealed class MediatorTests
     public async Task Should_DispatchCommandToHandler_When_HandlerIsRegistered()
     {
         // Arrange
-        var services = new ServiceCollection();
-        var executionOrder = new List<string>();
-
-        services.AddSingleton(executionOrder);
-        services.AddTransient<IRequestHandler<TestCommand, string>, TestCommandHandler>();
-        services.AddSingleton<IMediator, Mediator>();
-
-        var provider = services.BuildServiceProvider();
-        var mediator = provider.GetRequiredService<IMediator>();
-
-        var command = new TestCommand("Hector");
+        var fixture = new MediatorTestFixture(services =>
+        {
+            services.AddTransient<IRequestHandler<TestCommand, string>, TestCommandHandler>();
+        });
 
         // Act
-        var result = await mediator.SendAsync(command);
+        var result = await fixture.Mediator.SendAsync(new TestCommand("Hector"));
 
         // Assert
         result.Should().Be("Hello Hector");
+        fixture.ExecutionOrder.Should().Equal("Handler");
     }
 
     [Fact]
-    public async Task Should_ExecutePipelineBehavior_Around_Handler()
+    public async Task Should_DispatchQueryToHandler_When_HandlerIsRegistered()
     {
         // Arrange
-        var services = new ServiceCollection();
-        var executionOrder = new List<string>();
-
-        services.AddSingleton(executionOrder);
-        services.AddTransient<IRequestHandler<TestCommand, string>>(
-            _ => new TestCommandHandler(executionOrder));
-        services.AddTransient<IPipelineBehavior<TestCommand, string>>(
-            _ => new TestPipelineBehavior(executionOrder));
-        services.AddSingleton<IMediator, Mediator>();
-
-        var provider = services.BuildServiceProvider();
-        var mediator = provider.GetRequiredService<IMediator>();
-
-        var command = new TestCommand("Hector");
+        var fixture = new MediatorTestFixture(services =>
+        {
+            services.AddTransient<IRequestHandler<TestQuery, int>, TestQueryHandler>();
+        });
 
         // Act
-        var result = await mediator.SendAsync(command);
+        var result = await fixture.Mediator.SendAsync(new TestQuery(21));
+
+        // Assert
+        result.Should().Be(42);
+    }
+
+    [Fact]
+    public async Task Should_ThrowInvalidOperationException_When_RequestHandlerIsMissing()
+    {
+        // Arrange
+        var fixture = new MediatorTestFixture();
+
+        // Act
+        var act = async () => await fixture.Mediator.SendAsync(new TestCommand("Hector"));
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task Should_ExecuteSinglePipelineBehaviorAroundHandler_When_BehaviorIsRegistered()
+    {
+        // Arrange
+        var fixture = new MediatorTestFixture(services =>
+        {
+            services.AddTransient<IRequestHandler<TestCommand, string>, TestCommandHandler>();
+            services.AddTransient<IPipelineBehavior<TestCommand, string>, TrackingPipelineBehavior>();
+        });
+
+        // Act
+        var result = await fixture.Mediator.SendAsync(new TestCommand("Hector"));
 
         // Assert
         result.Should().Be("Hello Hector");
-
-        executionOrder.Should().Equal(
+        fixture.ExecutionOrder.Should().Equal(
             "Pipeline:Before",
             "Handler",
             "Pipeline:After");
     }
 
     [Fact]
-    public async Task Should_Execute_MultiplePipelineBehaviors_In_Registration_Order()
+    public async Task Should_ExecutePipelineBehaviorsInRegistrationOrder_When_MultipleBehaviorsAreRegistered()
     {
         // Arrange
-        var services = new ServiceCollection();
-        var executionOrder = new List<string>();
-
-        services.AddSingleton(executionOrder);
-
-        services.AddTransient<IRequestHandler<TestCommand, string>>(
-            _ => new TestCommandHandler(executionOrder));
-
-        services.AddTransient<IPipelineBehavior<TestCommand, string>>(
-            _ => new FirstPipelineBehavior(executionOrder));
-
-        services.AddTransient<IPipelineBehavior<TestCommand, string>>(
-            _ => new SecondPipelineBehavior(executionOrder));
-
-        services.AddSingleton<IMediator, Mediator>();
-
-        var provider = services.BuildServiceProvider();
-        var mediator = provider.GetRequiredService<IMediator>();
-
-        var command = new TestCommand("Hector");
+        var fixture = new MediatorTestFixture(services =>
+        {
+            services.AddTransient<IRequestHandler<TestCommand, string>, TestCommandHandler>();
+            services.AddTransient<IPipelineBehavior<TestCommand, string>, FirstPipelineBehavior>();
+            services.AddTransient<IPipelineBehavior<TestCommand, string>, SecondPipelineBehavior>();
+        });
 
         // Act
-        var result = await mediator.SendAsync(command);
+        var result = await fixture.Mediator.SendAsync(new TestCommand("Hector"));
 
         // Assert
-        executionOrder.Should().Equal(
+        result.Should().Be("Hello Hector");
+        fixture.ExecutionOrder.Should().Equal(
             "First:Before",
             "Second:Before",
             "Handler",
@@ -99,239 +101,175 @@ public sealed class MediatorTests
     }
 
     [Fact]
-    public async Task Should_Invoke_All_NotificationHandlers()
+    public async Task Should_ShortCircuitPipeline_When_BehaviorDoesNotInvokeNext()
     {
         // Arrange
-        var services = new ServiceCollection();
-        var executionOrder = new List<string>();
-
-        services.AddSingleton(executionOrder);
-
-        services.AddTransient<INotificationHandler<TestNotification>, FirstNotificationHandler>();
-        services.AddTransient<INotificationHandler<TestNotification>, SecondNotificationHandler>();
-
-        services.AddSingleton<IMediator, Mediator>();
-
-        var provider = services.BuildServiceProvider();
-        var mediator = provider.GetRequiredService<IMediator>();
-
-        var notification = new TestNotification();
+        var fixture = new MediatorTestFixture(services =>
+        {
+            services.AddTransient<IRequestHandler<TestCommand, string>, TestCommandHandler>();
+            services.AddTransient<IPipelineBehavior<TestCommand, string>, ShortCircuitPipelineBehavior>();
+        });
 
         // Act
-        await mediator.PublishAsync(notification);
+        var result = await fixture.Mediator.SendAsync(new TestCommand("Hector"));
 
         // Assert
-        executionOrder.Should().Equal(
+        result.Should().Be("ShortCircuited");
+        fixture.ExecutionOrder.Should().Equal("ShortCircuit");
+    }
+
+    [Fact]
+    public async Task Should_PropagateException_When_HandlerThrows()
+    {
+        // Arrange
+        var fixture = new MediatorTestFixture(services =>
+        {
+            services.AddTransient<IRequestHandler<TestCommand, string>, ThrowingCommandHandler>();
+        });
+
+        // Act
+        var act = async () => await fixture.Mediator.SendAsync(new TestCommand("Hector"));
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage("Handler failure");
+    }
+
+    [Fact]
+    public async Task Should_PropagateCancellationTokenToRequestHandler_When_RequestIsSent()
+    {
+        // Arrange
+        var fixture = new MediatorTestFixture(services =>
+        {
+            services.AddSingleton<CancellationCapture>();
+            services.AddTransient<IRequestHandler<TestCommand, string>, CancellationAwareCommandHandler>();
+        });
+
+        using var cancellationTokenSource = new CancellationTokenSource();
+
+        // Act
+        await fixture.Mediator.SendAsync(new TestCommand("Hector"), cancellationTokenSource.Token);
+
+        // Assert
+        fixture.GetRequiredService<CancellationCapture>().Token.Should().Be(cancellationTokenSource.Token);
+    }
+
+    [Fact]
+    public async Task Should_PropagateCancellationTokenToPipelineBehavior_When_RequestIsSent()
+    {
+        // Arrange
+        var fixture = new MediatorTestFixture(services =>
+        {
+            services.AddSingleton<CancellationCapture>();
+            services.AddTransient<IRequestHandler<TestCommand, string>, TestCommandHandler>();
+            services.AddTransient<IPipelineBehavior<TestCommand, string>, CancellationAwarePipelineBehavior>();
+        });
+
+        using var cancellationTokenSource = new CancellationTokenSource();
+
+        // Act
+        await fixture.Mediator.SendAsync(new TestCommand("Hector"), cancellationTokenSource.Token);
+
+        // Assert
+        fixture.GetRequiredService<CancellationCapture>().Token.Should().Be(cancellationTokenSource.Token);
+    }
+
+    [Fact]
+    public async Task Should_InvokeAllNotificationHandlers_When_NotificationIsPublished()
+    {
+        // Arrange
+        var fixture = new MediatorTestFixture(services =>
+        {
+            services.AddTransient<INotificationHandler<TestNotification>, FirstNotificationHandler>();
+            services.AddTransient<INotificationHandler<TestNotification>, SecondNotificationHandler>();
+        });
+
+        // Act
+        await fixture.Mediator.PublishAsync(new TestNotification());
+
+        // Assert
+        fixture.ExecutionOrder.Should().Equal(
             "FirstHandler",
             "SecondHandler");
     }
 
     [Fact]
-    public async Task Should_Invoke_NotificationHandlers_In_Registration_Order()
+    public async Task Should_InvokeNotificationHandlersInRegistrationOrder_When_MultipleHandlersAreRegistered()
     {
         // Arrange
-        var services = new ServiceCollection();
-        var executionOrder = new List<string>();
-
-        services.AddSingleton(executionOrder);
-
-        services.AddTransient<INotificationHandler<TestNotification>, FirstNotificationHandler>();
-        services.AddTransient<INotificationHandler<TestNotification>, SecondNotificationHandler>();
-        services.AddTransient<INotificationHandler<TestNotification>, ThirdNotificationHandler>();
-
-        services.AddSingleton<IMediator, Mediator>();
-
-        var provider = services.BuildServiceProvider();
-        var mediator = provider.GetRequiredService<IMediator>();
+        var fixture = new MediatorTestFixture(services =>
+        {
+            services.AddTransient<INotificationHandler<TestNotification>, FirstNotificationHandler>();
+            services.AddTransient<INotificationHandler<TestNotification>, SecondNotificationHandler>();
+            services.AddTransient<INotificationHandler<TestNotification>, ThirdNotificationHandler>();
+        });
 
         // Act
-        await mediator.PublishAsync(new TestNotification());
+        await fixture.Mediator.PublishAsync(new TestNotification());
 
         // Assert
-        executionOrder.Should().Equal(
+        fixture.ExecutionOrder.Should().Equal(
             "FirstHandler",
             "SecondHandler",
             "ThirdHandler");
     }
 
     [Fact]
-    public async Task Should_Not_Throw_When_No_NotificationHandler_IsRegistered()
+    public async Task Should_PropagateCancellationTokenToNotificationHandlers_When_NotificationIsPublished()
     {
         // Arrange
-        var services = new ServiceCollection();
+        var fixture = new MediatorTestFixture(services =>
+        {
+            services.AddSingleton<CancellationCapture>();
+            services.AddTransient<INotificationHandler<TestNotification>, CancellationAwareNotificationHandler>();
+        });
 
-        services.AddSingleton<IMediator, Mediator>();
-
-        var provider = services.BuildServiceProvider();
-        var mediator = provider.GetRequiredService<IMediator>();
-
-        var notification = new TestNotification();
+        using var cancellationTokenSource = new CancellationTokenSource();
 
         // Act
-        var act = async () => await mediator.PublishAsync(notification);
+        await fixture.Mediator.PublishAsync(new TestNotification(), cancellationTokenSource.Token);
+
+        // Assert
+        fixture.GetRequiredService<CancellationCapture>().Token.Should().Be(cancellationTokenSource.Token);
+    }
+
+    [Fact]
+    public async Task Should_NotThrow_When_NoNotificationHandlerIsRegistered()
+    {
+        // Arrange
+        var fixture = new MediatorTestFixture();
+
+        // Act
+        var act = async () => await fixture.Mediator.PublishAsync(new TestNotification());
 
         // Assert
         await act.Should().NotThrowAsync();
     }
 
-    #region Test Fixtures
-
-    private sealed record TestCommand(string Name) : ICommand<string>;
-
-    private sealed class TestCommandHandler
-    : IRequestHandler<TestCommand, string>
+    [Fact]
+    public async Task Should_ThrowArgumentNullException_When_RequestIsNull()
     {
-        private readonly List<string> _executionOrder;
+        // Arrange
+        var fixture = new MediatorTestFixture();
 
-        public TestCommandHandler(List<string> executionOrder)
-        {
-            _executionOrder = executionOrder;
-        }
+        // Act
+        var act = async () => await fixture.Mediator.SendAsync<string>(null!);
 
-        public Task<string> HandleAsync(
-            TestCommand request,
-            CancellationToken cancellationToken = default)
-        {
-            _executionOrder.Add("Handler");
-            return Task.FromResult($"Hello {request.Name}");
-        }
+        // Assert
+        await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
-    private sealed class TestPipelineBehavior
-    : IPipelineBehavior<TestCommand, string>
+    [Fact]
+    public async Task Should_ThrowArgumentNullException_When_NotificationIsNull()
     {
-        private readonly List<string> _executionOrder;
+        // Arrange
+        var fixture = new MediatorTestFixture();
 
-        public TestPipelineBehavior(List<string> executionOrder)
-        {
-            _executionOrder = executionOrder;
-        }
+        // Act
+        var act = async () => await fixture.Mediator.PublishAsync<TestNotification>(null!);
 
-        public async Task<string> HandleAsync(
-            TestCommand request,
-            RequestHandlerDelegate<string> next,
-            CancellationToken cancellationToken)
-        {
-            _executionOrder.Add("Pipeline:Before");
-
-            var response = await next();
-
-            _executionOrder.Add("Pipeline:After");
-
-            return response;
-        }
+        // Assert
+        await act.Should().ThrowAsync<ArgumentNullException>();
     }
-
-    private sealed class FirstPipelineBehavior
-        : IPipelineBehavior<TestCommand, string>
-    {
-        private readonly List<string> _executionOrder;
-
-        public FirstPipelineBehavior(List<string> executionOrder)
-        {
-            _executionOrder = executionOrder;
-        }
-
-        public async Task<string> HandleAsync(
-            TestCommand request,
-            RequestHandlerDelegate<string> next,
-            CancellationToken cancellationToken)
-        {
-            _executionOrder.Add("First:Before");
-
-            var response = await next();
-
-            _executionOrder.Add("First:After");
-
-            return response;
-        }
-    }
-
-    private sealed class SecondPipelineBehavior
-        : IPipelineBehavior<TestCommand, string>
-    {
-        private readonly List<string> _executionOrder;
-
-        public SecondPipelineBehavior(List<string> executionOrder)
-        {
-            _executionOrder = executionOrder;
-        }
-
-        public async Task<string> HandleAsync(
-            TestCommand request,
-            RequestHandlerDelegate<string> next,
-            CancellationToken cancellationToken)
-        {
-            _executionOrder.Add("Second:Before");
-
-            var response = await next();
-
-            _executionOrder.Add("Second:After");
-
-            return response;
-        }
-    }
-
-    private sealed class TestNotification : INotification
-    {
-    }
-
-    private sealed class FirstNotificationHandler
-        : INotificationHandler<TestNotification>
-    {
-        private readonly List<string> _executionOrder;
-
-        public FirstNotificationHandler(List<string> executionOrder)
-        {
-            _executionOrder = executionOrder;
-        }
-
-        public Task HandleAsync(
-        TestNotification notification,
-        CancellationToken cancellationToken)
-        {
-            _executionOrder.Add("FirstHandler");
-            return Task.CompletedTask;
-        }
-    }
-
-    private sealed class SecondNotificationHandler
-    : INotificationHandler<TestNotification>
-    {
-        private readonly List<string> _executionOrder;
-
-        public SecondNotificationHandler(List<string> executionOrder)
-        {
-            _executionOrder = executionOrder;
-        }
-
-        public Task HandleAsync(
-            TestNotification notification,
-            CancellationToken cancellationToken)
-        {
-            _executionOrder.Add("SecondHandler");
-            return Task.CompletedTask;
-        }
-    }
-
-    private sealed class ThirdNotificationHandler
-        : INotificationHandler<TestNotification>
-    {
-        private readonly List<string> _executionOrder;
-
-        public ThirdNotificationHandler(List<string> executionOrder)
-        {
-            _executionOrder = executionOrder;
-        }
-
-        public Task HandleAsync(
-            TestNotification notification,
-            CancellationToken cancellationToken)
-        {
-            _executionOrder.Add("ThirdHandler");
-            return Task.CompletedTask;
-        }
-    }
-
-    #endregion
 }
