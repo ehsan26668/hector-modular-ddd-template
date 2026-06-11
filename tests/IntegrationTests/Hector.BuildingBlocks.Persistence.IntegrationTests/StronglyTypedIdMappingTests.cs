@@ -3,6 +3,7 @@ using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Converters;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using static Hector.Testing.Persistence.PersistenceTestInfrastructure;
 
 namespace Hector.BuildingBlocks.Persistence.IntegrationTests;
 
@@ -68,13 +69,6 @@ public sealed class StronglyTypedIdMappingTests
         persistedOrder.OrderNumber.Should().Be(order.OrderNumber);
     }
 
-    private static SqliteConnection CreateOpenInMemoryConnection()
-    {
-        var connection = new SqliteConnection("Data Source=:memory:");
-        connection.Open();
-        return connection;
-    }
-
     private sealed class StronglyTypedIdTestDbContext : DbContext
     {
         private readonly SqliteConnection _connection;
@@ -129,9 +123,7 @@ public sealed class StronglyTypedIdMappingTests
             OrderNumber = orderNumber;
         }
 
-        private TestOrder()
-        {
-        }
+        private TestOrder() { }
 
         public TestOrderId Id { get; private set; } = null!;
         public string OrderNumber { get; private set; } = null!;
@@ -142,9 +134,7 @@ public sealed class StronglyTypedIdMappingTests
 
     private sealed class TestOrderId : StronglyTypedId<TestOrderId>
     {
-        private TestOrderId(Guid value) : base(value)
-        {
-        }
+        private TestOrderId(Guid value) : base(value) { }
 
         public static TestOrderId New()
             => CreateNew(static value => new TestOrderId(value));

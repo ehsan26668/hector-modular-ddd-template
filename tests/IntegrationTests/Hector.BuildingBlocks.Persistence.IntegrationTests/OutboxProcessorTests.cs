@@ -3,23 +3,16 @@ using FluentAssertions;
 using Hector.BuildingBlocks.Application.Messaging;
 using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Outbox;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using static Hector.Testing.Persistence.PersistenceTestInfrastructure;
 
 namespace Hector.BuildingBlocks.Persistence.IntegrationTests;
 
 public sealed class OutboxProcessorTests
 {
-    private static readonly IStronglyTypedIdAssemblyProvider StronglyTypedIdAssemblyProvider =
-        new TestStronglyTypedIdAssemblyProvider();
-
-    private static IOutboxEventSerializer CreateOutboxSerializer()
-        => new SystemTextJsonOutboxEventSerializer(
-            new CachedOutboxEventTypeResolver());
-
     private static OutboxProcessor CreateProcessor(
         HectorDbContext context,
         IOutboxPublisher publisher,
@@ -32,35 +25,18 @@ public sealed class OutboxProcessorTests
             Options.Create(options ?? new OutboxOptions()));
     }
 
-    private static async Task<TestDbContext> CreateContextAsync(SqliteConnection connection)
-    {
-        var options = new DbContextOptionsBuilder<TestDbContext>()
-            .UseSqlite(connection)
-            .Options;
-
-        var outboxSerializer = CreateOutboxSerializer();
-
-        var context = new TestDbContext(options, StronglyTypedIdAssemblyProvider, outboxSerializer);
-
-        await context.Database.EnsureCreatedAsync();
-
-        return context;
-    }
-
-    public sealed record TestDomainEvent(Guid AggregateId) : DomainEventBase;
-
     [Fact]
     public async Task Should_PublishMessage_AndMarkAsProcessed_When_MessageIsReady()
     {
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
+        // Arrange
+        using var connection = CreateOpenInMemoryConnection();
         await using var context = await CreateContextAsync(connection);
 
         var mediator = Substitute.For<IMediator>();
         var publisher = new OutboxPublisher(
             mediator,
             NullLogger<OutboxPublisher>.Instance,
-            CreateOutboxSerializer());
+            OutboxSerializer);
 
         var processor = CreateProcessor(context, publisher);
 
@@ -78,8 +54,10 @@ public sealed class OutboxProcessorTests
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
 
+        // Act
         await processor.ProcessAsync(CancellationToken.None);
 
+        // Assert
         await mediator.Received(1).PublishAsync(
             Arg.Is<INotification>(e => e is TestDomainEvent),
             Arg.Any<CancellationToken>());
@@ -94,16 +72,15 @@ public sealed class OutboxProcessorTests
     [Fact]
     public async Task Should_SkipMessage_When_LockedByAnotherProcessor()
     {
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
-
+        // Arrange
+        using var connection = CreateOpenInMemoryConnection();
         await using var context = await CreateContextAsync(connection);
 
         var mediator = Substitute.For<IMediator>();
         var publisher = new OutboxPublisher(
             mediator,
             NullLogger<OutboxPublisher>.Instance,
-            CreateOutboxSerializer());
+            OutboxSerializer);
 
         var processor = CreateProcessor(context, publisher);
 
@@ -120,8 +97,10 @@ public sealed class OutboxProcessorTests
         context.OutboxMessages.Add(message);
         await context.SaveChangesAsync();
 
+        // Act
         await processor.ProcessAsync(CancellationToken.None);
 
+        // Assert
         await mediator.DidNotReceive().PublishAsync(
             Arg.Any<INotification>(),
             Arg.Any<CancellationToken>());
@@ -130,16 +109,15 @@ public sealed class OutboxProcessorTests
     [Fact]
     public async Task Should_ProcessMessage_When_LockExpired()
     {
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
+        // Arrange
+        using var connection = CreateOpenInMemoryConnection();
         await using var context = await CreateContextAsync(connection);
 
         var mediator = Substitute.For<IMediator>();
-
         var publisher = new OutboxPublisher(
             mediator,
             NullLogger<OutboxPublisher>.Instance,
-            CreateOutboxSerializer());
+            OutboxSerializer);
 
         var processor = CreateProcessor(context, publisher);
 
@@ -158,8 +136,10 @@ public sealed class OutboxProcessorTests
         context.OutboxMessages.Add(message);
         await context.SaveChangesAsync();
 
+        // Act
         await processor.ProcessAsync(CancellationToken.None);
 
+        // Assert
         await mediator.Received(1).PublishAsync(
             Arg.Any<INotification>(),
             Arg.Any<CancellationToken>());
@@ -168,12 +148,11 @@ public sealed class OutboxProcessorTests
     [Fact]
     public async Task Should_IncrementRetryCount_When_PublishFails()
     {
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
+        // Arrange
+        using var connection = CreateOpenInMemoryConnection();
         await using var context = await CreateContextAsync(connection);
 
         var mediator = Substitute.For<IMediator>();
-
         mediator
             .PublishAsync(Arg.Any<INotification>(), Arg.Any<CancellationToken>())
             .Returns(_ => throw new Exception("boom"));
@@ -181,7 +160,7 @@ public sealed class OutboxProcessorTests
         var publisher = new OutboxPublisher(
             mediator,
             NullLogger<OutboxPublisher>.Instance,
-            CreateOutboxSerializer());
+            OutboxSerializer);
 
         var processor = CreateProcessor(context, publisher);
 
@@ -196,8 +175,10 @@ public sealed class OutboxProcessorTests
         context.OutboxMessages.Add(message);
         await context.SaveChangesAsync();
 
+        // Act
         await processor.ProcessAsync(CancellationToken.None);
 
+        // Assert
         var stored = await context.OutboxMessages.SingleAsync();
 
         stored.RetryCount.Should().Be(1);
@@ -208,16 +189,15 @@ public sealed class OutboxProcessorTests
     [Fact]
     public async Task Should_NotProcessMessage_When_MaxRetryReached()
     {
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
+        // Arrange
+        using var connection = CreateOpenInMemoryConnection();
         await using var context = await CreateContextAsync(connection);
 
         var mediator = Substitute.For<IMediator>();
-
         var publisher = new OutboxPublisher(
             mediator,
             NullLogger<OutboxPublisher>.Instance,
-            CreateOutboxSerializer());
+            OutboxSerializer);
 
         var processor = CreateProcessor(context, publisher);
 
@@ -233,8 +213,10 @@ public sealed class OutboxProcessorTests
         context.OutboxMessages.Add(message);
         await context.SaveChangesAsync();
 
+        // Act
         await processor.ProcessAsync(CancellationToken.None);
 
+        // Assert
         await mediator.DidNotReceive().PublishAsync(
             Arg.Any<INotification>(),
             Arg.Any<CancellationToken>());
@@ -244,19 +226,17 @@ public sealed class OutboxProcessorTests
     public async Task Should_ProcessMessages_InOrder_When_MultipleMessagesExist()
     {
         // Arrange
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
+        using var connection = CreateOpenInMemoryConnection();
         await using var context = await CreateContextAsync(connection);
 
         var mediator = Substitute.For<IMediator>();
         var publisher = new OutboxPublisher(
             mediator,
             NullLogger<OutboxPublisher>.Instance,
-            CreateOutboxSerializer());
+            OutboxSerializer);
 
         var processor = CreateProcessor(context, publisher);
 
-        // ثبت ترتیب پردازش
         var processedEvents = new List<Guid>();
         mediator.PublishAsync(Arg.Any<INotification>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask)
@@ -270,7 +250,6 @@ public sealed class OutboxProcessorTests
         var id2 = Guid.NewGuid();
         var id3 = Guid.NewGuid();
 
-        // ایجاد پیام‌ها با ترتیب زمانی مشخص (T1 < T2 < T3)
         var now = DateTime.UtcNow;
         context.OutboxMessages.AddRange(
             new OutboxMessage
@@ -301,7 +280,6 @@ public sealed class OutboxProcessorTests
         await processor.ProcessAsync(CancellationToken.None);
 
         // Assert
-        // بررسی اینکه لیست پردازش شده دقیقاً به ترتیب id1, id2, id3 است
         processedEvents.Should().HaveCount(3);
         processedEvents.Should().ContainInOrder(id1, id2, id3);
     }

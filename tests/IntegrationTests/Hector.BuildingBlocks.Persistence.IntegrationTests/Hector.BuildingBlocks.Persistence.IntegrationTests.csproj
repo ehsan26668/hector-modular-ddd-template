@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Framework\Hector.BuildingBlocks.Persistence\Hector.BuildingBlocks.Persistence.csproj" />
     <ProjectReference Include="..\..\..\src\Framework\Hector.BuildingBlocks.Domain\Hector.BuildingBlocks.Domain.csproj" />
+    <ProjectReference Include="..\..\Shared\Hector.Testing\Hector.Testing.csproj" />
   </ItemGroup>
 
 </Project>

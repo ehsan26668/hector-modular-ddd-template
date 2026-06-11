@@ -1,44 +1,18 @@
 using FluentAssertions;
-using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Outbox;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using static Hector.Testing.Persistence.PersistenceTestInfrastructure;
 
 namespace Hector.BuildingBlocks.Persistence.IntegrationTests;
 
 public sealed class OutboxCleanupTests
 {
-    private static readonly IStronglyTypedIdAssemblyProvider StronglyTypedIdAssemblyProvider =
-        new TestStronglyTypedIdAssemblyProvider();
-
-    private static IOutboxEventSerializer CreateOutboxSerializer()
-        => new SystemTextJsonOutboxEventSerializer(
-            new CachedOutboxEventTypeResolver());
-
-    private static async Task<TestDbContext> CreateContextAsync(SqliteConnection connection)
-    {
-        var options = new DbContextOptionsBuilder<TestDbContext>()
-            .UseSqlite(connection)
-            .Options;
-
-        var outboxSerializer = CreateOutboxSerializer();
-
-        var context = new TestDbContext(options, StronglyTypedIdAssemblyProvider, outboxSerializer);
-
-        await context.Database.EnsureCreatedAsync();
-
-        return context;
-    }
-
-    public sealed record TestDomainEvent(Guid AggregateId) : DomainEventBase;
-
     [Fact]
     public async Task Should_DeleteProcessedMessages_When_RetentionPeriodExpired()
     {
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
-
+        // Arrange
+        using var connection = CreateOpenInMemoryConnection();
         await using var context = await CreateContextAsync(connection);
 
         var oldMessage = new OutboxMessage
@@ -61,19 +35,19 @@ public sealed class OutboxCleanupTests
 
         var cleaner = new OutboxCleaner(context, Options.Create(options));
 
+        // Act
         await cleaner.CleanupAsync(CancellationToken.None);
 
+        // Assert
         var count = await context.OutboxMessages.CountAsync();
-
         count.Should().Be(0);
     }
 
     [Fact]
     public async Task Should_KeepRecentMessages_When_RetentionPeriodNotExpired()
     {
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
-
+        // Arrange
+        using var connection = CreateOpenInMemoryConnection();
         await using var context = await CreateContextAsync(connection);
 
         var message = new OutboxMessage
@@ -95,19 +69,19 @@ public sealed class OutboxCleanupTests
 
         var cleaner = new OutboxCleaner(context, Options.Create(options));
 
+        // Act
         await cleaner.CleanupAsync(CancellationToken.None);
 
+        // Assert
         var count = await context.OutboxMessages.CountAsync();
-
         count.Should().Be(1);
     }
 
     [Fact]
-    public async Task Should_NotDeleteUnprocessedMessages()
+    public async Task Should_NotDeleteUnprocessedMessages_When_MessageIsOlderThanRetentionPeriod()
     {
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
-
+        // Arrange
+        using var connection = CreateOpenInMemoryConnection();
         await using var context = await CreateContextAsync(connection);
 
         var message = new OutboxMessage
@@ -129,22 +103,22 @@ public sealed class OutboxCleanupTests
 
         var cleaner = new OutboxCleaner(context, Options.Create(options));
 
+        // Act
         await cleaner.CleanupAsync(CancellationToken.None);
 
+        // Assert
         var count = await context.OutboxMessages.CountAsync();
-
         count.Should().Be(1);
     }
 
     [Fact]
-    public async Task Should_DeleteOnlyBatchSizeMessages()
+    public async Task Should_DeleteOnlyBatchSizeMessages_When_EligibleMessagesExceedBatchLimit()
     {
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
-
+        // Arrange
+        using var connection = CreateOpenInMemoryConnection();
         await using var context = await CreateContextAsync(connection);
 
-        for (int i = 0; i < 10; i++)
+        for (var index = 0; index < 10; index++)
         {
             context.OutboxMessages.Add(new OutboxMessage
             {
@@ -166,10 +140,11 @@ public sealed class OutboxCleanupTests
 
         var cleaner = new OutboxCleaner(context, Options.Create(options));
 
+        // Act
         await cleaner.CleanupAsync(CancellationToken.None);
 
+        // Assert
         var remaining = await context.OutboxMessages.CountAsync();
-
         remaining.Should().Be(5);
     }
 }
