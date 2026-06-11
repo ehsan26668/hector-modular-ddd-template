@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Converters;
 using Microsoft.Data.Sqlite;
@@ -5,98 +6,147 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Hector.BuildingBlocks.Persistence.IntegrationTests;
 
-public sealed class TestOrderId : StronglyTypedId<TestOrderId>
-{
-    private TestOrderId(Guid value) : base(value) { }
-
-    public static TestOrderId New()
-        => CreateNew(v => new TestOrderId(v));
-
-    internal static TestOrderId From(Guid value)
-        => FromExisting(value, v => new TestOrderId(v));
-}
-
-public class TestOrder
-{
-    public TestOrderId Id { get; set; } = null!;
-    public string OrderNumber { get; set; } = null!;
-}
-
-#region DbContexts
-
-public class TestDbContextWithoutConvention : DbContext
-{
-    public DbSet<TestOrder> Orders => Set<TestOrder>();
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        var connection = new SqliteConnection("DataSource=:memory:");
-        connection.Open();
-        optionsBuilder.UseSqlite(connection);
-    }
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<TestOrder>().HasKey(x => x.Id);
-    }
-}
-
-public class TestDbContextWithConvention : DbContext
-{
-    public DbSet<TestOrder> Orders => Set<TestOrder>();
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        var connection = new SqliteConnection("DataSource=:memory:");
-        connection.Open();
-        optionsBuilder.UseSqlite(connection);
-    }
-
-    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
-    {
-        // 1. پیدا کردن همه کلاس‌هایی که از StronglyTypedId<> ارث می‌برند در اسمبلی تست
-        var stronglyTypedIdTypes = typeof(TestOrderId).Assembly.GetTypes()
-            .Where(t => !t.IsAbstract && !t.IsInterface &&
-                        t.BaseType != null &&
-                        t.BaseType.IsGenericType &&
-                        t.BaseType.GetGenericTypeDefinition() == typeof(StronglyTypedId<>));
-
-        // 2. ثبت converter برای هر کدام به صورت جداگانه
-        foreach (var type in stronglyTypedIdTypes)
-        {
-            var converterType = typeof(StronglyTypedIdValueConverter<>).MakeGenericType(type);
-            configurationBuilder.Properties(type).HaveConversion(converterType);
-        }
-    }
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<TestOrder>().HasKey(x => x.Id);
-    }
-}
-
-
-#endregion
-
 public sealed class StronglyTypedIdMappingTests
 {
     [Fact]
-    public void EfCore_Should_Fail_To_Map_StronglyTypedId_Without_Convention()
+    public async Task Should_ThrowException_When_PersistingStronglyTypedIdWithoutConvention()
     {
-        using var context = new TestDbContextWithoutConvention();
+        // Arrange
+        using var connection = CreateOpenInMemoryConnection();
+        await using var context = StronglyTypedIdTestDbContext.WithoutConvention(connection);
 
-        var action = () => context.Model;
+        var order = TestOrder.Create("ORD-001");
 
-        Assert.Throws<InvalidOperationException>(action);
+        // Act
+        Func<Task> act = async () =>
+        {
+            await context.Database.EnsureCreatedAsync();
+            context.Orders.Add(order);
+            await context.SaveChangesAsync();
+        };
+
+        // Assert
+        await act.Should().ThrowAsync<Exception>();
     }
 
     [Fact]
-    public void EfCore_Should_Map_StronglyTypedId_With_Convention()
+    public void Should_CreateModel_When_StronglyTypedIdConventionIsConfigured()
     {
-        using var context = new TestDbContextWithConvention();
+        // Arrange
+        using var connection = CreateOpenInMemoryConnection();
+        using var context = StronglyTypedIdTestDbContext.WithConvention(connection);
 
-        var exception = Record.Exception(() => context.Model);
+        // Act
+        var model = context.Model;
 
-        Assert.Null(exception);
+        // Assert
+        model.Should().NotBeNull();
+        model.FindEntityType(typeof(TestOrder)).Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Should_PersistAndRehydrate_StronglyTypedId_When_StronglyTypedIdConventionIsConfigured()
+    {
+        // Arrange
+        using var connection = CreateOpenInMemoryConnection();
+        var order = TestOrder.Create("ORD-001");
+
+        await using (var setupContext = StronglyTypedIdTestDbContext.WithConvention(connection))
+        {
+            await setupContext.Database.EnsureCreatedAsync();
+            setupContext.Orders.Add(order);
+            await setupContext.SaveChangesAsync();
+        }
+
+        await using var assertionContext = StronglyTypedIdTestDbContext.WithConvention(connection);
+
+        // Act
+        var persistedOrder = await assertionContext.Orders.SingleAsync();
+
+        // Assert
+        persistedOrder.Id.Should().Be(order.Id);
+        persistedOrder.OrderNumber.Should().Be(order.OrderNumber);
+    }
+
+    private static SqliteConnection CreateOpenInMemoryConnection()
+    {
+        var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+        return connection;
+    }
+
+    private sealed class StronglyTypedIdTestDbContext : DbContext
+    {
+        private readonly SqliteConnection _connection;
+        private readonly bool _configureStronglyTypedIdConvention;
+
+        private StronglyTypedIdTestDbContext(
+            SqliteConnection connection,
+            bool configureStronglyTypedIdConvention)
+        {
+            _connection = connection;
+            _configureStronglyTypedIdConvention = configureStronglyTypedIdConvention;
+        }
+
+        public DbSet<TestOrder> Orders => Set<TestOrder>();
+
+        public static StronglyTypedIdTestDbContext WithConvention(SqliteConnection connection)
+            => new(connection, true);
+
+        public static StronglyTypedIdTestDbContext WithoutConvention(SqliteConnection connection)
+            => new(connection, false);
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+            => optionsBuilder.UseSqlite(_connection);
+
+        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        {
+            if (!_configureStronglyTypedIdConvention)
+            {
+                return;
+            }
+
+            configurationBuilder
+                .Properties<TestOrderId>()
+                .HaveConversion<StronglyTypedIdValueConverter<TestOrderId>>();
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<TestOrder>(builder =>
+            {
+                builder.HasKey(o => o.Id);
+                builder.Property(o => o.OrderNumber).IsRequired();
+            });
+        }
+    }
+
+    private sealed class TestOrder
+    {
+        private TestOrder(TestOrderId id, string orderNumber)
+        {
+            Id = id;
+            OrderNumber = orderNumber;
+        }
+
+        private TestOrder()
+        {
+        }
+
+        public TestOrderId Id { get; private set; } = null!;
+        public string OrderNumber { get; private set; } = null!;
+
+        public static TestOrder Create(string orderNumber)
+            => new(TestOrderId.New(), orderNumber);
+    }
+
+    private sealed class TestOrderId : StronglyTypedId<TestOrderId>
+    {
+        private TestOrderId(Guid value) : base(value)
+        {
+        }
+
+        public static TestOrderId New()
+            => CreateNew(static value => new TestOrderId(value));
     }
 }
