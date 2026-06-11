@@ -112,4 +112,26 @@ public sealed class HectorDbContextTests
         var count = await context.TestAggregates.CountAsync();
         count.Should().Be(0);
     }
+
+    [Fact]
+    public async Task Should_DispatchDomainEvents_When_SaveChangesSucceeds()
+    {
+        // Arrange
+        using var connection = CreateOpenInMemoryConnection();
+        var dispatcher = new RecordingDomainEventDispatcher();
+        await using var context = await CreateContextAsync(connection, dispatcher);
+
+        var aggregate = TestAggregate.Create();
+        aggregate.RaiseTestEvent();
+
+        context.Add(aggregate);
+
+        // Act
+        await context.SaveChangesAsync();
+
+        // Assert
+        dispatcher.DispatchedEvents.Should().ContainSingle();
+        dispatcher.DispatchedEvents[0].Should().BeOfType<TestDomainEvent>();
+        ((TestDomainEvent)dispatcher.DispatchedEvents[0]).AggregateId.Should().Be(aggregate.Id.Value);
+    }
 }

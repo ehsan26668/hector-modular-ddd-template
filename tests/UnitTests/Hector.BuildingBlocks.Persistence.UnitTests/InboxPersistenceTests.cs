@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Outbox;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
@@ -18,8 +19,13 @@ public sealed class InboxPersistenceTests
         var assemblyProvider = Substitute.For<IStronglyTypedIdAssemblyProvider>();
         var outboxSerializer = new SystemTextJsonOutboxEventSerializer(
             new CachedOutboxEventTypeResolver());
+        var domainEventDispatcher = Substitute.For<IDomainEventDispatcher>();
 
-        await using var context = new TestDbContext(options, assemblyProvider, outboxSerializer);
+        await using var context = new TestDbContext(
+            options,
+            assemblyProvider,
+            outboxSerializer,
+            domainEventDispatcher);
 
         var message = new Inbox.InboxMessage
         {
@@ -47,8 +53,9 @@ public sealed class InboxPersistenceTests
         public TestDbContext(
             DbContextOptions options,
             IStronglyTypedIdAssemblyProvider assemblyProvider,
-            IOutboxEventSerializer outboxSerializer)
-            : base(options, assemblyProvider, outboxSerializer) { }
+            IOutboxEventSerializer outboxSerializer,
+            IDomainEventDispatcher domainEventDispatcher)
+            : base(options, assemblyProvider, outboxSerializer, domainEventDispatcher) { }
 
         public DbSet<Inbox.InboxMessage> InboxMessages => Set<Inbox.InboxMessage>();
     }

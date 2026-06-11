@@ -19,8 +19,13 @@ public sealed class OutboxPersistenceTests
         var assembblyProvider = Substitute.For<IStronglyTypedIdAssemblyProvider>();
         var outboxSerializer = new SystemTextJsonOutboxEventSerializer(
             new CachedOutboxEventTypeResolver());
+        var domainEventDispatcher = Substitute.For<IDomainEventDispatcher>();
 
-        await using var context = new TestDbContext(options, assembblyProvider, outboxSerializer);
+        await using var context = new TestDbContext(
+            options,
+            assembblyProvider,
+            outboxSerializer,
+            domainEventDispatcher);
 
         var aggregate = TestAggregate.Create();
         context.Aggregates.Add(aggregate);
@@ -41,11 +46,13 @@ public sealed class OutboxPersistenceTests
         public TestDbContext(
             DbContextOptions options,
             IStronglyTypedIdAssemblyProvider assemblyProvider,
-            IOutboxEventSerializer outboxSerializer)
+            IOutboxEventSerializer outboxSerializer,
+            IDomainEventDispatcher domainEventDispatcher)
             : base(
                   options,
                   assemblyProvider,
-                  outboxSerializer)
+                  outboxSerializer,
+                  domainEventDispatcher)
         { }
 
         public DbSet<TestAggregate> Aggregates => Set<TestAggregate>();

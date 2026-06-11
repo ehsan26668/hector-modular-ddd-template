@@ -15,12 +15,14 @@ public class DomainEventDispatcherTests
         _sut = new DomainEventDispatcher(_mediator);
     }
 
+    private record TestDomainEvent : IDomainEvent;
+
     [Fact]
     public async Task Should_PublishAllEvents_When_EventsAreProvided()
     {
         // Arrange
-        var event1 = Substitute.For<IDomainEvent>();
-        var event2 = Substitute.For<IDomainEvent>();
+        var event1 = new TestDomainEvent();
+        var event2 = new TestDomainEvent();
         var events = new List<IDomainEvent> { event1, event2 };
         var cancellationToken = new CancellationToken();
 
@@ -28,8 +30,11 @@ public class DomainEventDispatcherTests
         await _sut.DispatchAsync(events, cancellationToken);
 
         // Assert
-        await _mediator.Received(1).PublishAsync(Arg.Is<INotification>(e => e == event1), cancellationToken);
-        await _mediator.Received(1).PublishAsync(Arg.Is<INotification>(e => e == event2), cancellationToken);
+        await _mediator.Received(1)
+            .PublishAsync(Arg.Is<IDomainEvent>(e => ReferenceEquals(e, event1)), cancellationToken);
+
+        await _mediator.Received(1)
+            .PublishAsync(Arg.Is<IDomainEvent>(e => ReferenceEquals(e, event2)), cancellationToken);
     }
 
     [Fact]
@@ -43,5 +48,18 @@ public class DomainEventDispatcherTests
 
         // Assert
         await _mediator.DidNotReceiveWithAnyArgs().PublishAsync<INotification>(default!);
+    }
+
+    [Fact]
+    public async Task Should_ThrowArgumentNullException_When_EventsIsNull()
+    {
+        // Arrange
+        IEnumerable<IDomainEvent> events = null!;
+
+        // Act
+        var act = () => _sut.DispatchAsync(events);
+
+        // Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(act);
     }
 }

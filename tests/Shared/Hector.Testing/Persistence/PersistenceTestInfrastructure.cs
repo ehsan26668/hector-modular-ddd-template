@@ -22,7 +22,9 @@ public static class PersistenceTestInfrastructure
         return connection;
     }
 
-    public static async Task<TestDbContext> CreateContextAsync(SqliteConnection connection)
+    public static async Task<TestDbContext> CreateContextAsync(
+        SqliteConnection connection,
+        IDomainEventDispatcher? domainEventDispatcher = null)
     {
         var options = new DbContextOptionsBuilder<TestDbContext>()
             .UseSqlite(connection)
@@ -31,7 +33,8 @@ public static class PersistenceTestInfrastructure
         var context = new TestDbContext(
             options,
             StronglyTypedIdAssemblyProvider,
-            OutboxSerializer);
+            OutboxSerializer,
+            domainEventDispatcher ?? new RecordingDomainEventDispatcher());
 
         await context.Database.EnsureCreatedAsync();
         return context;
@@ -46,7 +49,8 @@ public static class PersistenceTestInfrastructure
         var context = new FailingDbContext(
             options,
             StronglyTypedIdAssemblyProvider,
-            OutboxSerializer);
+            OutboxSerializer,
+            new RecordingDomainEventDispatcher());
 
         await context.Database.EnsureCreatedAsync();
         return context;
@@ -58,11 +62,25 @@ public static class PersistenceTestInfrastructure
             => [typeof(TestAggregateId).Assembly];
     }
 
+    public sealed class RecordingDomainEventDispatcher : IDomainEventDispatcher
+    {
+        public List<IDomainEvent> DispatchedEvents { get; } = [];
+
+        public Task DispatchAsync(
+            IEnumerable<IDomainEvent> domainEvents,
+            CancellationToken cancellationToken = default)
+        {
+            DispatchedEvents.AddRange(domainEvents);
+            return Task.CompletedTask;
+        }
+    }
+
     public class TestDbContext(
         DbContextOptions<TestDbContext> options,
         IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider,
-        IOutboxEventSerializer outboxSerializer)
-        : HectorDbContext(options, stronglyTypedIdAssemblyProvider, outboxSerializer)
+        IOutboxEventSerializer outboxSerializer,
+        IDomainEventDispatcher domainEventDispatcher)
+        : HectorDbContext(options, stronglyTypedIdAssemblyProvider, outboxSerializer, domainEventDispatcher)
     {
         public DbSet<TestAggregate> TestAggregates => Set<TestAggregate>();
 
@@ -81,8 +99,9 @@ public static class PersistenceTestInfrastructure
     public sealed class FailingDbContext(
         DbContextOptions<FailingDbContext> options,
         IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider,
-        IOutboxEventSerializer outboxSerializer)
-        : HectorDbContext(options, stronglyTypedIdAssemblyProvider, outboxSerializer)
+        IOutboxEventSerializer outboxSerializer,
+        IDomainEventDispatcher domainEventDispatcher)
+        : HectorDbContext(options, stronglyTypedIdAssemblyProvider, outboxSerializer, domainEventDispatcher)
     {
         public DbSet<TestAggregate> TestAggregates => Set<TestAggregate>();
 

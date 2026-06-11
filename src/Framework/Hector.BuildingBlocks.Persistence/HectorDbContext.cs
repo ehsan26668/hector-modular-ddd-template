@@ -6,21 +6,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Hector.BuildingBlocks.Persistence;
 
-public abstract class HectorDbContext : DbContext
+public abstract class HectorDbContext(
+    DbContextOptions options,
+    IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider,
+    IOutboxEventSerializer outboxSerializer,
+    IDomainEventDispatcher domainEventDispatcher)
+    : DbContext(options)
 {
-    private readonly IStronglyTypedIdAssemblyProvider _stronglyTypedIdAssemblyProvider;
-    private readonly IOutboxEventSerializer _outboxSerializer;
-
-    protected HectorDbContext(
-        DbContextOptions options,
-        IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider,
-        IOutboxEventSerializer outboxSerializer)
-        : base(options)
-    {
-        _stronglyTypedIdAssemblyProvider = stronglyTypedIdAssemblyProvider;
-        _outboxSerializer = outboxSerializer;
-    }
-
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -49,7 +41,7 @@ public abstract class HectorDbContext : DbContext
     {
         base.ConfigureConventions(configurationBuilder);
 
-        var stronglyTypedIdTypes = _stronglyTypedIdAssemblyProvider
+        var stronglyTypedIdTypes = stronglyTypedIdAssemblyProvider
             .GetAssemblies()
             .Distinct()
             .SelectMany(GetLoadableTypes)
@@ -83,8 +75,8 @@ public abstract class HectorDbContext : DbContext
             {
                 Id = Guid.NewGuid(),
                 OccurredOn = domainEvent.OccurredOnUtc,
-                Type = _outboxSerializer.GetTypeName(domainEvent),
-                Content = _outboxSerializer.Serialize(domainEvent)
+                Type = outboxSerializer.GetTypeName(domainEvent),
+                Content = outboxSerializer.Serialize(domainEvent)
             })
             .ToList();
 
@@ -94,6 +86,11 @@ public abstract class HectorDbContext : DbContext
         }
 
         var result = await base.SaveChangesAsync(cancellationToken);
+
+        if (domainEvents.Count > 0)
+        {
+            await domainEventDispatcher.DispatchAsync(domainEvents, cancellationToken);
+        }
 
         foreach (var entity in domainEntities)
         {

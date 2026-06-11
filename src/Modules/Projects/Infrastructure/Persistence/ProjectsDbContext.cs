@@ -1,3 +1,4 @@
+using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence;
 using Hector.BuildingBlocks.Persistence.Outbox;
 using Hector.Modules.Projects.Domain;
@@ -10,8 +11,9 @@ public class ProjectsDbContext : HectorDbContext
     public ProjectsDbContext(
         DbContextOptions<ProjectsDbContext> options,
         IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider,
-        IOutboxEventSerializer outboxSerializer)
-        : base(options, stronglyTypedIdAssemblyProvider, outboxSerializer)
+        IOutboxEventSerializer outboxSerializer,
+        IDomainEventDispatcher domainEventDispatcher)
+        : base(options, stronglyTypedIdAssemblyProvider, outboxSerializer, domainEventDispatcher)
     {
     }
 
