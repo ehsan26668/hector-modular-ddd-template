@@ -15,7 +15,7 @@ public static class PersistenceTestInfrastructure
     public static IOutboxEventSerializer OutboxSerializer { get; } =
         new SystemTextJsonOutboxEventSerializer(new CachedOutboxEventTypeResolver());
 
-    public static SqliteConnection CreateOpenInMemoryConnection()
+    public static SqliteConnection CreateOpenSqliteConnection()
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         connection.Open();
@@ -33,8 +33,7 @@ public static class PersistenceTestInfrastructure
         var context = new TestDbContext(
             options,
             StronglyTypedIdAssemblyProvider,
-            OutboxSerializer,
-            domainEventDispatcher ?? new RecordingDomainEventDispatcher());
+            OutboxSerializer);
 
         await context.Database.EnsureCreatedAsync();
         return context;
@@ -49,8 +48,7 @@ public static class PersistenceTestInfrastructure
         var context = new FailingDbContext(
             options,
             StronglyTypedIdAssemblyProvider,
-            OutboxSerializer,
-            new RecordingDomainEventDispatcher());
+            OutboxSerializer);
 
         await context.Database.EnsureCreatedAsync();
         return context;
@@ -78,9 +76,8 @@ public static class PersistenceTestInfrastructure
     public class TestDbContext(
         DbContextOptions<TestDbContext> options,
         IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider,
-        IOutboxEventSerializer outboxSerializer,
-        IDomainEventDispatcher domainEventDispatcher)
-        : HectorDbContext(options, stronglyTypedIdAssemblyProvider, outboxSerializer, domainEventDispatcher)
+        IOutboxEventSerializer outboxSerializer)
+        : HectorDbContext(options, stronglyTypedIdAssemblyProvider, outboxSerializer)
     {
         public DbSet<TestAggregate> TestAggregates => Set<TestAggregate>();
 
@@ -99,9 +96,8 @@ public static class PersistenceTestInfrastructure
     public sealed class FailingDbContext(
         DbContextOptions<FailingDbContext> options,
         IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider,
-        IOutboxEventSerializer outboxSerializer,
-        IDomainEventDispatcher domainEventDispatcher)
-        : HectorDbContext(options, stronglyTypedIdAssemblyProvider, outboxSerializer, domainEventDispatcher)
+        IOutboxEventSerializer outboxSerializer)
+        : HectorDbContext(options, stronglyTypedIdAssemblyProvider, outboxSerializer)
     {
         public DbSet<TestAggregate> TestAggregates => Set<TestAggregate>();
 

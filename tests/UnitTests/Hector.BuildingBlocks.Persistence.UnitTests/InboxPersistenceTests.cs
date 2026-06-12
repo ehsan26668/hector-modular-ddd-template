@@ -1,6 +1,7 @@
 using FluentAssertions;
-using Hector.BuildingBlocks.Domain.Primitives;
+using Hector.BuildingBlocks.Persistence.Inbox;
 using Hector.BuildingBlocks.Persistence.Outbox;
+using Hector.Testing.Persistence;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 
@@ -12,22 +13,16 @@ public sealed class InboxPersistenceTests
     public async Task Should_PersistInboxMessage()
     {
         // Arrange
-        var options = new DbContextOptionsBuilder<TestDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options;
+        using var connection = PersistenceTestInfrastructure.CreateOpenSqliteConnection();
+        var options = new DbContextOptionsBuilder<TestDbContext>().UseSqlite(connection).Options;
 
         var assemblyProvider = Substitute.For<IStronglyTypedIdAssemblyProvider>();
-        var outboxSerializer = new SystemTextJsonOutboxEventSerializer(
-            new CachedOutboxEventTypeResolver());
-        var domainEventDispatcher = Substitute.For<IDomainEventDispatcher>();
+        var outboxSerializer = new SystemTextJsonOutboxEventSerializer(new CachedOutboxEventTypeResolver());
 
-        await using var context = new TestDbContext(
-            options,
-            assemblyProvider,
-            outboxSerializer,
-            domainEventDispatcher);
+        await using var context = new TestDbContext(options, assemblyProvider, outboxSerializer);
+        await context.Database.EnsureCreatedAsync();
 
-        var message = new Inbox.InboxMessage
+        var message = new InboxMessage
         {
             Id = Guid.NewGuid(),
             MessageId = Guid.NewGuid(),
@@ -50,13 +45,15 @@ public sealed class InboxPersistenceTests
 
     private sealed class TestDbContext : HectorDbContext
     {
-        public TestDbContext(
-            DbContextOptions options,
-            IStronglyTypedIdAssemblyProvider assemblyProvider,
-            IOutboxEventSerializer outboxSerializer,
-            IDomainEventDispatcher domainEventDispatcher)
-            : base(options, assemblyProvider, outboxSerializer, domainEventDispatcher) { }
+        public TestDbContext(DbContextOptions options, IStronglyTypedIdAssemblyProvider assemblyProvider, IOutboxEventSerializer outboxSerializer)
+            : base(options, assemblyProvider, outboxSerializer) { }
 
-        public DbSet<Inbox.InboxMessage> InboxMessages => Set<Inbox.InboxMessage>();
+        public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(InboxMessage).Assembly);
+        }
     }
 }

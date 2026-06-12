@@ -49,8 +49,7 @@ public sealed class ProjectsStronglyTypedIdMappingTests
                 [
                     new ProjectsStronglyTypedIdAssemblyProvider()
                 ]),
-            new NoOpSerializer(),
-            new NoOpDispatcher());
+            new NoOpSerializer());
     }
 
     private sealed class NoOpSerializer : IOutboxEventSerializer
@@ -63,13 +62,5 @@ public sealed class ProjectsStronglyTypedIdMappingTests
 
         public INotification Deserialize(OutboxMessage message)
             => throw new NotSupportedException();
-    }
-
-    private sealed class NoOpDispatcher : IDomainEventDispatcher
-    {
-        public Task DispatchAsync(
-            IEnumerable<IDomainEvent> domainEvents,
-            CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
     }
 }

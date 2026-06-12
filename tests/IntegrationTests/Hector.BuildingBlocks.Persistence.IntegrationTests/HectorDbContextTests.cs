@@ -12,7 +12,7 @@ public sealed class HectorDbContextTests
     public async Task Should_PersistOutboxMessage_When_AggregateRaisesDomainEvent()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         await using var context = await CreateContextAsync(connection);
 
         var aggregate = TestAggregate.Create();
@@ -35,7 +35,7 @@ public sealed class HectorDbContextTests
     public async Task Should_ClearDomainEvents_When_SaveChangesSucceeds()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         await using var context = await CreateContextAsync(connection);
 
         var aggregate = TestAggregate.Create();
@@ -54,7 +54,7 @@ public sealed class HectorDbContextTests
     public async Task Should_NotClearDomainEvents_When_PersistenceFails()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         await using var context = await CreateFailingContextAsync(connection);
 
         var aggregate = TestAggregate.Create();
@@ -74,7 +74,7 @@ public sealed class HectorDbContextTests
     public async Task Should_NotPersistOutboxMessage_When_PersistenceFails()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         await using var context = await CreateFailingContextAsync(connection);
 
         var aggregate = TestAggregate.Create();
@@ -93,10 +93,10 @@ public sealed class HectorDbContextTests
     }
 
     [Fact]
-    public async Task Should_NotCommitAggregateChanges_WhenPeresistenceFails()
+    public async Task Should_NotCommitAggregateChanges_When_PersistenceFails()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         await using var context = await CreateFailingContextAsync(connection);
 
         var aggregate = TestAggregate.Create();
@@ -108,30 +108,7 @@ public sealed class HectorDbContextTests
         // Assert
         await act.Should().ThrowAsync<DbUpdateException>();
 
-        // Check if the record exists in DB (should be 0)
         var count = await context.TestAggregates.CountAsync();
         count.Should().Be(0);
-    }
-
-    [Fact]
-    public async Task Should_DispatchDomainEvents_When_SaveChangesSucceeds()
-    {
-        // Arrange
-        using var connection = CreateOpenInMemoryConnection();
-        var dispatcher = new RecordingDomainEventDispatcher();
-        await using var context = await CreateContextAsync(connection, dispatcher);
-
-        var aggregate = TestAggregate.Create();
-        aggregate.RaiseTestEvent();
-
-        context.Add(aggregate);
-
-        // Act
-        await context.SaveChangesAsync();
-
-        // Assert
-        dispatcher.DispatchedEvents.Should().ContainSingle();
-        dispatcher.DispatchedEvents[0].Should().BeOfType<TestDomainEvent>();
-        ((TestDomainEvent)dispatcher.DispatchedEvents[0]).AggregateId.Should().Be(aggregate.Id.Value);
     }
 }

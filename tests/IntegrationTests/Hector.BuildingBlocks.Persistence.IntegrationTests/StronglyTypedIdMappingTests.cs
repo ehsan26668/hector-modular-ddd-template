@@ -13,7 +13,7 @@ public sealed class StronglyTypedIdMappingTests
     public async Task Should_ThrowException_When_PersistingStronglyTypedIdWithoutConvention()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         await using var context = StronglyTypedIdTestDbContext.WithoutConvention(connection);
 
         var order = TestOrder.Create("ORD-001");
@@ -34,7 +34,7 @@ public sealed class StronglyTypedIdMappingTests
     public void Should_CreateModel_When_StronglyTypedIdConventionIsConfigured()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         using var context = StronglyTypedIdTestDbContext.WithConvention(connection);
 
         // Act
@@ -49,7 +49,7 @@ public sealed class StronglyTypedIdMappingTests
     public async Task Should_PersistAndRehydrate_StronglyTypedId_When_StronglyTypedIdConventionIsConfigured()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         var order = TestOrder.Create("ORD-001");
 
         await using (var setupContext = StronglyTypedIdTestDbContext.WithConvention(connection))

@@ -29,7 +29,7 @@ public sealed class OutboxProcessorTests
     public async Task Should_PublishMessage_AndMarkAsProcessed_When_MessageIsReady()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         await using var context = await CreateContextAsync(connection);
 
         var mediator = Substitute.For<IMediator>();
@@ -73,7 +73,7 @@ public sealed class OutboxProcessorTests
     public async Task Should_SkipMessage_When_LockedByAnotherProcessor()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         await using var context = await CreateContextAsync(connection);
 
         var mediator = Substitute.For<IMediator>();
@@ -110,7 +110,7 @@ public sealed class OutboxProcessorTests
     public async Task Should_ProcessMessage_When_LockExpired()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         await using var context = await CreateContextAsync(connection);
 
         var mediator = Substitute.For<IMediator>();
@@ -149,7 +149,7 @@ public sealed class OutboxProcessorTests
     public async Task Should_IncrementRetryCount_When_PublishFails()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         await using var context = await CreateContextAsync(connection);
 
         var mediator = Substitute.For<IMediator>();
@@ -190,7 +190,7 @@ public sealed class OutboxProcessorTests
     public async Task Should_NotProcessMessage_When_MaxRetryReached()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         await using var context = await CreateContextAsync(connection);
 
         var mediator = Substitute.For<IMediator>();
@@ -226,7 +226,7 @@ public sealed class OutboxProcessorTests
     public async Task Should_ProcessMessages_InOrder_When_MultipleMessagesExist()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         await using var context = await CreateContextAsync(connection);
 
         var mediator = Substitute.For<IMediator>();
@@ -282,5 +282,53 @@ public sealed class OutboxProcessorTests
         // Assert
         processedEvents.Should().HaveCount(3);
         processedEvents.Should().ContainInOrder(id1, id2, id3);
+    }
+
+    [Fact]
+    public async Task Should_IncrementRetryCount_When_MessageTypeCannotBeResolved()
+    {
+        // Arrange
+        using var connection = CreateOpenSqliteConnection();
+        await using var context = await CreateContextAsync(connection);
+
+        var mediator = Substitute.For<IMediator>();
+
+        var publisher = new OutboxPublisher(
+            mediator,
+            NullLogger<OutboxPublisher>.Instance,
+            OutboxSerializer);
+
+        var processor = CreateProcessor(context, publisher);
+
+        var messageId = Guid.NewGuid();
+
+        context.OutboxMessages.Add(new OutboxMessage
+        {
+            Id = messageId,
+            Type = "Missing.Namespace.MissingEvent, Missing.Assembly",
+            Content = "{}",
+            OccurredOn = DateTime.UtcNow
+        });
+
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        // Act
+        await processor.ProcessAsync(CancellationToken.None);
+
+        // Assert
+        var message = await context.OutboxMessages.SingleAsync(x => x.Id == messageId);
+
+        message.ProcessedOn.Should().BeNull();
+        message.RetryCount.Should().Be(1);
+        message.Error.Should().NotBeNullOrWhiteSpace();
+        message.Error.Should().Contain("resolved");
+        message.LockId.Should().BeNull();
+        message.LockedUntil.Should().BeNull();
+
+        await mediator.DidNotReceive()
+            .PublishAsync(
+                Arg.Any<INotification>(),
+                Arg.Any<CancellationToken>());
     }
 }

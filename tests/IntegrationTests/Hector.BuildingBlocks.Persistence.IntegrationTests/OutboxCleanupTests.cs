@@ -12,7 +12,7 @@ public sealed class OutboxCleanupTests
     public async Task Should_DeleteProcessedMessages_When_RetentionPeriodExpired()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         await using var context = await CreateContextAsync(connection);
 
         var oldMessage = new OutboxMessage
@@ -47,7 +47,7 @@ public sealed class OutboxCleanupTests
     public async Task Should_KeepRecentMessages_When_RetentionPeriodNotExpired()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         await using var context = await CreateContextAsync(connection);
 
         var message = new OutboxMessage
@@ -81,7 +81,7 @@ public sealed class OutboxCleanupTests
     public async Task Should_NotDeleteUnprocessedMessages_When_MessageIsOlderThanRetentionPeriod()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         await using var context = await CreateContextAsync(connection);
 
         var message = new OutboxMessage
@@ -115,7 +115,7 @@ public sealed class OutboxCleanupTests
     public async Task Should_DeleteOnlyBatchSizeMessages_When_EligibleMessagesExceedBatchLimit()
     {
         // Arrange
-        using var connection = CreateOpenInMemoryConnection();
+        using var connection = CreateOpenSqliteConnection();
         await using var context = await CreateContextAsync(connection);
 
         for (var index = 0; index < 10; index++)
