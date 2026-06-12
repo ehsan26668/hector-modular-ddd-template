@@ -2,35 +2,33 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
-The project follows a modular architecture based on Domain-Driven Design, Clean Architecture principles, and strict separation of layers.
+The project follows a modular architecture based on Domain‑Driven Design and Clean Architecture principles. The system is organized into feature modules and layered components such as Domain, Application, and Infrastructure.
 
-Over time, large codebases tend to experience architectural drift. Developers may accidentally introduce unintended dependencies between layers or modules, weakening the intended architecture.
-
-Examples of such problems include:
+As the codebase evolves, architectural drift may occur. Developers may accidentally introduce dependencies that violate architectural boundaries. Examples include:
 
 - Domain layer referencing Application or Infrastructure
 - Application layer referencing Infrastructure directly
-- Cross-module dependencies between feature modules
-- Domain identifiers bypassing the StronglyTypedId abstraction
+- Feature modules depending on other feature modules
+- Domain logic bypassing StronglyTypedId conventions
 - Infrastructure concerns leaking into the domain model
 
-Traditional code reviews and developer discipline alone are often insufficient to prevent such issues as the codebase grows.
+While code reviews help mitigate these risks, they are not sufficient to guarantee long‑term architectural integrity.
 
-To ensure long-term architectural integrity, automated verification is required. Architecture tests provide a way to continuously validate architectural rules during the test phase of the build process.
-
-This approach allows the architecture to become self-protecting by automatically detecting violations whenever the test suite runs.
+To ensure architectural rules remain enforced as the system grows, automated architecture validation is required.
 
 ## Decision
 
-The project will introduce an **Architecture Test Suite** that validates key architectural constraints of the system.
+The project will introduce an **Architecture Test Suite** that automatically verifies architectural constraints during test execution.
 
-These tests will run as part of the standard test pipeline and will prevent architectural violations from being introduced into the codebase.
+Architecture rules will be implemented as executable tests inside a dedicated test project:
 
-Architecture tests will validate rules such as:
+    tests/ArchitectureTests
+
+These tests will validate important architectural constraints such as:
 
     Domain layer must not reference Application layer
     Domain layer must not reference Infrastructure layer
@@ -39,16 +37,12 @@ Architecture tests will validate rules such as:
     Domain identifiers must inherit from StronglyTypedId<>
     Domain assemblies must not generate identifiers using Guid.NewGuid()
 
-Architecture tests will be implemented in a dedicated test project:
-
-    tests/ArchitectureTests
-
-The tests will use reflection and architecture inspection libraries such as:
+Architecture tests may use reflection and architecture inspection tools such as:
 
     NetArchTest.Rules
     System.Reflection
 
-Each architectural rule must be expressed as a clear test case using the naming convention defined in the testing standards:
+Each rule will be implemented as a test following the testing standards naming convention:
 
     Should_<ExpectedBehavior>_When_<Condition>
 
@@ -56,25 +50,24 @@ Example:
 
     Should_NotDependOnInfrastructure_When_InDomainLayer()
 
-These tests serve as **automated architectural guardrails** and are executed together with the rest of the unit and integration tests using:
+These tests will run automatically together with the rest of the test suite using:
 
     dotnet test
 
-If an architectural violation occurs, the test suite will fail and prevent the change from being accepted.
+Any architectural violation will cause the test suite to fail, preventing the change from being accepted.
 
 ## Consequences
 
 Positive:
 
 - Prevents architectural drift over time
-- Provides automated enforcement of architecture rules
+- Enforces architectural rules automatically
 - Makes architectural boundaries explicit and verifiable
-- Increases confidence when refactoring the codebase
-- Helps maintain modularity and clean architecture principles
-- Documents architectural constraints in executable form
+- Improves confidence during refactoring
+- Documents architecture rules as executable tests
 
 Negative:
 
-- Requires maintaining architecture tests when new modules or layers are added
-- Some architectural violations may still require manual review
+- Architecture tests must be maintained as modules evolve
+- Some violations may still require manual architectural review
 - Adds a small amount of complexity to the test suite

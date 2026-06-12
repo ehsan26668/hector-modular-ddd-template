@@ -37,4 +37,4 @@
 | ADR-0033 | [Event Ordering and Delivery Guarantees](/docs/adr/0033-event-ordering-and-delivery-guarantees.md) | Proposed | 2026-06-07 |
 | ADR-0034 | [Dead Letter and Poison Message Handling](/docs/adr/0034-dead-letter-and-poison-message-handling.md) | Proposed | 2026-06-07 |
 | ADR-0035 | [Consumer Idempotency Strategy](/docs/adr/0035-consumer-idempotency-strategy.md) | Proposed | 2026-06-07 |
-| ADR-0036 | [Architecture Guard Tests](/docs/adr/0036-architecture-guard-tests.md) | Proposed | 2026-06-07 |
+| ADR-0036 | [Architecture Guard Tests](/docs/adr/0036-architecture-guard-tests.md) | Accepted | 2026-06-07 |

@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Framework\Hector.BuildingBlocks.Application\Hector.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\..\..\src\Framework\Hector.BuildingBlocks.Domain\Hector.BuildingBlocks.Domain.csproj" />
     <ProjectReference Include="..\..\..\src\Modules\Projects\Domain\Hector.Modules.Projects.Domain.csproj" />
   </ItemGroup>
