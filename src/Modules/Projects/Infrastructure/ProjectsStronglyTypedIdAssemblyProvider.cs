@@ -8,10 +8,5 @@ public sealed class ProjectsStronglyTypedIdAssemblyProvider
     : IStronglyTypedIdAssemblyProvider
 {
     public IReadOnlyCollection<Assembly> GetAssemblies()
-    {
-        return new[]
-        {
-            typeof(ProjectsDomainAssemblyMarker).Assembly
-        };
-    }
+        => [typeof(ProjectsDomainAssemblyMarker).Assembly];
 }

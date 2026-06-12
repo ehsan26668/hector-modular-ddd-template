@@ -1,6 +1,7 @@
 using System.Reflection;
-using Hector.BuildingBlocks.Persistence;
 using Microsoft.Extensions.DependencyInjection;
+
+namespace Hector.BuildingBlocks.Persistence;
 
 public static class StronglyTypedIdRegistrationExtensions
 {
@@ -12,17 +13,25 @@ public static class StronglyTypedIdRegistrationExtensions
             .SelectMany(a => a.GetTypes())
             .Where(t =>
                 typeof(IStronglyTypedIdAssemblyProvider).IsAssignableFrom(t) &&
+                !t.IsAbstract &&
                 !t.IsInterface &&
-                !t.IsAbstract)
-            .ToList();
+                t != typeof(CompositeStronglyTypedIdAssemblyProvider))
+            .Distinct()
+            .ToArray();
 
-        foreach (var type in providerTypes)
+        foreach (var providerType in providerTypes)
         {
-            services.AddSingleton(typeof(IStronglyTypedIdAssemblyProvider), type);
+            services.AddSingleton(providerType);
         }
 
-        services.AddSingleton<IStronglyTypedIdAssemblyProvider,
-            CompositeStronglyTypedIdAssemblyProvider>();
+        services.AddSingleton<IStronglyTypedIdAssemblyProvider>(sp =>
+        {
+            var providers = providerTypes
+                .Select(providerType => (IStronglyTypedIdAssemblyProvider)sp.GetRequiredService(providerType))
+                .ToArray();
+
+            return new CompositeStronglyTypedIdAssemblyProvider(providers);
+        });
 
         return services;
     }

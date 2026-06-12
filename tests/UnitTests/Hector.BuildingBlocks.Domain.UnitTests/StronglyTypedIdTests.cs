@@ -147,6 +147,67 @@ public sealed class StronglyTypedIdTests
         id.Should().BeNull();
     }
 
+    [Fact]
+    public void Should_ThrowException_When_ImplicitlyConvertingNullIdToGuid()
+    {
+        // Arrange
+        TestId? id = null;
+
+        // Act
+        Action act = () =>
+        {
+            Guid value = id!;
+        };
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void Should_ReturnGuidString_When_ToStringIsCalled()
+    {
+        // Arrange
+        var id = TestId.New();
+
+        // Act
+        var text = id.ToString();
+
+        // Assert
+        text.Should().Be(id.Value.ToString());
+    }
+
+    [Fact]
+    public void Should_ThrowException_When_CreateNewFactoryIsNull()
+    {
+        // Arrange
+        Func<Guid, TestId>? factory = null;
+
+        // Act
+        Action act = () =>
+        {
+            TestId.CreateWithFactory(factory!);
+        };
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void Should_ThrowException_When_FromExistingFactoryIsNull()
+    {
+        // Arrange
+        Func<Guid, TestId>? factory = null;
+
+        // Act
+        Action act = () =>
+        {
+            TestId.FromWithFactory(Guid.NewGuid(), factory!);
+        };
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
+    }
+
     private sealed class TestId : StronglyTypedId<TestId>
     {
         private TestId(Guid value) : base(value) { }
@@ -156,6 +217,12 @@ public sealed class StronglyTypedIdTests
 
         internal static TestId From(Guid value)
             => FromExisting(value, static v => new TestId(v));
+
+        public static TestId CreateWithFactory(Func<Guid, TestId> factory)
+            => CreateNew(factory);
+
+        public static TestId FromWithFactory(Guid value, Func<Guid, TestId> factory)
+            => FromExisting(value, factory);
     }
 
     private sealed class AnotherTestId : StronglyTypedId<AnotherTestId>

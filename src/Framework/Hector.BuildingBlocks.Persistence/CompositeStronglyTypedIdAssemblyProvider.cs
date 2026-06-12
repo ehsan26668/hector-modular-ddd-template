@@ -2,22 +2,14 @@ using System.Reflection;
 
 namespace Hector.BuildingBlocks.Persistence;
 
-public sealed class CompositeStronglyTypedIdAssemblyProvider
-    : IStronglyTypedIdAssemblyProvider
+public sealed class CompositeStronglyTypedIdAssemblyProvider(
+    IEnumerable<IStronglyTypedIdAssemblyProvider> providers)
+        : IStronglyTypedIdAssemblyProvider
 {
-    private readonly IEnumerable<IStronglyTypedIdAssemblyProvider> _providers;
-
-    public CompositeStronglyTypedIdAssemblyProvider(
-        IEnumerable<IStronglyTypedIdAssemblyProvider> providers)
-    {
-        _providers = providers;
-    }
-
     public IReadOnlyCollection<Assembly> GetAssemblies()
     {
-        return _providers
+        return [.. providers
             .SelectMany(p => p.GetAssemblies())
-            .Distinct()
-            .ToArray();
+            .Distinct()];
     }
 }

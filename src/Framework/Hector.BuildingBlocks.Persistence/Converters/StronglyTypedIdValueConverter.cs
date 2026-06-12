@@ -23,13 +23,10 @@ public class StronglyTypedIdValueConverter<TId> : ValueConverter<TId, Guid>
             var ctor = type.GetConstructor(
                 BindingFlags.Instance | BindingFlags.NonPublic,
                 null,
-                new[] { typeof(Guid) },
-                null);
-
-            if (ctor == null)
-                throw new InvalidOperationException($"Type {type.Name} must have a private constructor taking a Guid.");
-
-            return (Guid g) => (TId)ctor.Invoke(new object[] { g });
+                [typeof(Guid)],
+                null) ?? throw new InvalidOperationException(
+                    $"Type {type.Name} must have a private constructor taking a Guid.");
+            return g => (TId)ctor.Invoke(new object[] { g });
         });
 
         return factory(guid);

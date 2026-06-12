@@ -1,4 +1,4 @@
-# ADR 0019: Simplify StronglyTypedId and Use Assembly Scanning
+# ADR-0019: Simplify StronglyTypedId and Use Assembly Scanning
 
 ## Status
 
@@ -6,47 +6,83 @@ Accepted
 
 ## Context
 
-Following the implementation of [ADR-0011](/docs/adr/0011-eliminate-boilerplate-in-strongly-typed-ids-using-self-referencing-generics.md), we encountered several architectural frictions:
+The project uses strongly typed identifiers to avoid mixing primitive identifiers across aggregates and entities. The initial implementation used a self-referencing generic base type `(StronglyTypedId<TSelf>)` and required manual persistence configuration for each identifier type.
 
-1. **Complexity:** The Self-Referencing Generic (CRTP) pattern created complex type hierarchies that were difficult to maintain and extend across multiple architectural layers.
-2. **Persistence Coupling:** EF Core's `ConfigureConventions` could not easily map generic base classes without knowing the concrete types at startup.
-3. **Boilerplate vs. Flexibility:** While CRTP reduced some boilerplate, it forced a rigid structure that made it harder for feature modules to define their own identifier logic without being heavily tied to the framework's generic constraints.
+While this approach worked, it introduced friction in the persistence layer and made registration harder to keep modular. We needed a way to:
 
-We need a simpler base structure that maintains type safety while allowing automated, modular registration for persistence.
+1. Keep type safety for identifiers.
+
+2. Allow feature modules to expose their own identifier assemblies.
+
+3. Register EF Core value converters automatically without manual per-type configuration.
+
+4. Avoid circular dependencies in the dependency injection container.
+
+During implementation, a naive registration approach that resolved `IEnumerable<IStronglyTypedIdAssemblyProvider>` from inside the `IStronglyTypedIdAssemblyProvider` factory caused a circular dependency. The final registration strategy must avoid resolving the same service collection from its own composite factory.
 
 ## Decision
 
-We will simplify the `StronglyTypedId` abstraction by removing self-referencing generics and implementing an **Assembly Scanning** mechanism for persistence mapping.
+We will keep strongly typed identifiers as a generic base type for now, and we will standardize persistence registration through assembly scanning and a composite assembly provider.
 
-1. **Simplified Base Class:**
-   `StronglyTypedId` will now be a simple abstract record/class wrapping a `Guid`, without generic self-references.
+1. **Module-owned assembly exposure**  
+   Each feature module can expose one or more IStronglyTypedIdAssemblyProvider implementations.
 
-2. **Automated Discovery:**
-   We will introduce `IStronglyTypedIdAssemblyProvider` to allow each module to expose its domain assemblies.
+2. **Concrete provider registration**  
+   Provider implementations are registered as concrete singleton services first.
 
-3. **Composite Registration:**
-   The `HectorDbContext` will use a `CompositeStronglyTypedIdAssemblyProvider` to scan all registered assemblies and automatically apply `StronglyTypedIdValueConverter<TId>` to every concrete subclass found.
+3. **Composite provider as the public abstraction**  
+   A CompositeStronglyTypedIdAssemblyProvider is registered as the single IStronglyTypedIdAssemblyProvider used by persistence infrastructure.
 
-    Example Registration Logic:
-    var derivedTypes = assembly.GetTypes()
-        .Where(t => t is { IsClass: true, IsAbstract: false } &&
-                    t.IsSubclassOf(typeof(StronglyTypedId)));
+4. **Factory-based composition**  
+   The composite provider is built from the concrete provider types discovered during registration, not by re-resolving `IEnumerable<IStronglyTypedIdAssemblyProvider>` from the same service graph.
 
-    foreach (var idType in derivedTypes) {
-        configurationBuilder.Properties(idType)
-                            .HaveConversion(typeof(StronglyTypedIdValueConverter<>).MakeGenericType(idType));
-    }
+5. **Automated EF Core conversion**  
+   Persistence uses the registered assembly providers to discover strongly typed identifier types and apply `StronglyTypedIdValueConverter<TId>` automatically.
+
+## Implementation Notes
+
+The final registration pattern is:
+
+```text
+var providerTypes = assemblies
+    .SelectMany(a => a.GetTypes())
+    .Where(t =>
+        typeof(IStronglyTypedIdAssemblyProvider).IsAssignableFrom(t) &&
+        !t.IsAbstract &&
+        !t.IsInterface &&
+        t != typeof(CompositeStronglyTypedIdAssemblyProvider))
+    .Distinct()
+    .ToArray();
+
+foreach (var providerType in providerTypes)
+{
+    services.AddSingleton(providerType);
+}
+
+services.AddSingleton<IStronglyTypedIdAssemblyProvider>(sp =>
+{
+    var providers = providerTypes
+        .Select(providerType => (IStronglyTypedIdAssemblyProvider)sp.GetRequiredService(providerType))
+        .ToArray();
+
+    return new CompositeStronglyTypedIdAssemblyProvider(providers);
+});
+```
+
+This avoids the DI cycle that occurred when the composite factory attempted to resolve the same interface it was producing.
 
 ## Consequences
 
-Positive:
+### Positive
 
-- **Significantly Reduced Complexity:** No more complex generic constraints (`where TSelf : StronglyTypedId<TSelf>`).
-- **Truly Modular:** New modules can register their IDs by simply providing their assembly marker, adhering to the Open/Closed Principle.
-- **Zero Boilerplate for Mapping:** Developers no longer need to manually configure EF Core mappings for every new ID created.
-- **Improved Testability:** Simplified types are easier to mock and instantiate in unit tests.
+- Removes circular dependency risk in DI registration.
+- Keeps strongly typed ID persistence registration modular.
+- Allows each module to provide its own assemblies explicitly.
+- Preserves type safety while reducing manual EF Core configuration.
+- Works cleanly with the current generic strongly typed ID model.
 
-Negative:
+### Negative
 
-- **Startup Overhead:** A one-time assembly scan occurs during the first DbContext model creation (mitigated by EF Core's model caching).
-- **Reflection Usage:** Uses reflection during the configuration phase to discover types, though this does not impact runtime performance after the model is built.
+- Reflection is still used during registration and model setup.
+- The current domain model still uses the generic strongly typed ID base type, so a future non-generic redesign would require a separate breaking refactor.
+- Module authors must ensure their assembly provider types are discoverable during scanning.
