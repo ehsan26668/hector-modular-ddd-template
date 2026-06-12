@@ -20,6 +20,9 @@
     <Project Path="src/Modules/Projects/Infrastructure/Hector.Modules.Projects.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/" />
+  <Folder Name="/tests/ArchitectureTests/">
+    <Project Path="tests/ArchitectureTests/Hector.ArchitectureTests/Hector.ArchitectureTests.csproj" />
+  </Folder>
   <Folder Name="/tests/IntegrationTests/">
     <Project Path="tests/IntegrationTests/Hector.Modules.Projects.IntegrationTests/Hector.Modules.Projects.IntegrationTests.csproj" />
   </Folder>
