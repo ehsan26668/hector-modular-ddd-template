@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -61,5 +61,7 @@ the `HectorDbContext` save pipeline.
 
 ## Notes
 
-ADR-0016 remains historically valid, but when Transactional Outbox is enabled,
-ADR-0038 supersedes immediate dispatch in the EF Core save pipeline.
+ADR-0016 introduced immediate in-process domain event dispatch as part of the EF Core save pipeline.
+
+ADR-0038 supersedes that behavior when the Transactional Outbox pattern is enabled,
+making the outbox the single publication mechanism for domain events.
