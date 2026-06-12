@@ -35,7 +35,6 @@ public sealed class OutboxProcessorDeserializationTests
 
         var publisher = new OutboxPublisher(
             mediator,
-            NullLogger<OutboxPublisher>.Instance,
             PersistenceTestInfrastructure.OutboxSerializer);
 
         var processor = new OutboxProcessor(

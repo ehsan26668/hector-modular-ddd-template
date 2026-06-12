@@ -86,38 +86,4 @@ public sealed class OutboxProcessor(
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
-
-    private async Task ProcessMessageAsync(
-        OutboxMessage message,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            await publisher.PublishAsync([message], cancellationToken);
-
-            message.ProcessedOn = DateTime.UtcNow;
-            message.LastAttemptedOn = DateTime.UtcNow;
-            message.Error = null;
-            message.LockId = null;
-            message.LockedUntil = null;
-
-            logger.LogInformation(
-                "Outbox message {OutboxMessageId} processed successfully",
-                message.Id);
-        }
-        catch (Exception ex)
-        {
-            message.RetryCount++;
-            message.LastAttemptedOn = DateTime.UtcNow;
-            message.Error = ex.Message;
-            message.LockId = null;
-            message.LockedUntil = null;
-
-            logger.LogError(
-                ex,
-                "Failed to process outbox message {OutboxMessageId}. RetryCount: {RetryCount}",
-                message.Id,
-                message.RetryCount);
-        }
-    }
 }

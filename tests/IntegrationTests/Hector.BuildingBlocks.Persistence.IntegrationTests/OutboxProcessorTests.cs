@@ -35,7 +35,6 @@ public sealed class OutboxProcessorTests
         var mediator = Substitute.For<IMediator>();
         var publisher = new OutboxPublisher(
             mediator,
-            NullLogger<OutboxPublisher>.Instance,
             OutboxSerializer);
 
         var processor = CreateProcessor(context, publisher);
@@ -79,7 +78,6 @@ public sealed class OutboxProcessorTests
         var mediator = Substitute.For<IMediator>();
         var publisher = new OutboxPublisher(
             mediator,
-            NullLogger<OutboxPublisher>.Instance,
             OutboxSerializer);
 
         var processor = CreateProcessor(context, publisher);
@@ -116,7 +114,6 @@ public sealed class OutboxProcessorTests
         var mediator = Substitute.For<IMediator>();
         var publisher = new OutboxPublisher(
             mediator,
-            NullLogger<OutboxPublisher>.Instance,
             OutboxSerializer);
 
         var processor = CreateProcessor(context, publisher);
@@ -159,7 +156,6 @@ public sealed class OutboxProcessorTests
 
         var publisher = new OutboxPublisher(
             mediator,
-            NullLogger<OutboxPublisher>.Instance,
             OutboxSerializer);
 
         var processor = CreateProcessor(context, publisher);
@@ -196,7 +192,6 @@ public sealed class OutboxProcessorTests
         var mediator = Substitute.For<IMediator>();
         var publisher = new OutboxPublisher(
             mediator,
-            NullLogger<OutboxPublisher>.Instance,
             OutboxSerializer);
 
         var processor = CreateProcessor(context, publisher);
@@ -232,7 +227,6 @@ public sealed class OutboxProcessorTests
         var mediator = Substitute.For<IMediator>();
         var publisher = new OutboxPublisher(
             mediator,
-            NullLogger<OutboxPublisher>.Instance,
             OutboxSerializer);
 
         var processor = CreateProcessor(context, publisher);
@@ -295,7 +289,6 @@ public sealed class OutboxProcessorTests
 
         var publisher = new OutboxPublisher(
             mediator,
-            NullLogger<OutboxPublisher>.Instance,
             OutboxSerializer);
 
         var processor = CreateProcessor(context, publisher);
@@ -330,5 +323,44 @@ public sealed class OutboxProcessorTests
             .PublishAsync(
                 Arg.Any<INotification>(),
                 Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Should_SkipMessage_When_MaxRetryCountExceeded()
+    {
+        // Arrange
+        using var connection = CreateOpenSqliteConnection();
+        await using var context = await CreateContextAsync(connection);
+
+        var mediator = Substitute.For<IMediator>();
+        var publisher = new OutboxPublisher(
+            mediator,
+            OutboxSerializer);
+
+        var options = new OutboxOptions { MaxRetryCount = 3 }; // تنظیم حد نصاب
+        var processor = CreateProcessor(context, publisher, options);
+
+        var message = new OutboxMessage
+        {
+            Id = Guid.NewGuid(),
+            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Content = JsonSerializer.Serialize(new TestDomainEvent(Guid.NewGuid())),
+            OccurredOn = DateTime.UtcNow,
+            RetryCount = 3 // پیام قبلاً به حد نصاب رسیده است
+        };
+
+        context.OutboxMessages.Add(message);
+        await context.SaveChangesAsync();
+
+        // Act
+        await processor.ProcessAsync(CancellationToken.None);
+
+        // Assert
+        await mediator.DidNotReceive().PublishAsync(
+            Arg.Any<INotification>(),
+            Arg.Any<CancellationToken>());
+
+        var processed = await context.OutboxMessages.SingleAsync();
+        processed.RetryCount.Should().Be(3); // بدون تغییر
     }
 }
