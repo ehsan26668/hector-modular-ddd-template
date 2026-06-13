@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted
+Implemented
+
+Implemented on: Date: 2026-06-13
 
 ## Context
 
@@ -38,6 +40,7 @@ The cleanup process will follow these rules:
 2. Messages are retained for a configurable retention period (for example 7–30 days).
 3. Messages older than the retention threshold will be deleted in batches.
 4. Cleanup operations must avoid large transactions and use batched deletes.
+5. Cleanup configuration must be validated at runtime. RetentionPeriod and CleanupBatchSize must be greater than zero.
 
 Example cleanup query:
 
@@ -62,6 +65,7 @@ Positive:
 - reduces storage costs
 - keeps the outbox polling query efficient
 - maintains operational visibility for recently processed messages
+- fails fast on invalid cleanup configuration
 
 Negative:
 

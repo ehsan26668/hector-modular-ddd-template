@@ -5,24 +5,38 @@ namespace Hector.BuildingBlocks.Persistence.Outbox;
 
 internal sealed class OutboxCleaner(
     HectorDbContext context,
-    IOptions<OutboxOptions> options) : IOutboxCleaner
+    IOptions<OutboxOptions> options)
+    : IOutboxCleaner
 {
     public async Task CleanupAsync(CancellationToken cancellationToken)
     {
+        ValidateOptions(options.Value);
+
         var cutoff = DateTime.UtcNow - options.Value.RetentionPeriod;
 
-        var message = await context.OutboxMessages
-            .Where(x =>
-                x.ProcessedOn != null &&
-                x.ProcessedOn < cutoff)
-            .OrderBy(x => x.ProcessedOn)
+        var messages = await context.OutboxMessages
+            .Where(message =>
+                message.ProcessedOn != null &&
+                message.ProcessedOn < cutoff)
+            .OrderBy(message => message.ProcessedOn)
             .Take(options.Value.CleanupBatchSize)
             .ToListAsync(cancellationToken);
 
-        if (message.Count == 0) return;
+        if (messages.Count == 0) return;
 
-        context.OutboxMessages.RemoveRange(message);
+        context.OutboxMessages.RemoveRange(messages);
 
         await context.SaveChangesAsync(cancellationToken);
+    }
+
+    private static void ValidateOptions(OutboxOptions options)
+    {
+        if (options.RetentionPeriod <= TimeSpan.Zero)
+            throw new InvalidOperationException(
+                "Outbox retention period must be greater than zero.");
+
+        if (options.CleanupBatchSize <= 0)
+            throw new InvalidOperationException(
+                "Outbox cleanup batch size must be greater than zero.");
     }
 }

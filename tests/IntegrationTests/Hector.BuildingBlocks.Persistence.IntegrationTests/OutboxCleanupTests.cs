@@ -27,13 +27,10 @@ public sealed class OutboxCleanupTests
         context.OutboxMessages.Add(oldMessage);
         await context.SaveChangesAsync();
 
-        var options = new OutboxOptions
-        {
-            RetentionPeriod = TimeSpan.FromDays(7),
-            CleanupBatchSize = 100
-        };
-
-        var cleaner = new OutboxCleaner(context, Options.Create(options));
+        var cleaner = CreateCleaner(
+            context,
+            retentionPeriod: TimeSpan.FromDays(7),
+            cleanupBatchSize: 100);
 
         // Act
         await cleaner.CleanupAsync(CancellationToken.None);
@@ -62,12 +59,10 @@ public sealed class OutboxCleanupTests
         context.OutboxMessages.Add(message);
         await context.SaveChangesAsync();
 
-        var options = new OutboxOptions
-        {
-            RetentionPeriod = TimeSpan.FromDays(7)
-        };
-
-        var cleaner = new OutboxCleaner(context, Options.Create(options));
+        var cleaner = CreateCleaner(
+            context,
+            retentionPeriod: TimeSpan.FromDays(7),
+            cleanupBatchSize: 100);
 
         // Act
         await cleaner.CleanupAsync(CancellationToken.None);
@@ -96,12 +91,10 @@ public sealed class OutboxCleanupTests
         context.OutboxMessages.Add(message);
         await context.SaveChangesAsync();
 
-        var options = new OutboxOptions
-        {
-            RetentionPeriod = TimeSpan.FromDays(7)
-        };
-
-        var cleaner = new OutboxCleaner(context, Options.Create(options));
+        var cleaner = CreateCleaner(
+            context,
+            retentionPeriod: TimeSpan.FromDays(7),
+            cleanupBatchSize: 100);
 
         // Act
         await cleaner.CleanupAsync(CancellationToken.None);
@@ -126,19 +119,16 @@ public sealed class OutboxCleanupTests
                 Type = "test",
                 Content = "{}",
                 OccurredOn = DateTime.UtcNow.AddDays(-30),
-                ProcessedOn = DateTime.UtcNow.AddDays(-20)
+                ProcessedOn = DateTime.UtcNow.AddDays(-20).AddMinutes(index)
             });
         }
 
         await context.SaveChangesAsync();
 
-        var options = new OutboxOptions
-        {
-            RetentionPeriod = TimeSpan.FromDays(7),
-            CleanupBatchSize = 5
-        };
-
-        var cleaner = new OutboxCleaner(context, Options.Create(options));
+        var cleaner = CreateCleaner(
+            context,
+            retentionPeriod: TimeSpan.FromDays(7),
+            cleanupBatchSize: 5);
 
         // Act
         await cleaner.CleanupAsync(CancellationToken.None);
@@ -146,5 +136,190 @@ public sealed class OutboxCleanupTests
         // Assert
         var remaining = await context.OutboxMessages.CountAsync();
         remaining.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task Should_DoNothing_When_NoEligibleMessagesExist()
+    {
+        // Arrange
+        using var connection = CreateOpenSqliteConnection();
+        await using var context = await CreateContextAsync(connection);
+
+        context.OutboxMessages.AddRange(
+            new OutboxMessage
+            {
+                Id = Guid.NewGuid(),
+                Type = "test",
+                Content = "{}",
+                OccurredOn = DateTime.UtcNow.AddDays(-2),
+                ProcessedOn = DateTime.UtcNow.AddDays(-1)
+            },
+            new OutboxMessage
+            {
+                Id = Guid.NewGuid(),
+                Type = "test",
+                Content = "{}",
+                OccurredOn = DateTime.UtcNow.AddDays(-30),
+                ProcessedOn = null
+            });
+
+        await context.SaveChangesAsync();
+
+        var cleaner = CreateCleaner(
+            context,
+            retentionPeriod: TimeSpan.FromDays(7),
+            cleanupBatchSize: 100);
+
+        // Act
+        await cleaner.CleanupAsync(CancellationToken.None);
+
+        // Assert
+        var remaining = await context.OutboxMessages.CountAsync();
+        remaining.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Should_DeleteOldestProcessedMessagesFirst_When_BatchSizeIsLimited()
+    {
+        // Arrange
+        using var connection = CreateOpenSqliteConnection();
+        await using var context = await CreateContextAsync(connection);
+
+        var oldestId = Guid.NewGuid();
+        var middleId = Guid.NewGuid();
+        var newestId = Guid.NewGuid();
+
+        context.OutboxMessages.AddRange(
+            new OutboxMessage
+            {
+                Id = oldestId,
+                Type = "test",
+                Content = "{}",
+                OccurredOn = DateTime.UtcNow.AddDays(-30),
+                ProcessedOn = DateTime.UtcNow.AddDays(-20)
+            },
+            new OutboxMessage
+            {
+                Id = middleId,
+                Type = "test",
+                Content = "{}",
+                OccurredOn = DateTime.UtcNow.AddDays(-29),
+                ProcessedOn = DateTime.UtcNow.AddDays(-19)
+            },
+            new OutboxMessage
+            {
+                Id = newestId,
+                Type = "test",
+                Content = "{}",
+                OccurredOn = DateTime.UtcNow.AddDays(-28),
+                ProcessedOn = DateTime.UtcNow.AddDays(-18)
+            });
+
+        await context.SaveChangesAsync();
+
+        var cleaner = CreateCleaner(
+            context,
+            retentionPeriod: TimeSpan.FromDays(7),
+            cleanupBatchSize: 2);
+
+        // Act
+        await cleaner.CleanupAsync(CancellationToken.None);
+
+        // Assert
+        var remainingMessages = await context.OutboxMessages
+            .OrderBy(message => message.ProcessedOn)
+            .ToListAsync();
+
+        remainingMessages.Should().HaveCount(1);
+        remainingMessages[0].Id.Should().Be(newestId);
+    }
+
+    [Fact]
+    public async Task Should_DeleteNextBatch_When_CleanupRunsMultipleTimes()
+    {
+        // Arrange
+        using var connection = CreateOpenSqliteConnection();
+        await using var context = await CreateContextAsync(connection);
+
+        for (var index = 0; index < 6; index++)
+        {
+            context.OutboxMessages.Add(new OutboxMessage
+            {
+                Id = Guid.NewGuid(),
+                Type = "test",
+                Content = "{}",
+                OccurredOn = DateTime.UtcNow.AddDays(-30),
+                ProcessedOn = DateTime.UtcNow.AddDays(-20).AddMinutes(index)
+            });
+        }
+
+        await context.SaveChangesAsync();
+
+        var cleaner = CreateCleaner(
+            context,
+            retentionPeriod: TimeSpan.FromDays(7),
+            cleanupBatchSize: 2);
+
+        // Act
+        await cleaner.CleanupAsync(CancellationToken.None);
+        await cleaner.CleanupAsync(CancellationToken.None);
+
+        // Assert
+        var remaining = await context.OutboxMessages.CountAsync();
+        remaining.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Should_Throw_When_RetentionPeriodIsNotPositive()
+    {
+        // Arrange
+        using var connection = CreateOpenSqliteConnection();
+        await using var context = await CreateContextAsync(connection);
+
+        var cleaner = CreateCleaner(
+            context,
+            retentionPeriod: TimeSpan.Zero,
+            cleanupBatchSize: 100);
+
+        // Act
+        var action = async () => await cleaner.CleanupAsync(CancellationToken.None);
+
+        // Assert
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*retention period*");
+    }
+
+    [Fact]
+    public async Task Should_Throw_When_CleanupBatchSizeIsNotPositive()
+    {
+        // Arrange
+        using var connection = CreateOpenSqliteConnection();
+        await using var context = await CreateContextAsync(connection);
+
+        var cleaner = CreateCleaner(
+            context,
+            retentionPeriod: TimeSpan.FromDays(7),
+            cleanupBatchSize: 0);
+
+        // Act
+        var action = async () => await cleaner.CleanupAsync(CancellationToken.None);
+
+        // Assert
+        await action.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*batch size*");
+    }
+
+    private static OutboxCleaner CreateCleaner(
+        HectorDbContext context,
+        TimeSpan retentionPeriod,
+        int cleanupBatchSize)
+    {
+        var options = new OutboxOptions
+        {
+            RetentionPeriod = retentionPeriod,
+            CleanupBatchSize = cleanupBatchSize
+        };
+
+        return new OutboxCleaner(context, Options.Create(options));
     }
 }
