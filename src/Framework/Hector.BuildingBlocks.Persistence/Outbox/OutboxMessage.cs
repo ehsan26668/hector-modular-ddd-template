@@ -6,6 +6,8 @@ public sealed class OutboxMessage
 
     public string Type { get; set; } = string.Empty;
 
+    public int Version { get; set; } = 1;
+
     public string Content { get; set; } = string.Empty;
 
     public DateTime OccurredOn { get; set; }

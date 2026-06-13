@@ -18,7 +18,7 @@ public static class DependencyInjection
 
         services.TryAddScoped<IInboxStore, EfCoreInboxStore>();
 
-        services.TryAddSingleton<IOutboxEventTypeResolver, CachedOutboxEventTypeResolver>();
+        services.TryAddSingleton<IOutboxEventTypeResolver, AttributedOutboxEventTypeResolver>();
         services.TryAddSingleton<IOutboxEventSerializer, SystemTextJsonOutboxEventSerializer>();
 
         return services;

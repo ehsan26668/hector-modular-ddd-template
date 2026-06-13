@@ -10,6 +10,9 @@ namespace Hector.Modules.Projects.IntegrationTests;
 
 public sealed class CreateProjectTests
 {
+    private const string EventName = "projects.project-created";
+    private const int EventVersion = 1;
+
     [Fact]
     public async Task Should_Persist_Project_And_OutboxMessage_When_CreateProjectCommand_IsExecuted()
     {
@@ -27,7 +30,8 @@ public sealed class CreateProjectTests
         var projectId = await mediator.SendAsync(command, CancellationToken.None);
 
         // Assert
-        var createdProject = await context.Projects.FirstOrDefaultAsync(p => p.Id == projectId);
+        var createdProject = await context.Projects
+            .FirstOrDefaultAsync(p => p.Id == projectId);
 
         createdProject.Should().NotBeNull();
         createdProject!.Name.Should().Be("New Enterprise Project");
@@ -35,6 +39,8 @@ public sealed class CreateProjectTests
         var outboxMessages = await context.Set<OutboxMessage>().ToListAsync();
 
         outboxMessages.Should().HaveCount(1);
-        outboxMessages[0].Type.Should().Contain("ProjectCreatedDomainEvent");
+
+        outboxMessages[0].Type.Should().Be(EventName);
+        outboxMessages[0].Version.Should().Be(EventVersion);
     }
 }

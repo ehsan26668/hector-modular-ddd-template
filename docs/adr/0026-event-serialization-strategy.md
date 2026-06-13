@@ -2,112 +2,109 @@
 
 ## Status
 
-Accepted
+Implemented
+
+Implemented on: 2026-06-14
 
 ## Context
 
 ADR‑0021 introduced the Transactional Outbox pattern to persist domain events in the `OutboxMessages` table.
 
-Domain events are serialized and stored as JSON payloads together with their .NET type information so that they can later be reconstructed and published by the Outbox Processor.
+Domain events are serialized and stored as JSON payloads together with explicit contract metadata so that they can later be reconstructed and published by the Outbox Processor.
 
-The current implementation stores:
+The current strategy stores:
 
-`Type`
-
-`Content`
+- `Type`
+- `Version`
+- `Content`
 
 Where:
 
-- Type contains the .NET type name of the event
-- Content contains the serialized JSON payload
+- `Type` contains the stable logical event name
+- `Version` contains the event contract version
+- `Content` contains the serialized JSON payload
 
-During outbox processing, the event is reconstructed using:
-
-```text
-Type.GetType(…)
-
-JsonSerializer.Deserialize(…)
-```
-
-While this approach works for basic scenarios, long‑running systems must address additional concerns:
+Long-running systems must address additional concerns:
 
 - event schema evolution
 - backward compatibility
 - event versioning
-- cross‑service compatibility
-- long‑term storage of serialized events
-
-If event types evolve over time, previously stored events may fail to deserialize or may produce inconsistent results.
+- cross-service compatibility
+- long-term storage of serialized events
 
 Therefore, a clear and stable serialization strategy is required.
 
 ## Decision
 
-Domain events stored in the Outbox will be serialized using JSON with explicit metadata describing the event type.
+Domain events stored in the Outbox will be serialized using JSON with explicit metadata describing the event contract.
 
 Each outbox message will contain:
 
-`Id`
-`Type`
-`Content`
-`OccurredOn`
-`ProcessedOn`
+- `Id`
+- `Type`
+- `Version`
+- `Content`
+- `OccurredOn`
+- `ProcessedOn`
 
 Serialization rules:
 
 1. Events are serialized using `System.Text.Json`.
-2. The *Type* field stores the assembly-qualified type name of the event.
-3. The *Content* field stores the serialized JSON payload of the event.
-4. Event types must remain backward compatible when possible.
-5. Event properties should be additive rather than breaking.
+2. The `Type` field stores the stable logical event name instead of the .NET full type name.
+3. The `Version` field stores the contract version as an integer starting at `1`.
+4. The `Content` field stores the serialized JSON payload of the event.
+5. Each domain event must declare its contract explicitly using `OutboxEventAttribute`.
+6. The mapping between logical contracts and CLR types is managed by `AttributedOutboxEventTypeResolver`.
+7. Contract identity is defined by the pair `(Name, Version)`.
+8. The same logical event name may exist in multiple versions simultaneously.
+9. The combination `(Name, Version)` must be unique across all registered event types.
+10. Event properties should remain backward compatible when possible and evolve additively where feasible.
 
-Event reconstruction during publishing will follow this process:
+Event reconstruction during publishing follows this process:
 
-1. Resolve the event type using the type resolver.
-2. Deserialize the JSON payload into the resolved event type.
-3. Publish the event through the mediator.
+1. Read `Type`, `Version`, and `Content` from the outbox message.
+2. Resolve the CLR event type using `IOutboxEventTypeResolver`.
+3. Deserialize the JSON payload into the resolved event type.
+4. Publish the reconstructed event through the mediator.
 
 Example stored record:
 
 ```text
-Type:
-
-Hector.Modules.Projects.Domain.ProjectCreatedDomainEvent,
-
-Hector.Modules.Projects.Domain
-
+Type: projects.project-created
+Version: 1
 Content:
-
 {
-
-“ProjectId”: “6e0b8a6e-45a8-4d64-92e0-8c0d44d8a55a”,
-
-“OccurredOn”: “2026-05-12T10:23:44Z”
-
+  "ProjectId": "6e0b8a6e-45a8-4d64-92e0-8c0d44d8a55a",
+  "OccurredOn": "2026-05-12T10:23:44Z"
 }
 ```
 
-To improve performance and reliability, type resolution may use caching to avoid repeated reflection lookups.
+To improve reliability and enforce contract stability, the implementation is protected by three layers:
+
+1. Explicit contract declaration using `OutboxEventAttribute`
+2. Architecture tests to prevent duplicate `(Name, Version)` registrations
+3. Snapshot tests to detect accidental event contract changes
 
 Future enhancements may include:
 
-- event version identifiers
-- schema evolution support
-- alternative serialization formats (e.g., MessagePack, Avro)
+- event upcasters
+- richer schema evolution support
+- alternative serialization formats
 - contract-based event publishing for external integrations
 
 ## Consequences
 
-Positive:
+### Positive
 
-- ensures consistent event reconstruction
+- ensures stable event reconstruction independent of CLR type names
 - provides a clear serialization standard
-- supports long‑term storage of domain events
-- enables compatibility with the transactional outbox mechanism
-- allows future extensibility for event versioning
+- supports long-term storage of domain events
+- enables side-by-side support for multiple event versions
+- improves refactoring safety by decoupling persisted contracts from .NET type names
+- allows architectural enforcement of contract uniqueness and stability
 
-Negative:
+### Negative
 
-- tight coupling to .NET type names
-- potential issues if event types are renamed or moved
-- requires careful management of event schema evolution
+- requires explicit contract registration on every persisted domain event
+- introduces contract governance overhead for versioning and snapshots
+- schema-breaking changes still require deliberate migration or upcasting strategy

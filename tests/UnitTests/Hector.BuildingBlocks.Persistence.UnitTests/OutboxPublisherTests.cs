@@ -8,6 +8,9 @@ namespace Hector.BuildingBlocks.Persistence.UnitTests;
 
 public sealed class OutboxPublisherTests
 {
+    private const string EventName = "test.publisher-domain-event";
+    private const int EventVersion = 1;
+
     [Fact]
     public async Task Should_publish_unprocessed_messages()
     {
@@ -17,7 +20,8 @@ public sealed class OutboxPublisherTests
         var message = new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = JsonSerializer.Serialize(new TestDomainEvent()),
             OccurredOn = DateTime.UtcNow
         };
@@ -25,7 +29,8 @@ public sealed class OutboxPublisherTests
         var messages = new List<OutboxMessage> { message };
 
         var serializer = new SystemTextJsonOutboxEventSerializer(
-            new CachedOutboxEventTypeResolver());
+            new AttributedOutboxEventTypeResolver(
+                [typeof(TestDomainEvent).Assembly]));
 
         var publisher = new OutboxPublisher(
             mediator,
@@ -49,7 +54,8 @@ public sealed class OutboxPublisherTests
         var message1 = new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = JsonSerializer.Serialize(new TestDomainEvent()),
             OccurredOn = DateTime.UtcNow
         };
@@ -57,7 +63,8 @@ public sealed class OutboxPublisherTests
         var message2 = new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = JsonSerializer.Serialize(new TestDomainEvent()),
             OccurredOn = DateTime.UtcNow
         };
@@ -69,7 +76,8 @@ public sealed class OutboxPublisherTests
         };
 
         var serializer = new SystemTextJsonOutboxEventSerializer(
-            new CachedOutboxEventTypeResolver());
+            new AttributedOutboxEventTypeResolver(
+                [typeof(TestDomainEvent).Assembly]));
 
         var publisher = new OutboxPublisher(
             mediator,
@@ -93,7 +101,8 @@ public sealed class OutboxPublisherTests
         var message = new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = "invalid-json",
             OccurredOn = DateTime.UtcNow
         };
@@ -101,7 +110,8 @@ public sealed class OutboxPublisherTests
         var messages = new List<OutboxMessage> { message };
 
         var serializer = new SystemTextJsonOutboxEventSerializer(
-            new CachedOutboxEventTypeResolver());
+            new AttributedOutboxEventTypeResolver(
+                [typeof(TestDomainEvent).Assembly]));
 
         var publisher = new OutboxPublisher(
             mediator,
@@ -130,7 +140,8 @@ public sealed class OutboxPublisherTests
         var message1 = new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = JsonSerializer.Serialize(event1),
             OccurredOn = DateTime.UtcNow
         };
@@ -138,7 +149,8 @@ public sealed class OutboxPublisherTests
         var message2 = new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = JsonSerializer.Serialize(event2),
             OccurredOn = DateTime.UtcNow
         };
@@ -150,7 +162,8 @@ public sealed class OutboxPublisherTests
         };
 
         var serializer = new SystemTextJsonOutboxEventSerializer(
-            new CachedOutboxEventTypeResolver());
+            new AttributedOutboxEventTypeResolver(
+                [typeof(TestDomainEvent).Assembly]));
 
         var publisher = new OutboxPublisher(
             mediator,
@@ -180,7 +193,8 @@ public sealed class OutboxPublisherTests
         var message1 = new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = JsonSerializer.Serialize(new TestDomainEvent()),
             OccurredOn = DateTime.UtcNow
         };
@@ -188,7 +202,8 @@ public sealed class OutboxPublisherTests
         var message2 = new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = JsonSerializer.Serialize(new TestDomainEvent()),
             OccurredOn = DateTime.UtcNow
         };
@@ -200,7 +215,8 @@ public sealed class OutboxPublisherTests
             .Returns(_ => throw new InvalidOperationException());
 
         var serializer = new SystemTextJsonOutboxEventSerializer(
-            new CachedOutboxEventTypeResolver());
+            new AttributedOutboxEventTypeResolver(
+                [typeof(TestDomainEvent).Assembly]));
 
         var publisher = new OutboxPublisher(mediator, serializer);
 
@@ -215,5 +231,6 @@ public sealed class OutboxPublisherTests
             Arg.Any<CancellationToken>());
     }
 
+    [OutboxEvent(EventName, EventVersion)]
     internal sealed record TestDomainEvent : DomainEventBase;
 }

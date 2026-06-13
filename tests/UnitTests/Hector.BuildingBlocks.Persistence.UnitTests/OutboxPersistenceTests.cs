@@ -6,6 +6,9 @@ namespace Hector.BuildingBlocks.Persistence.UnitTests;
 
 public sealed class OutboxPersistenceTests
 {
+    private const string EventName = "test.persistence-domain-event";
+    private const int EventVersion = 1;
+
     [Fact]
     public async Task Should_PersistOutboxMessage_When_AggregateContainsDomainEvent()
     {
@@ -13,9 +16,8 @@ public sealed class OutboxPersistenceTests
         using var connection = PersistenceTestInfrastructure.CreateOpenSqliteConnection();
         await using var context = await PersistenceTestInfrastructure.CreateContextAsync(connection);
 
-        // We use the TestAggregate defined in our shared persistence infrastructure
         var aggregate = PersistenceTestInfrastructure.TestAggregate.Create();
-        aggregate.RaiseTestEvent(); // This ensures at least one domain event is raised
+        aggregate.RaiseTestEvent();
 
         context.TestAggregates.Add(aggregate);
 
@@ -26,7 +28,8 @@ public sealed class OutboxPersistenceTests
         var messages = await context.OutboxMessages.ToListAsync();
 
         messages.Should().HaveCount(1);
-        messages[0].Type.Should().Be(typeof(PersistenceTestInfrastructure.TestDomainEvent).AssemblyQualifiedName);
+        messages[0].Type.Should().Be(EventName);
+        messages[0].Version.Should().Be(EventVersion);
         messages[0].ProcessedOn.Should().BeNull();
     }
 }

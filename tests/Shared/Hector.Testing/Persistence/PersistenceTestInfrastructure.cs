@@ -13,7 +13,9 @@ public static class PersistenceTestInfrastructure
         new TestStronglyTypedIdAssemblyProvider();
 
     public static IOutboxEventSerializer OutboxSerializer { get; } =
-        new SystemTextJsonOutboxEventSerializer(new CachedOutboxEventTypeResolver());
+        new SystemTextJsonOutboxEventSerializer(
+            new AttributedOutboxEventTypeResolver(
+            [typeof(TestDomainEvent).Assembly]));
 
     public static SqliteConnection CreateOpenSqliteConnection()
     {
@@ -131,5 +133,6 @@ public static class PersistenceTestInfrastructure
         public static TestAggregateId From(Guid value) => FromExisting(value, id => new TestAggregateId(id));
     }
 
+    [OutboxEvent("test.persistence-domain-event", 1)]
     public sealed record TestDomainEvent(Guid AggregateId) : DomainEventBase;
 }

@@ -26,4 +26,10 @@
     <ProjectReference Include="..\..\..\src\Modules\Projects\Domain\Hector.Modules.Projects.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="event-contracts.snapshot">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

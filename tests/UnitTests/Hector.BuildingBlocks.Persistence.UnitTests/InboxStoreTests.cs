@@ -4,6 +4,7 @@ using Hector.BuildingBlocks.Persistence.Outbox;
 using Hector.Testing.Persistence;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
+using static Hector.Testing.Persistence.PersistenceTestInfrastructure;
 
 namespace Hector.BuildingBlocks.Persistence.UnitTests;
 
@@ -19,7 +20,9 @@ public sealed class InboxStoreTests
             .Options;
 
         var assemblyProvider = Substitute.For<IStronglyTypedIdAssemblyProvider>();
-        var outboxSerializer = new SystemTextJsonOutboxEventSerializer(new CachedOutboxEventTypeResolver());
+        var outboxSerializer = new SystemTextJsonOutboxEventSerializer(
+            new AttributedOutboxEventTypeResolver(
+                [typeof(TestDomainEvent).Assembly]));
 
         await using var context = new TestDbContext(options, assemblyProvider, outboxSerializer);
         await context.Database.EnsureCreatedAsync();
@@ -51,7 +54,9 @@ public sealed class InboxStoreTests
             .Options;
 
         var assemblyProvider = Substitute.For<IStronglyTypedIdAssemblyProvider>();
-        var outboxSerializer = new SystemTextJsonOutboxEventSerializer(new CachedOutboxEventTypeResolver());
+        var outboxSerializer = new SystemTextJsonOutboxEventSerializer(
+            new AttributedOutboxEventTypeResolver(
+                [typeof(TestDomainEvent).Assembly]));
 
         await using var context = new TestDbContext(options, assemblyProvider, outboxSerializer);
         await context.Database.EnsureCreatedAsync();
@@ -85,7 +90,9 @@ public sealed class InboxStoreTests
             .Options;
 
         var assemblyProvider = Substitute.For<IStronglyTypedIdAssemblyProvider>();
-        var outboxSerializer = new SystemTextJsonOutboxEventSerializer(new CachedOutboxEventTypeResolver());
+        var outboxSerializer = new SystemTextJsonOutboxEventSerializer(
+            new AttributedOutboxEventTypeResolver(
+                [typeof(TestDomainEvent).Assembly]));
 
         await using var context = new TestDbContext(options, assemblyProvider, outboxSerializer);
         await context.Database.EnsureCreatedAsync();

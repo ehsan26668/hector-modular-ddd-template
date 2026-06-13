@@ -7,8 +7,13 @@ namespace Hector.BuildingBlocks.Persistence.UnitTests;
 
 public sealed class OutboxEventSerializationTests
 {
+    private const string EventName = "test.serialization-domain-event";
+    private const int EventVersion = 1;
+
     private static readonly IOutboxEventSerializer Serializer =
-        new SystemTextJsonOutboxEventSerializer(new CachedOutboxEventTypeResolver());
+        new SystemTextJsonOutboxEventSerializer(
+            new AttributedOutboxEventTypeResolver(
+                [typeof(TestDomainEvent).Assembly]));
 
     [Fact]
     public void Should_ReturnAssemblyQualifiedName_When_GetTypeNameIsCalled()
@@ -20,7 +25,7 @@ public sealed class OutboxEventSerializationTests
         var typeName = Serializer.GetTypeName(domainEvent);
 
         // Assert
-        typeName.Should().Be(typeof(TestDomainEvent).AssemblyQualifiedName);
+        typeName.Should().Be(EventName);
     }
 
     [Fact]
@@ -49,7 +54,8 @@ public sealed class OutboxEventSerializationTests
         var message = new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = JsonSerializer.Serialize(domainEvent),
             OccurredOn = DateTime.UtcNow
         };
@@ -69,6 +75,7 @@ public sealed class OutboxEventSerializationTests
         {
             Id = Guid.NewGuid(),
             Type = "unknown.type",
+            Version = EventVersion,
             Content = "{}",
             OccurredOn = DateTime.UtcNow
         };
@@ -82,5 +89,6 @@ public sealed class OutboxEventSerializationTests
             .WithMessage("*could not be resolved*");
     }
 
+    [OutboxEvent(EventName, 1)]
     internal sealed record TestDomainEvent : DomainEventBase;
 }

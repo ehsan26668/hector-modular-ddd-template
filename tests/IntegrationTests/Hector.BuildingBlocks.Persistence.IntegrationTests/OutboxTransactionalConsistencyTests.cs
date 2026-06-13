@@ -30,7 +30,8 @@ public sealed class OutboxTransactionalConsistencyTests
             Id = Guid.NewGuid(),
             Type = "valid.type",
             Content = "{}",
-            OccurredOn = DateTime.UtcNow
+            OccurredOn = DateTime.UtcNow,
+            Version = 1
         });
 
         failingContext.FailingWriteEntities.Add(new FailingWriteEntity
@@ -53,16 +54,14 @@ public sealed class OutboxTransactionalConsistencyTests
         persistedEntitiesCount.Should().Be(0);
     }
 
-    private sealed class AtomicityTestDbContext : HectorDbContext
+    private sealed class AtomicityTestDbContext(
+        DbContextOptions<AtomicityTestDbContext> options)
+        : HectorDbContext(
+            options,
+            new EmptyStronglyTypedIdAssemblyProvider(),
+            new SystemTextJsonOutboxEventSerializer(
+                new AttributedOutboxEventTypeResolver([])))
     {
-        public AtomicityTestDbContext(DbContextOptions<AtomicityTestDbContext> options)
-            : base(
-                options,
-                new EmptyStronglyTypedIdAssemblyProvider(),
-                new SystemTextJsonOutboxEventSerializer(new CachedOutboxEventTypeResolver()))
-        {
-        }
-
         public DbSet<FailingWriteEntity> FailingWriteEntities => Set<FailingWriteEntity>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

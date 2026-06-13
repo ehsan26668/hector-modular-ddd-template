@@ -8,6 +8,9 @@ namespace Hector.BuildingBlocks.Persistence.IntegrationTests;
 
 public sealed class HectorDbContextTests
 {
+    private const string EventName = "test.persistence-domain-event";
+    private const int EventVersion = 1;
+
     [Fact]
     public async Task Should_PersistOutboxMessage_When_AggregateRaisesDomainEvent()
     {
@@ -27,7 +30,8 @@ public sealed class HectorDbContextTests
         var outboxMessages = await context.Set<OutboxMessage>().ToListAsync();
 
         outboxMessages.Should().ContainSingle();
-        outboxMessages[0].Type.Should().Be(typeof(TestDomainEvent).AssemblyQualifiedName);
+        outboxMessages[0].Type.Should().Be(EventName);
+        outboxMessages[0].Version.Should().Be(EventVersion);
         outboxMessages[0].Content.Should().Contain(aggregate.Id.Value.ToString());
     }
 

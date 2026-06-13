@@ -27,7 +27,7 @@
 | ADR-0023 | [Adopt Inbox Pattern for Idempotent Event Handling](/docs/adr/0023-adopt-inbox-pattern-for-idempotent-event-handling.md) | **Implemented** | 2026-06-13 |
 | ADR-0024 | [Adopt Distributed Locking for Outbox Processor](/docs/adr/0024-adopt-distributed-locking-for-outbox-processor.md) | **Implemented** | 2026-06-13 |
 | ADR-0025 | [Introduce Outbox Cleanup and Retention Policy](/docs/adr/0025-outbox-cleanup-and-retention-policy.md) | **Implemented** | 2026-06-13 |
-| ADR-0026 | [Define Event Serialization Strategy](/docs/adr/0026-event-serialization-strategy.md) | Accepted | 2026-06-07 |
+| ADR-0026 | [Define Event Serialization Strategy](/docs/adr/0026-event-serialization-strategy.md) | **Implemented** | 2026-06-14 |
 | ADR-0027 | [Domain Event to Integration Event Bridge](/docs/adr/0027-domain-event-to-integration-event-bridge.md) | Proposed | 2026-06-07 |
 | ADR-0028 | [Integration Event Bus Abstraction](/docs/adr/0028-integration-event-bus-abstraction.md) | Proposed | 2026-06-07 |
 | ADR-0029 | [Integration Event Versioning Strategy](/docs/adr/0029-integration-event-versioning-strategy.md) | Proposed | 2026-06-07 |

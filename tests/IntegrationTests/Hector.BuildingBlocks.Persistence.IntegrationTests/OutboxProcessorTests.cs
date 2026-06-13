@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 using FluentAssertions;
 using Hector.BuildingBlocks.Application.Messaging;
@@ -14,6 +13,9 @@ namespace Hector.BuildingBlocks.Persistence.IntegrationTests;
 
 public sealed class OutboxProcessorTests
 {
+    private const string EventName = "test.persistence-domain-event";
+    private const int EventVersion = 1;
+
     private static OutboxProcessor CreateProcessor(
         HectorDbContext context,
         IOutboxPublisher publisher,
@@ -46,7 +48,8 @@ public sealed class OutboxProcessorTests
         context.OutboxMessages.Add(new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = JsonSerializer.Serialize(domainEvent),
             OccurredOn = DateTime.UtcNow
         });
@@ -85,7 +88,8 @@ public sealed class OutboxProcessorTests
         context.OutboxMessages.Add(new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = "{}",
             OccurredOn = DateTime.UtcNow,
             LockId = Guid.NewGuid(),
@@ -116,7 +120,8 @@ public sealed class OutboxProcessorTests
         context.OutboxMessages.Add(new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = JsonSerializer.Serialize(new TestDomainEvent(Guid.NewGuid())),
             OccurredOn = DateTime.UtcNow,
             LockId = Guid.NewGuid(),
@@ -154,7 +159,8 @@ public sealed class OutboxProcessorTests
         context.OutboxMessages.Add(new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = JsonSerializer.Serialize(new TestDomainEvent(Guid.NewGuid())),
             OccurredOn = DateTime.UtcNow
         });
@@ -187,7 +193,8 @@ public sealed class OutboxProcessorTests
         context.OutboxMessages.Add(new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = "{}",
             OccurredOn = DateTime.UtcNow,
             RetryCount = 5
@@ -225,7 +232,8 @@ public sealed class OutboxProcessorTests
             context.OutboxMessages.Add(new OutboxMessage
             {
                 Id = Guid.NewGuid(),
-                Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+                Type = EventName,
+                Version = EventVersion,
                 Content = JsonSerializer.Serialize(new TestDomainEvent(Guid.NewGuid())),
                 OccurredOn = DateTime.UtcNow.AddMinutes(i)
             });
@@ -271,21 +279,24 @@ public sealed class OutboxProcessorTests
             new OutboxMessage
             {
                 Id = Guid.NewGuid(),
-                Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+                Type = EventName,
+                Version = EventVersion,
                 Content = JsonSerializer.Serialize(new TestDomainEvent(id3)),
                 OccurredOn = now.AddMinutes(3)
             },
             new OutboxMessage
             {
                 Id = Guid.NewGuid(),
-                Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+                Type = EventName,
+                Version = EventVersion,
                 Content = JsonSerializer.Serialize(new TestDomainEvent(id1)),
                 OccurredOn = now.AddMinutes(1)
             },
             new OutboxMessage
             {
                 Id = Guid.NewGuid(),
-                Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+                Type = EventName,
+                Version = EventVersion,
                 Content = JsonSerializer.Serialize(new TestDomainEvent(id2)),
                 OccurredOn = now.AddMinutes(2)
             });
@@ -339,6 +350,7 @@ public sealed class OutboxProcessorTests
         {
             Id = id,
             Type = "Missing.Type",
+            Version = EventVersion,
             Content = "{}",
             OccurredOn = DateTime.UtcNow
         });
@@ -380,7 +392,8 @@ public sealed class OutboxProcessorTests
         var message = new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = JsonSerializer.Serialize(new TestDomainEvent(Guid.NewGuid())),
             OccurredOn = DateTime.UtcNow
         };

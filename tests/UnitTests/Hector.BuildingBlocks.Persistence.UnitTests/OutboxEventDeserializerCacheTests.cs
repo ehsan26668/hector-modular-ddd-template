@@ -7,19 +7,24 @@ namespace Hector.BuildingBlocks.Persistence.UnitTests;
 
 public sealed class OutboxEventDeserializerCacheTests
 {
+    private const string EventName = "test.deserializer-cache-domain-event";
+    private const int EventVersion = 1;
+
     [Fact]
     public void Should_DeserializeMultipleMessages_When_SameEventTypeIsUsed()
     {
         // Arrange
         var serializer = new SystemTextJsonOutboxEventSerializer(
-            new CachedOutboxEventTypeResolver());
+            new AttributedOutboxEventTypeResolver(
+                [typeof(TestDomainEvent).Assembly]));
 
         var domainEvent = new TestDomainEvent();
 
         var message1 = new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = JsonSerializer.Serialize(domainEvent),
             OccurredOn = DateTime.UtcNow
         };
@@ -27,7 +32,8 @@ public sealed class OutboxEventDeserializerCacheTests
         var message2 = new OutboxMessage
         {
             Id = Guid.NewGuid(),
-            Type = typeof(TestDomainEvent).AssemblyQualifiedName!,
+            Type = EventName,
+            Version = EventVersion,
             Content = JsonSerializer.Serialize(domainEvent),
             OccurredOn = DateTime.UtcNow
         };
@@ -41,5 +47,6 @@ public sealed class OutboxEventDeserializerCacheTests
         result2.Should().BeOfType<TestDomainEvent>();
     }
 
+    [OutboxEvent(EventName, 1)]
     internal sealed record TestDomainEvent : DomainEventBase;
 }
