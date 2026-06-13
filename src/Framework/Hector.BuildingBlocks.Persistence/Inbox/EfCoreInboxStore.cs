@@ -3,27 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Hector.BuildingBlocks.Persistence.Inbox;
 
-public sealed class EfCoreInboxStore : IInboxStore
+public sealed class EfCoreInboxStore(DbContext context) : IInboxStore
 {
-    private readonly DbContext _Context;
-
-    public EfCoreInboxStore(DbContext context)
-    {
-        _Context = context;
-    }
-
-    public async Task<bool> ExistsAsync(
-        Guid messageId,
-        string consumer,
-        CancellationToken cancellationToken = default)
-    {
-        return await _Context.Set<InboxMessage>()
-            .AnyAsync(
-                x => x.MessageId == messageId && x.Consumer == consumer,
-                cancellationToken);
-    }
-
-    public async Task StoreAsync(
+    public async Task<bool> TryStoreAsync(
         Guid messageId,
         string consumer,
         CancellationToken cancellationToken = default)
@@ -36,8 +18,34 @@ public sealed class EfCoreInboxStore : IInboxStore
             ProcessedOn = DateTime.UtcNow
         };
 
-        _Context.Set<InboxMessage>().Add(message);
+        context.Set<InboxMessage>().Add(message);
 
-        await _Context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context
+                .SaveChangesAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            return true;
+        }
+        catch (DbUpdateException exception) when (IsUniqueConstraintViolation(exception))
+        {
+            context.Entry(message).State = EntityState.Detached;
+            return false;
+        }
+    }
+
+    private static bool IsUniqueConstraintViolation(DbUpdateException exception)
+    {
+        var message = exception.InnerException?.Message;
+
+        if (message is null)
+        {
+            return false;
+        }
+
+        return message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("IX_InboxMessages_MessageId_Consumer", StringComparison.OrdinalIgnoreCase);
     }
 }

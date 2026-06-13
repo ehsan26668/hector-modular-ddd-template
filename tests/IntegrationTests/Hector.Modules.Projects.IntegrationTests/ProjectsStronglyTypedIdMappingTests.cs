@@ -8,7 +8,7 @@ using Hector.Modules.Projects.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
-namespace Hector.Modules.Projects.IntegrationTests.Projects;
+namespace Hector.Modules.Projects.IntegrationTests;
 
 public sealed class ProjectsStronglyTypedIdMappingTests
 {

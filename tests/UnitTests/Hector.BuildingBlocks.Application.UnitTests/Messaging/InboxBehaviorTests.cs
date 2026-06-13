@@ -1,5 +1,4 @@
 using FluentAssertions;
-using Hector.BuildingBlocks.Application.Messaging;
 using Hector.BuildingBlocks.Application.Messaging.Inbox;
 using NSubstitute;
 
@@ -16,7 +15,40 @@ public sealed class InboxBehaviorTests
         var messageId = Guid.NewGuid();
         var consumer = "TestConsumer";
 
-        inbox.ExistsAsync(messageId, consumer, Arg.Any<CancellationToken>())
+        inbox.TryStoreAsync(messageId, consumer, Arg.Any<CancellationToken>())
+            .Returns(false);
+
+        var behavior = new InboxBehavior<string>(
+            inbox,
+            messageId,
+            consumer);
+
+        var nextExecuted = false;
+
+        Task<string> Next()
+        {
+            nextExecuted = true;
+            return Task.FromResult("ok");
+        }
+
+        // Act
+        var response = await behavior.Handle("request", Next, CancellationToken.None);
+
+        // Assert
+        nextExecuted.Should().BeFalse();
+        response.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Should_ExecuteHandler_When_MessageIsNew()
+    {
+        // Arrange
+        var inbox = Substitute.For<IInboxStore>();
+
+        var messageId = Guid.NewGuid();
+        var consumer = "TestConsumer";
+
+        inbox.TryStoreAsync(messageId, consumer, Arg.Any<CancellationToken>())
             .Returns(true);
 
         var behavior = new InboxBehavior<string>(
@@ -33,9 +65,45 @@ public sealed class InboxBehaviorTests
         }
 
         // Act
-        await behavior.Handle("request", Next, CancellationToken.None);
+        var response = await behavior.Handle("request", Next, CancellationToken.None);
 
         // Assert
-        nextExecuted.Should().BeFalse();
+        nextExecuted.Should().BeTrue();
+        response.Should().Be("ok");
+    }
+
+    [Fact]
+    public async Task Should_StoreMessageBeforeExecutingHandler()
+    {
+        // Arrange
+        var inbox = Substitute.For<IInboxStore>();
+
+        var messageId = Guid.NewGuid();
+        var consumer = "TestConsumer";
+        var storeCalled = false;
+
+        inbox.TryStoreAsync(messageId, consumer, Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                storeCalled = true;
+                return true;
+            });
+
+        var behavior = new InboxBehavior<string>(
+            inbox,
+            messageId,
+            consumer);
+
+        Task<string> Next()
+        {
+            storeCalled.Should().BeTrue();
+            return Task.FromResult("ok");
+        }
+
+        // Act
+        var response = await behavior.Handle("request", Next, CancellationToken.None);
+
+        // Assert
+        response.Should().Be("ok");
     }
 }

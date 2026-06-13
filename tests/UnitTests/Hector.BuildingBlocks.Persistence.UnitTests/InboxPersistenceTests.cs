@@ -10,7 +10,7 @@ namespace Hector.BuildingBlocks.Persistence.UnitTests;
 public sealed class InboxPersistenceTests
 {
     [Fact]
-    public async Task Should_PersistInboxMessage()
+    public async Task Should_EnforceUniqueConstraint_OnMessageIdAndConsumer()
     {
         // Arrange
         using var connection = PersistenceTestInfrastructure.CreateOpenSqliteConnection();
@@ -22,34 +22,38 @@ public sealed class InboxPersistenceTests
         await using var context = new TestDbContext(options, assemblyProvider, outboxSerializer);
         await context.Database.EnsureCreatedAsync();
 
-        var message = new InboxMessage
+        var messageId = Guid.NewGuid();
+        var consumer = "TestConsumer";
+
+        context.InboxMessages.Add(new InboxMessage
         {
             Id = Guid.NewGuid(),
-            MessageId = Guid.NewGuid(),
-            Consumer = "TestConsumer",
+            MessageId = messageId,
+            Consumer = consumer,
             ProcessedOn = DateTime.UtcNow
-        };
+        });
 
-        context.InboxMessages.Add(message);
+        context.InboxMessages.Add(new InboxMessage
+        {
+            Id = Guid.NewGuid(),
+            MessageId = messageId,
+            Consumer = consumer,
+            ProcessedOn = DateTime.UtcNow
+        });
 
         // Act
-        await context.SaveChangesAsync();
+        var act = async () => await context.SaveChangesAsync();
 
         // Assert
-        var messages = await context.InboxMessages.ToListAsync();
-
-        messages.Should().HaveCount(1);
-        messages[0].MessageId.Should().Be(message.MessageId);
-        messages[0].Consumer.Should().Be("TestConsumer");
+        await act.Should().ThrowAsync<DbUpdateException>();
     }
 
-    private sealed class TestDbContext : HectorDbContext
+    private sealed class TestDbContext(
+        DbContextOptions options,
+        IStronglyTypedIdAssemblyProvider assemblyProvider,
+        IOutboxEventSerializer outboxSerializer)
+        : HectorDbContext(options, assemblyProvider, outboxSerializer)
     {
-        public TestDbContext(DbContextOptions options, IStronglyTypedIdAssemblyProvider assemblyProvider, IOutboxEventSerializer outboxSerializer)
-            : base(options, assemblyProvider, outboxSerializer) { }
-
-        public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

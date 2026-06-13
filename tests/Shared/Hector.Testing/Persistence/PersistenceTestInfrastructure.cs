@@ -23,8 +23,7 @@ public static class PersistenceTestInfrastructure
     }
 
     public static async Task<TestDbContext> CreateContextAsync(
-        SqliteConnection connection,
-        IDomainEventDispatcher? domainEventDispatcher = null)
+        SqliteConnection connection)
     {
         var options = new DbContextOptionsBuilder<TestDbContext>()
             .UseSqlite(connection)

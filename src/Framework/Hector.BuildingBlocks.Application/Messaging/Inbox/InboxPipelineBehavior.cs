@@ -1,38 +1,23 @@
 namespace Hector.BuildingBlocks.Application.Messaging.Inbox;
 
-public sealed class InboxPipelineBehavior<TRequest, TResponse>
+public sealed class InboxPipelineBehavior<TRequest, TResponse>(IInboxStore inbox)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
-    private readonly IInboxStore _inbox;
-
-    public InboxPipelineBehavior(IInboxStore inbox)
-    {
-        _inbox = inbox;
-    }
-
     public async Task<TResponse> HandleAsync(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
-        if (request is not IInboxMessage inboxMessage)
-        {
-            return await next();
-        }
+        if (request is not IInboxMessage inboxMessage) return await next();
 
-        var messageId = inboxMessage.MessageId;
-        var consumer = inboxMessage.Consumer;
+        var stored = await inbox.TryStoreAsync(
+            inboxMessage.MessageId,
+            inboxMessage.Consumer,
+            cancellationToken);
 
-        if (await _inbox.ExistsAsync(messageId, consumer, cancellationToken))
-        {
-            return default!;
-        }
+        if (!stored) return default!;
 
-        var response = await next();
-
-        await _inbox.StoreAsync(messageId, consumer, cancellationToken);
-
-        return response;
+        return await next();
     }
 }
