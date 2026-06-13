@@ -13,27 +13,28 @@ public sealed class OutboxProcessor(
 {
     public async Task ProcessAsync(CancellationToken cancellationToken)
     {
+        var outboxOptions = options.Value;
         var now = DateTime.UtcNow;
         var lockId = Guid.NewGuid();
-        var lockedUntil = now.Add(options.Value.LockDuration);
+        var lockedUntil = now.Add(outboxOptions.LockDuration);
 
         var messageIds = await dbContext.OutboxMessages
             .Where(m =>
                 m.ProcessedOn == null &&
-                m.RetryCount < options.Value.MaxRetryCount &&
+                m.RetryCount < outboxOptions.MaxRetryCount &&
                 (m.LockedUntil == null || m.LockedUntil < now))
             .OrderBy(m => m.OccurredOn)
-            .Take(options.Value.BatchSize)
+            .Take(outboxOptions.BatchSize)
             .Select(m => m.Id)
             .ToListAsync(cancellationToken);
 
         if (messageIds.Count == 0) return;
 
-        await dbContext.OutboxMessages
+        var lockedCount = await dbContext.OutboxMessages
             .Where(m =>
                 messageIds.Contains(m.Id) &&
                 m.ProcessedOn == null &&
-                m.RetryCount < options.Value.MaxRetryCount &&
+                m.RetryCount < outboxOptions.MaxRetryCount &&
                 (m.LockedUntil == null || m.LockedUntil < now))
             .ExecuteUpdateAsync(
                 setters => setters
@@ -41,8 +42,13 @@ public sealed class OutboxProcessor(
                     .SetProperty(m => m.LockedUntil, lockedUntil),
                 cancellationToken);
 
+        if (lockedCount == 0) return;
+
         var messages = await dbContext.OutboxMessages
-            .Where(m => m.LockId == lockId)
+            .Where(m =>
+                m.LockId == lockId &&
+                m.ProcessedOn == null &&
+                m.RetryCount < outboxOptions.MaxRetryCount)
             .OrderBy(m => m.OccurredOn)
             .ToListAsync(cancellationToken);
 
@@ -69,10 +75,12 @@ public sealed class OutboxProcessor(
         }
         catch (Exception ex)
         {
+            var attemptedOn = DateTime.UtcNow;
+
             foreach (var message in messages)
             {
                 message.RetryCount++;
-                message.LastAttemptedOn = DateTime.UtcNow;
+                message.LastAttemptedOn = attemptedOn;
                 message.Error = ex.Message;
                 message.LockId = null;
                 message.LockedUntil = null;
@@ -86,4 +94,5 @@ public sealed class OutboxProcessor(
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
 }
