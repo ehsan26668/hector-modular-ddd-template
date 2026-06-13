@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted
+Implemented
+
+Implemented on: 2026-06-13
 
 ## Context
 
@@ -42,17 +44,42 @@ Each incoming event message will be processed according to the following workflo
 
     - the message identifier is stored in the Inbox table
     - the event handler is executed
+
 4. The transaction commits only after both the Inbox record and the handler side effects are persisted.
 
 This guarantees that each event is processed at most once by a given consumer.
+
 The Inbox record will typically contain:
-`Id`
-`MessageId`
-`ProcessedOn`
-`Consumer`
+
+- Id
+- MessageId
+- ProcessedOn
+- Consumer
+
 The `MessageId` corresponds to the identifier stored in the Outbox message.
 
 The Inbox mechanism will be implemented in the infrastructure layer and integrated into the event handling pipeline so that application handlers remain unaware of the deduplication mechanism.
+
+## Implementation
+
+The Inbox pattern has been implemented as part of the messaging pipeline and persistence infrastructure.
+
+Key implementation components:
+
+- `IInboxStore` abstraction defined in the Application layer
+- `InboxPipelineBehavior` integrated into the mediator pipeline
+- `EfCoreInboxStore` implemented in the Persistence layer
+- `InboxMessage` entity used for persistent deduplication
+- EF Core configuration for the inbox table
+- Dependency Injection registration in BuildingBlocks
+
+Processing flow:
+
+1. Incoming message enters the mediator pipeline.
+2. `InboxPipelineBehavior` checks whether the message has already been processed.
+3. If the message exists in the inbox store, the handler execution is skipped.
+4. If not, the message is recorded and the handler proceeds.
+5. The transaction commits both the handler side effects and the inbox record atomically.
 
 ## Consequences
 
@@ -71,3 +98,13 @@ Negative:
 - Slightly increases storage requirements
 - Adds additional database checks during message processing
 - Requires periodic cleanup of old inbox records
+
+## Verification
+
+The implementation is covered by automated tests:
+
+- Inbox behavior unit tests
+- Inbox persistence tests
+- Integration tests involving message processing
+
+All tests passing at implementation time.
