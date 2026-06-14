@@ -2,7 +2,15 @@
 
 ## Status
 
-Proposed
+Superseded by ADR-0027 and ADR-0039
+
+> ⚠️ This ADR has been superseded by:
+>
+> - [ADR-0027: Domain Event to Integration Event Bridge](/docs/adr/0027-domain-event-to-integration-event-bridge.md)
+> - [ADR-0039: Separate Integration Event from Inbox Message](/docs/adr/0039-separate-integration-event-from-inbox-message.md)
+>
+> The abstraction and responsibilities described here were refined and formally adopted
+> in the later ADRs. This document remains for historical context only.
 
 ## Context
 
