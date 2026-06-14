@@ -2,102 +2,105 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
-Integration events represent communication contracts between modules and potentially external systems.
+The project uses integration events to publish domain changes through the outbox pattern. The implementation does **not** place a `Version` property on `IIntegrationEvent` payloads. Instead, versioning is handled as **event contract metadata** via `OutboxEventAttribute` and persisted in `OutboxMessage.Version`.
 
-Examples include:
+This means the effective identity of an integration event contract is:
 
-- ProjectCreatedIntegrationEvent
-- UserRegisteredIntegrationEvent
-- OrderCompletedIntegrationEvent
+`EventName:v{Version}`
 
-Unlike domain events, integration events cross module boundaries and may be consumed by independent components. Because of this, integration events must evolve carefully.
-
-Over time, event schemas may change due to:
-
-- adding new fields
-- renaming fields
-- removing properties
-- changing event structure
-- supporting new consumers
-
-Without a versioning strategy, these changes can break existing consumers and introduce tight coupling between producers and consumers.
-
-To support long-term system evolution, integration events must include explicit version information and follow compatibility rules.
+The runtime resolves the concrete event type using the contract name and version, while the serialized payload remains version-free.
 
 ## Decision
 
-Integration events will include an explicit **event version**.
+We standardize integration event versioning as metadata-driven contract versioning:
 
-Each integration event represents a versioned contract.
-
-Example:
-
-    public sealed record ProjectCreatedIntegrationEvent(
-        Guid ProjectId,
-        string Name
-    ) : IIntegrationEvent
-    {
-        public int Version => 1;
-    }
-
-All integration events will implement a common marker interface.
-
-Example:
-
-    public interface IIntegrationEvent
-    {
-        int Version { get; }
-    }
-
-Versioning rules:
-
-1. New optional fields may be added without increasing the version.
-2. Breaking changes require introducing a new version.
-3. Old versions should remain supported for a reasonable time window.
-4. Producers should avoid removing fields used by existing consumers.
-5. Consumers should ignore unknown fields when possible.
-
-Example evolution:
-
-Version 1:
-
-    ProjectCreatedIntegrationEvent
-    {
-        ProjectId
-        Name
-    }
-
-Version 2:
-
-    ProjectCreatedIntegrationEventV2
-    {
-        ProjectId
-        Name
-        CreatedBy
-    }
-
-Multiple versions may coexist in the system while consumers migrate.
-
-Integration events should remain immutable data contracts and must not contain business logic.
-
-Version information may also be included in event metadata when events are transported through message brokers.
+1. `IIntegrationEvent` must remain version-free.
+2. Event version is declared on the event type via `OutboxEventAttribute(Name, Version)`.
+3. `OutboxMessage` persists both the contract name and version.
+4. Serialization is performed using the concrete CLR type.
+5. Deserialization resolves the CLR type from `(Type, Version)` using `IOutboxEventTypeResolver`.
+6. Domain event handlers publish integration events through `IIntegrationEventBus` without manually managing transport metadata.
 
 ## Consequences
 
-Positive:
+### Positive
 
-- Enables safe evolution of integration event contracts.
-- Prevents breaking existing consumers.
-- Supports long-lived event streams.
-- Aligns the architecture with common event-driven system practices.
-- Improves compatibility with external messaging infrastructure.
+- Keeps integration event payloads clean and stable.
+- Avoids leaking transport/version concerns into consumer-facing contracts.
+- Enables multiple versions of the same event contract to coexist safely.
+- Makes contract evolution explicit and traceable.
+- Aligns with the existing outbox implementation and tests.
 
-Negative:
+### Negative
 
-- Requires managing multiple versions of events.
-- Increases maintenance overhead for event contracts.
-- Developers must carefully plan schema evolution.
+- Requires a resolver and attribute scan at startup.
+- Contract changes must be coordinated carefully to avoid version collisions.
+
+## Implementation Notes
+
+### Event declaration
+
+Integration/domain event contracts define metadata with `OutboxEventAttribute`:
+
+```csharp
+[OutboxEvent("projects.project-created", 1)]
+public sealed record ProjectCreatedIntegrationEvent(
+    Guid MessageId,
+    Guid ProjectId,
+    string Name)
+    : IIntegrationEvent, IInboxMessage;
+```
+
+### Outbox message model
+
+`OutboxMessage` stores the event contract metadata:
+
+- `Type`
+- `Version`
+- `Content`
+- processing state fields
+
+### Publishing flow
+
+`OutboxIntegrationEventBus` converts an `IIntegrationEvent` to an `OutboxMessage` via `IOutboxMessageFactory` and stores it in the database.
+
+### Processing flow
+
+`OutboxProcessor` locks eligible messages, sends them to `OutboxPublisher`, and updates processing state.
+
+### Serialization flow
+
+`SystemTextJsonOutboxEventSerializer`:
+
+- reads metadata from `IOutboxEventTypeResolver`
+- serializes the notification as JSON
+- resolves the target CLR type from stored `(Type, Version)`
+- deserializes back to `INotification`
+
+### Type resolution
+
+`AttributedOutboxEventTypeResolver` scans assemblies for `INotification` types decorated with `OutboxEventAttribute` and builds a contract map keyed by `(Name, Version)`.
+
+## Test Strategy
+
+The contract is protected by serialization and publisher tests, including:
+
+- type-name resolution
+- serialization and deserialization
+- unknown contract failures
+- ordered publishing
+- failure short-circuiting
+
+## Related Decisions
+
+- ADR-0021: Outbox Pattern Adoption
+- ADR-0030: Integration Event Consumer Contract Handling
+- ADR-0031: Event Schema Evolution Strategy
+
+## Notes
+
+If a future event change is backward-incompatible, the correct action is to introduce a **new contract version** through `OutboxEventAttribute`, not to add a `Version` property to the payload.

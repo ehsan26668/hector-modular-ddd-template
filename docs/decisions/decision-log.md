@@ -30,7 +30,7 @@
 | ADR-0026 | [Define Event Serialization Strategy](/docs/adr/0026-event-serialization-strategy.md) | **Implemented** | 2026-06-14 |
 | ADR-0027 | [Domain Event to Integration Event Bridge](/docs/adr/0027-domain-event-to-integration-event-bridge.md) | **Implemented** | 2026-06-14 |
 | ADR-0028 | [Integration Event Bus Abstraction](/docs/adr/0028-integration-event-bus-abstraction.md) | Superseded | 2026-06-14 |
-| ADR-0029 | [Integration Event Versioning Strategy](/docs/adr/0029-integration-event-versioning-strategy.md) | Proposed | 2026-06-07 |
+| ADR-0029 | [Integration Event Versioning Strategy](/docs/adr/0029-integration-event-versioning-strategy.md) | Accepted | 2026-06-14 |
 | ADR-0030 | [Event Naming and Contract Stability Rules](/docs/adr/0030-event-naming-and-contract-stability-rules.md) | Proposed | 2026-06-07 |
 | ADR-0031 | [Event Schema Evolution Strategy](/docs/adr/0031-event-schema-evolution-strategy.md) | Proposed | 2026-06-07 |
 | ADR-0032 | [Event Metadata and Correlation Strategy](/docs/adr/0032-event-metadata-and-correlation-strategy.md) | Proposed | 2026-06-07 |
