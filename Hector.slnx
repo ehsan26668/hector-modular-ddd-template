@@ -36,6 +36,7 @@
     <Project Path="tests/UnitTests/Hector.BuildingBlocks.Application.UnitTests/Hector.BuildingBlocks.Application.UnitTests.csproj" />
     <Project Path="tests/UnitTests/Hector.BuildingBlocks.Domain.UnitTests/Hector.BuildingBlocks.Domain.UnitTests.csproj" />
     <Project Path="tests/UnitTests/Hector.BuildingBlocks.Persistence.UnitTests/Hector.BuildingBlocks.Persistence.UnitTests.csproj" />
+    <Project Path="tests/UnitTests/Hector.Modules.Projects.Application.UnitTests/Hector.Modules.Projects.Application.UnitTests.csproj" />
     <Project Path="tests/UnitTests/Hector.Modules.Projects.Domain.UnitTests/Hector.Modules.Projects.Domain.UnitTests.csproj" />
   </Folder>
 </Solution>
