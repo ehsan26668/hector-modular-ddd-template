@@ -40,3 +40,4 @@
 | ADR-0036 | [Architecture Guard Tests](/docs/adr/0036-architecture-guard-tests.md) | Accepted | 2026-06-07 |
 | ADR-0037 | [Introduce ModuleLoader for Automatic Module Registration](/docs/adr/0037-introduce-module-loader-for-auto-registration.md) | Proposed | 2026-06-07 |
 | ADR-0038 | [Enforce Pure Transactional Outbox and Remove Immediate Domain Event Dispatch](/docs/adr/0038-enforce-pure-transactional-outbox-and-remove-immediate-domain-event-dispatch.md) | Accepted | 2026-06-07 |
+| ADR-0039 | [Separate Integration Event from Inbox Message](/docs/adr/0039-separate-integration-event-from-inbox-message.md) | Accepted | 2026-06-14 |
