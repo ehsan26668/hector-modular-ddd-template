@@ -34,6 +34,7 @@ public static class PersistenceTestInfrastructure
         var context = new TestDbContext(
             options,
             StronglyTypedIdAssemblyProvider,
+            new RecordingDomainEventDispatcher(),
             OutboxSerializer);
 
         await context.Database.EnsureCreatedAsync();
@@ -49,6 +50,7 @@ public static class PersistenceTestInfrastructure
         var context = new FailingDbContext(
             options,
             StronglyTypedIdAssemblyProvider,
+            new RecordingDomainEventDispatcher(),
             OutboxSerializer);
 
         await context.Database.EnsureCreatedAsync();
@@ -77,8 +79,9 @@ public static class PersistenceTestInfrastructure
     public class TestDbContext(
         DbContextOptions<TestDbContext> options,
         IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider,
+        IDomainEventDispatcher domainEventDispatcher,
         IOutboxEventSerializer outboxSerializer)
-        : HectorDbContext(options, stronglyTypedIdAssemblyProvider, outboxSerializer)
+        : HectorDbContext(options, stronglyTypedIdAssemblyProvider, domainEventDispatcher, outboxSerializer)
     {
         public DbSet<TestAggregate> TestAggregates => Set<TestAggregate>();
 
@@ -97,8 +100,9 @@ public static class PersistenceTestInfrastructure
     public sealed class FailingDbContext(
         DbContextOptions<FailingDbContext> options,
         IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider,
+        IDomainEventDispatcher domainEventDispatcher,
         IOutboxEventSerializer outboxSerializer)
-        : HectorDbContext(options, stronglyTypedIdAssemblyProvider, outboxSerializer)
+        : HectorDbContext(options, stronglyTypedIdAssemblyProvider, domainEventDispatcher, outboxSerializer)
     {
         public DbSet<TestAggregate> TestAggregates => Set<TestAggregate>();
 

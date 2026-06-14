@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Inbox;
 using Hector.BuildingBlocks.Persistence.Outbox;
 using Hector.Testing.Persistence;
@@ -22,7 +23,12 @@ public sealed class InboxPersistenceTests
             new AttributedOutboxEventTypeResolver(
                 [typeof(TestDomainEvent).Assembly]));
 
-        await using var context = new TestDbContext(options, assemblyProvider, outboxSerializer);
+        await using var context = new TestDbContext(
+            options,
+            assemblyProvider,
+            new NoOpDomainEventDispatcher(),
+            outboxSerializer);
+
         await context.Database.EnsureCreatedAsync();
 
         var messageId = Guid.NewGuid();
@@ -54,13 +60,22 @@ public sealed class InboxPersistenceTests
     private sealed class TestDbContext(
         DbContextOptions options,
         IStronglyTypedIdAssemblyProvider assemblyProvider,
+        IDomainEventDispatcher domainEventDispatcher,
         IOutboxEventSerializer outboxSerializer)
-        : HectorDbContext(options, assemblyProvider, outboxSerializer)
+        : HectorDbContext(options, assemblyProvider, domainEventDispatcher, outboxSerializer)
     {
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(InboxMessage).Assembly);
         }
+    }
+
+    private sealed class NoOpDomainEventDispatcher : IDomainEventDispatcher
+    {
+        public Task DispatchAsync(
+            IEnumerable<IDomainEvent> domainEvents,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 }

@@ -49,7 +49,16 @@ public sealed class ProjectsStronglyTypedIdMappingTests
                 [
                     new ProjectsStronglyTypedIdAssemblyProvider()
                 ]),
+            new NoOpDomainEventDispatcher(),
             new NoOpSerializer());
+    }
+
+    private sealed class NoOpDomainEventDispatcher : IDomainEventDispatcher
+    {
+        public Task DispatchAsync(
+            IEnumerable<IDomainEvent> domainEvents,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 
     private sealed class NoOpSerializer : IOutboxEventSerializer

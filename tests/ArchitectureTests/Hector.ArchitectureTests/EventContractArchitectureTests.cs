@@ -1,27 +1,26 @@
 using System.Reflection;
 using FluentAssertions;
-using Hector.BuildingBlocks.Domain;
+using Hector.BuildingBlocks.Application.Messaging;
 using Hector.BuildingBlocks.Domain.Primitives;
-using Hector.Modules.Projects.Domain;
+using Hector.Modules.Projects.Contracts;
 
 namespace Hector.ArchitectureTests;
 
 public sealed class EventContractArchitectureTests
 {
     [Fact]
-    public void DomainEvents_Should_Have_Unique_EventContract()
+    public void Should_HaveUniqueContractIdentity_When_IntegrationEventsAreDefined()
     {
         // Arrange
         var assemblies = new[]
         {
-            typeof(DomainAssemblyMarker).Assembly,
-            typeof(ProjectsDomainAssemblyMarker).Assembly
+            typeof(ProjectsContractsAssemblyMarker).Assembly
         };
 
-        var domainEventTypes = assemblies
+        var integrationEventTypes = assemblies
             .SelectMany(a => a.GetTypes())
             .Where(t =>
-                typeof(IDomainEvent).IsAssignableFrom(t) &&
+                typeof(IIntegrationEvent).IsAssignableFrom(t) &&
                 !t.IsAbstract &&
                 !t.IsInterface)
             .ToList();
@@ -29,20 +28,20 @@ public sealed class EventContractArchitectureTests
         var contracts = new Dictionary<(string Name, int Version), Type>();
 
         // Act
-        foreach (var type in domainEventTypes)
+        foreach (var type in integrationEventTypes)
         {
             var attribute = type.GetCustomAttribute<OutboxEventAttribute>();
 
-            if (attribute is null)
-                continue;
+            attribute.Should().NotBeNull(
+                $"Integration event '{type.FullName}' must declare OutboxEventAttribute.");
 
-            var key = (attribute.Name, attribute.Version);
+            var key = (attribute!.Name, attribute.Version);
 
-            if (contracts.ContainsKey(key))
+            if (contracts.TryGetValue(key, out var existingType))
             {
                 throw new InvalidOperationException(
-                    $"Duplicate event contract detected: '{attribute.Name}' v{attribute.Version} " +
-                    $"defined on '{type.FullName}' and '{contracts[key].FullName}'.");
+                    $"Duplicate integration event contract detected: '{attribute.Name}' v{attribute.Version} " +
+                    $"defined on '{type.FullName}' and '{existingType.FullName}'.");
             }
 
             contracts[key] = type;

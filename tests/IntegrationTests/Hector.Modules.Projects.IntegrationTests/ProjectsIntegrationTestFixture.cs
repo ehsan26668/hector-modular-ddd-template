@@ -1,5 +1,7 @@
 using Hector.BuildingBlocks.Application;
+using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence;
+using Hector.BuildingBlocks.Persistence.Outbox;
 using Hector.Modules.Projects.Application;
 using Hector.Modules.Projects.Infrastructure;
 using Hector.Modules.Projects.Infrastructure.Persistence;
@@ -26,6 +28,9 @@ public sealed class ProjectsIntegrationTestFixture : IAsyncDisposable
             typeof(ProjectsStronglyTypedIdAssemblyProvider).Assembly);
 
         services.AddHectorApplicationBuildingBlocks();
+
+        services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
+        services.AddSingleton<IOutboxEventSerializer, SystemTextJsonOutboxEventSerializer>();
 
         services.AddProjectsApplication();
 

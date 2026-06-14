@@ -11,6 +11,7 @@ namespace Hector.BuildingBlocks.Persistence;
 public abstract class HectorDbContext(
     DbContextOptions options,
     IStronglyTypedIdAssemblyProvider stronglyTypedIdAssemblyProvider,
+    IDomainEventDispatcher domainEventDispatcher,
     IOutboxEventSerializer outboxSerializer)
     : DbContext(options)
 {
@@ -51,10 +52,10 @@ public abstract class HectorDbContext(
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var domainEntities = ChangeTracker
-            .Entries<IHasDomainEvents>()
-            .Select(entry => entry.Entity)
-            .Where(entity => entity.GetDomainEvents().Count != 0)
-            .ToList();
+        .Entries<IHasDomainEvents>()
+        .Select(entry => entry.Entity)
+        .Where(entity => entity.GetDomainEvents().Count != 0)
+        .ToList();
 
         var domainEvents = domainEntities
             .SelectMany(entity => entity.GetDomainEvents())
@@ -62,13 +63,22 @@ public abstract class HectorDbContext(
 
         if (domainEvents.Count > 0)
         {
-            var outboxMessages = domainEvents
-                .Select(domainEvent => new OutboxMessage
+            await domainEventDispatcher.DispatchAsync(domainEvents, cancellationToken);
+        }
+
+        var outboxEvents = domainEvents
+            .Where(HasOutboxMetadata)
+            .ToList();
+
+        if (outboxEvents.Count > 0)
+        {
+            var outboxMessages = outboxEvents
+                .Select(outboxEvent => new OutboxMessage
                 {
                     Id = Guid.NewGuid(),
-                    OccurredOn = domainEvent.OccurredOnUtc,
-                    Type = outboxSerializer.GetTypeName(domainEvent),
-                    Content = outboxSerializer.Serialize(domainEvent)
+                    OccurredOn = outboxEvent.OccurredOnUtc,
+                    Type = outboxSerializer.GetTypeName(outboxEvent),
+                    Content = outboxSerializer.Serialize(outboxEvent)
                 })
                 .ToList();
 
@@ -133,5 +143,12 @@ public abstract class HectorDbContext(
         {
             return exception.Types.Where(type => type is not null)!;
         }
+    }
+
+    private static bool HasOutboxMetadata(INotification notification)
+    {
+        return notification
+            .GetType()
+            .GetCustomAttribute<OutboxEventAttribute>() is not null;
     }
 }

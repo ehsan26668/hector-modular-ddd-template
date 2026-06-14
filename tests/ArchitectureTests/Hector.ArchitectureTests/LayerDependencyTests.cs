@@ -102,4 +102,22 @@ public sealed class LayerDependencyTests
 
         result.IsSuccessful.Should().BeTrue();
     }
+
+    [Fact]
+    public void Should_NotDependOnContracts_When_InDomainLayer()
+    {
+        // Arrange
+        var domainAssembly = typeof(ProjectsDomainAssemblyMarker).Assembly;
+
+        // Act
+        var result = Types
+            .InAssembly(domainAssembly)
+            .ShouldNot()
+            .HaveDependencyOn("Hector.Modules.Projects.Contracts")
+            .GetResult();
+
+        // Assert
+        result.IsSuccessful.Should().BeTrue(
+            "Domain layer must not depend on integration contracts. Contracts belong to cross-module communication and must remain outside the domain model.");
+    }
 }

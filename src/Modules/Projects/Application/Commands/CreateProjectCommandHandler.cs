@@ -3,7 +3,8 @@ using Hector.Modules.Projects.Domain;
 
 namespace Hector.Modules.Projects.Application.Commands;
 
-public sealed class CreateProjectCommandHandler : ICommandHandler<CreateProjectCommand, ProjectId>
+public sealed class CreateProjectCommandHandler
+    : ICommandHandler<CreateProjectCommand, ProjectId>
 {
     private readonly IProjectRepository _repository;
 

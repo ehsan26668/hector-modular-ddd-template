@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Outbox;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -59,6 +60,7 @@ public sealed class OutboxTransactionalConsistencyTests
         : HectorDbContext(
             options,
             new EmptyStronglyTypedIdAssemblyProvider(),
+            new NoOpDomainEventDispatcher(),
             new SystemTextJsonOutboxEventSerializer(
                 new AttributedOutboxEventTypeResolver([])))
     {
@@ -87,5 +89,13 @@ public sealed class OutboxTransactionalConsistencyTests
     {
         public IReadOnlyCollection<System.Reflection.Assembly> GetAssemblies()
             => [];
+    }
+
+    private sealed class NoOpDomainEventDispatcher : IDomainEventDispatcher
+    {
+        public Task DispatchAsync(
+            IEnumerable<IDomainEvent> domainEvents,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 }

@@ -8,17 +8,16 @@ public sealed class ProjectCreatedDomainEventHandler(
     IIntegrationEventBus integrationEventBus)
     : INotificationHandler<ProjectCreatedDomainEvent>
 {
-    public async Task HandleAsync(
-        ProjectCreatedDomainEvent notification,
-        CancellationToken cancellationToken = default)
+    public async Task HandleAsync(ProjectCreatedDomainEvent domainEvent, CancellationToken cancellationToken)
     {
+        // 1. Map Domain Event to Integration Event
         var integrationEvent = new ProjectCreatedIntegrationEvent(
             Guid.NewGuid(),
-            notification.ProjectId.Value,
-            notification.Name);
+            domainEvent.ProjectId.Value,
+            domainEvent.Name
+        );
 
-        await integrationEventBus.PublishAsync(
-            integrationEvent,
-            cancellationToken);
+        // 2. Publish Integration Event
+        await integrationEventBus.PublishAsync(integrationEvent, cancellationToken);
     }
 }
