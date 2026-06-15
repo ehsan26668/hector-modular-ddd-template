@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Implemented
 
 ## Context
 
@@ -78,6 +78,27 @@ Example structure:
 
 Application and infrastructure layers may reference the contracts project, but domain logic must not depend on integration events.
 
+### Example
+
+A typical integration event contract following the established rules:
+
+```csharp
+    [OutboxEvent("projects.project-created", 1)]
+    public sealed record ProjectCreatedIntegrationEvent(
+        Guid MessageId,
+        Guid ProjectId,
+        string Name
+    ) : IIntegrationEvent;
+```
+
+Characteristics of this contract:
+
+- The event name follows the past-tense convention.
+- The event is immutable (record type).
+- The contract contains only data.
+- The `OutboxEvent` attribute provides the canonical event name and version used by the outbox infrastructure.
+- The event does not contain consumer or infrastructure-specific concerns.
+
 ### Contract Stability Rules
 
 Integration events represent public contracts and must remain stable.
@@ -121,6 +142,28 @@ Events should reflect the ubiquitous language of the domain.
 Each module owns its own integration event contracts.
 
 Other modules may subscribe to these events but must not modify them.
+
+### Contract Purity
+
+Integration event contracts must remain independent from messaging infrastructure concerns.
+
+Rules:
+
+- Integration events MUST NOT implement inbox-related interfaces.
+- Integration events MUST NOT contain consumer identifiers.
+- Integration events MUST NOT contain transport-specific metadata.
+
+Examples of forbidden patterns:
+
+    class ProjectCreatedIntegrationEvent : IInboxMessage
+
+or
+
+    public string Consumer { get; }
+
+Consumer identity and idempotency mechanisms belong to the subscriber side and must be handled by the inbox infrastructure.
+
+This rule ensures that integration event contracts remain pure data contracts and reusable across different messaging infrastructures.
 
 ## Consequences
 
