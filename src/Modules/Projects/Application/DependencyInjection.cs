@@ -8,6 +8,8 @@ public static class DependencyInjection
     public static IServiceCollection AddProjectsApplication(
         this IServiceCollection services)
     {
+        services.AddSingleton<IModuleIdentity, ProjectsModuleIdentity>();
+
         services.AddMediator(typeof(ProjectsApplicationAssemblyMarker).Assembly);
 
         return services;

@@ -1,6 +1,8 @@
 namespace Hector.BuildingBlocks.Application.Messaging.Inbox;
 
-public sealed class InboxPipelineBehavior<TRequest, TResponse>(IInboxStore inbox)
+public sealed class InboxPipelineBehavior<TRequest, TResponse>(
+    IInboxStore inbox,
+    IModuleIdentity moduleIdentity)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
@@ -11,8 +13,7 @@ public sealed class InboxPipelineBehavior<TRequest, TResponse>(IInboxStore inbox
     {
         if (request is not IIntegrationEvent integrationEvent) return await next();
 
-        var consumer = typeof(TRequest).FullName
-            ?? typeof(TRequest).Name;
+        var consumer = moduleIdentity.ModuleName;
 
         var stored = await inbox.TryStoreAsync(
             integrationEvent.MessageId,

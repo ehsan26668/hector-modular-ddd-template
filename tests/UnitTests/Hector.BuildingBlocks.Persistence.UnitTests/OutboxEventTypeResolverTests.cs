@@ -73,12 +73,33 @@ public sealed class OutboxEventTypeResolverTests
             .WithMessage("*could not be resolved*");
     }
 
+    [Fact]
+    public void Should_ResolveType_By_StableEventName_IndependentFromClrTypeName()
+    {
+        // Arrange
+        var resolver = new AttributedOutboxEventTypeResolver(
+            [Assembly.GetExecutingAssembly()]);
+
+        const string stableEventName = "test.stable-event-name";
+
+        // Act
+        var result = resolver.Resolve(stableEventName, 1);
+
+        // Assert
+        result.Should().Be<CompletelyRenamedClrEvent>();
+    }
+
     [OutboxEvent(EventName, EventVersion)]
     private sealed record TestDomainEvent(
         Guid EventId,
         DateTime OccurredOnUtc) : IDomainEvent;
 
     private sealed record EventWithoutMetadata(
+        Guid EventId,
+        DateTime OccurredOnUtc) : IDomainEvent;
+
+    [OutboxEvent("test.stable-event-name", 1)]
+    private sealed record CompletelyRenamedClrEvent(
         Guid EventId,
         DateTime OccurredOnUtc) : IDomainEvent;
 }
