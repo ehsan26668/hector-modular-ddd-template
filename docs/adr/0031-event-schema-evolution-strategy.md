@@ -48,20 +48,24 @@ Example:
 
 Version 1:
 
+```csharp
     ProjectCreatedIntegrationEvent
     {
         ProjectId
         Name
     }
+```
 
 Version 2:
 
+```csharp
     ProjectCreatedIntegrationEvent
     {
         ProjectId
         Name
         CreatedBy
     }
+```
 
 Older serialized events without the `CreatedBy` field must still deserialize successfully.
 
@@ -73,7 +77,9 @@ Breaking changes require introducing a new event version.
 
 Example:
 
+```csharp
     ProjectCreatedIntegrationEventV2
+```
 
 The previous version should remain supported until consumers migrate.
 
