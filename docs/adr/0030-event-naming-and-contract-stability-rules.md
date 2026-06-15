@@ -2,7 +2,8 @@
 
 ## Status
 
-Implemented
+Implemented  
+Date: 2026-06-15
 
 ## Context
 
@@ -34,17 +35,21 @@ All events must follow the **past-tense naming convention**, representing someth
 
 Examples:
 
+```csharp
     ProjectCreatedDomainEvent
     UserRegisteredDomainEvent
     OrderCompletedDomainEvent
+```
 
 Integration events follow a similar naming convention but omit the "Domain" suffix.
 
 Examples:
 
+```csharp
     ProjectCreatedIntegrationEvent
     UserRegisteredIntegrationEvent
     OrderCompletedIntegrationEvent
+```
 
 Rules:
 
@@ -55,14 +60,18 @@ Rules:
 
 Incorrect examples:
 
+```csharp
     CreateProjectEvent
     ProjectCreateEvent
     DoSomethingEvent
+```
 
 Correct examples:
 
+```csharp
     ProjectCreatedDomainEvent
     ProjectCreatedIntegrationEvent
+```
 
 ### Event Contract Location
 
@@ -70,19 +79,21 @@ Integration event contracts must live in a dedicated **Contracts project** of ea
 
 Example structure:
 
+```text
     Modules
         Projects
             Contracts
                 Events
                     ProjectCreatedIntegrationEvent.cs
+```
 
 Application and infrastructure layers may reference the contracts project, but domain logic must not depend on integration events.
 
 ### Example
 
-A typical integration event contract following the established rules:
-
 ```csharp
+A typical integration event contract following the established rules (C#):
+
     [OutboxEvent("projects.project-created", 1)]
     public sealed record ProjectCreatedIntegrationEvent(
         Guid MessageId,
@@ -129,11 +140,15 @@ Events should represent meaningful business facts rather than low-level technica
 
 Example:
 
+```csharp
     ProjectCreatedIntegrationEvent
+```
 
 instead of
 
+```csharp
     ProjectRowInsertedEvent
+```
 
 Events should reflect the ubiquitous language of the domain.
 
@@ -155,11 +170,15 @@ Rules:
 
 Examples of forbidden patterns:
 
+```csharp
     class ProjectCreatedIntegrationEvent : IInboxMessage
+```
 
 or
 
+```csharp
     public string Consumer { get; }
+```
 
 Consumer identity and idempotency mechanisms belong to the subscriber side and must be handled by the inbox infrastructure.
 
