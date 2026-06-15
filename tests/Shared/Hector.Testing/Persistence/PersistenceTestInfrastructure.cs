@@ -1,3 +1,4 @@
+using Hector.BuildingBlocks.Application.Messaging;
 using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence;
 using Hector.BuildingBlocks.Persistence.Outbox;

@@ -9,11 +9,14 @@ public sealed class InboxPipelineBehavior<TRequest, TResponse>(IInboxStore inbox
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
-        if (request is not IInboxMessage inboxMessage) return await next();
+        if (request is not IIntegrationEvent integrationEvent) return await next();
+
+        var consumer = typeof(TRequest).FullName
+            ?? typeof(TRequest).Name;
 
         var stored = await inbox.TryStoreAsync(
-            inboxMessage.MessageId,
-            inboxMessage.Consumer,
+            integrationEvent.MessageId,
+            consumer,
             cancellationToken);
 
         if (!stored) return default!;

@@ -1,5 +1,6 @@
 using System.Reflection;
 using FluentAssertions;
+using Hector.BuildingBlocks.Application.Messaging;
 using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.Modules.Projects.Domain;
 

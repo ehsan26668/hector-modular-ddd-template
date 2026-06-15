@@ -1,4 +1,4 @@
-namespace Hector.BuildingBlocks.Domain.Primitives;
+namespace Hector.BuildingBlocks.Application.Messaging;
 
 [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
 public sealed class OutboxEventAttribute : Attribute
@@ -24,6 +24,5 @@ public sealed class OutboxEventAttribute : Attribute
     }
 
     public string Name { get; }
-
     public int Version { get; }
 }

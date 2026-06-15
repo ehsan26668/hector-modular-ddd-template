@@ -1,4 +1,5 @@
 using System.Reflection;
+using Hector.BuildingBlocks.Application.Messaging;
 using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Converters;
 using Hector.BuildingBlocks.Persistence.Inbox;

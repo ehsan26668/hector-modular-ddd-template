@@ -1,4 +1,5 @@
 using System.Reflection;
+using Hector.BuildingBlocks.Application.Messaging;
 using Hector.BuildingBlocks.Domain.Primitives;
 
 namespace Hector.BuildingBlocks.Persistence.Outbox;
