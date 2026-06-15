@@ -2,45 +2,54 @@ using FluentAssertions;
 using Hector.BuildingBlocks.Application.Messaging;
 using Hector.BuildingBlocks.Persistence.Outbox;
 using Hector.Modules.Projects.Application.Commands;
+using Hector.Modules.Projects.Contracts.Events;
 using Hector.Modules.Projects.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Hector.Modules.Projects.IntegrationTests;
 
-public sealed class CreateProjectTests
+public sealed class CreateProjectTests(
+    ProjectsIntegrationTestFixture fixture)
+    : IClassFixture<ProjectsIntegrationTestFixture>
 {
-    private const string EventName = "projects.project-created";
-    private const int EventVersion = 1;
-
     [Fact]
-    public async Task Should_Persist_Project_And_OutboxMessage_When_CreateProjectCommand_IsExecuted()
+    public async Task Should_Execute_Full_ProjectCreation_Pipeline_When_CommandIsSent()
     {
         // Arrange
-        await using var fixture = new ProjectsIntegrationTestFixture();
-
         using var scope = fixture.CreateScope();
 
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
         var context = scope.ServiceProvider.GetRequiredService<ProjectsDbContext>();
+        var serializer = scope.ServiceProvider.GetRequiredService<IOutboxEventSerializer>();
 
-        var command = new CreateProjectCommand("New Enterprise Project");
+        var projectName = "New Enterprise Project";
+        var command = new CreateProjectCommand(projectName);
 
         // Act
         var projectId = await mediator.SendAsync(command, CancellationToken.None);
 
         // Assert
-        var createdProject = await context.Projects
-            .FirstOrDefaultAsync(p => p.Id == projectId);
+
+        // 1️⃣ Persistence
+        var createdProject = await context.Projects.FirstOrDefaultAsync(p => p.Id == projectId);
 
         createdProject.Should().NotBeNull();
-        createdProject!.Name.Should().Be("New Enterprise Project");
+        createdProject!.Name.Should().Be(projectName);
 
-        var outboxMessages = await context.Set<OutboxMessage>().ToListAsync();
+        // 2️⃣ Outbox Message existence
+        var outboxMessage = await context.Set<OutboxMessage>().SingleAsync();
 
-        outboxMessages.Should().HaveCount(1);
+        outboxMessage.Type.Should().Be("projects.project-created");
 
-        outboxMessages[0].Type.Should().Be(EventName);
-        outboxMessages[0].Version.Should().Be(EventVersion);
+        // 3️⃣ Integration event payload (Domain → Integration bridge)
+        var deserializedEvent = serializer.Deserialize(outboxMessage);
+
+        deserializedEvent.Should().BeOfType<ProjectCreatedIntegrationEvent>();
+
+        var integrationEvent = (ProjectCreatedIntegrationEvent)deserializedEvent;
+
+        integrationEvent.ProjectId.Should().Be(projectId.Value);
+        integrationEvent.Name.Should().Be(projectName);
     }
 }

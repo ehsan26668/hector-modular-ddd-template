@@ -373,4 +373,3 @@ The architecture supports:
 - distributed caching
 
 The modular boundaries minimize future refactoring cost.
-`

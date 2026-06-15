@@ -5,6 +5,7 @@ using Hector.BuildingBlocks.Persistence.Outbox;
 using Hector.BuildingBlocks.Persistence.Transactions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace Hector.BuildingBlocks.Persistence;
 
@@ -18,7 +19,16 @@ public static class DependencyInjection
 
         services.TryAddScoped<IInboxStore, EfCoreInboxStore>();
 
-        services.TryAddSingleton<IOutboxEventTypeResolver, AttributedOutboxEventTypeResolver>();
+        services.TryAddScoped<IOutboxMessageFactory, DefaultOutboxMessageFactory>();
+
+        services.TryAddSingleton<IOutboxEventTypeResolver>(sp =>
+        {
+            OutboxEventContractOptions options =
+                sp.GetRequiredService<IOptions<OutboxEventContractOptions>>().Value;
+
+            return new AttributedOutboxEventTypeResolver(options.Assemblies);
+        });
+
         services.TryAddSingleton<IOutboxEventSerializer, SystemTextJsonOutboxEventSerializer>();
 
         return services;

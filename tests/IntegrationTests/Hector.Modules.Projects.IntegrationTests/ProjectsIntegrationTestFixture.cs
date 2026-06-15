@@ -1,8 +1,3 @@
-using Hector.BuildingBlocks.Application;
-using Hector.BuildingBlocks.Domain.Primitives;
-using Hector.BuildingBlocks.Persistence;
-using Hector.BuildingBlocks.Persistence.Outbox;
-using Hector.Modules.Projects.Application;
 using Hector.Modules.Projects.Infrastructure;
 using Hector.Modules.Projects.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
@@ -14,8 +9,7 @@ namespace Hector.Modules.Projects.IntegrationTests;
 public sealed class ProjectsIntegrationTestFixture : IAsyncDisposable
 {
     private readonly SqliteConnection _connection;
-
-    public IServiceProvider ServiceProvider { get; }
+    private readonly ServiceProvider _serviceProvider;
 
     public ProjectsIntegrationTestFixture()
     {
@@ -24,43 +18,26 @@ public sealed class ProjectsIntegrationTestFixture : IAsyncDisposable
 
         var services = new ServiceCollection();
 
-        services.AddStronglyTypedIdInfrastructure(
-            typeof(ProjectsStronglyTypedIdAssemblyProvider).Assembly);
-
-        services.AddHectorApplicationBuildingBlocks();
-
-        services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
-        services.AddSingleton<IOutboxEventSerializer, SystemTextJsonOutboxEventSerializer>();
-
-        services.AddProjectsApplication();
-
-        services.AddProjectsInfrastructure(options =>
+        services.AddProjectsModule(options =>
         {
             options.UseSqlite(_connection);
         });
 
-        ServiceProvider = services.BuildServiceProvider();
+        _serviceProvider = services.BuildServiceProvider();
 
-        using var scope = ServiceProvider.CreateScope();
-
+        using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ProjectsDbContext>();
-
         context.Database.EnsureCreated();
     }
 
-
     public IServiceScope CreateScope()
     {
-        return ServiceProvider.CreateScope();
+        return _serviceProvider.CreateScope();
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (ServiceProvider is IDisposable disposable)
-        {
-            disposable.Dispose();
-        }
-
+        await _serviceProvider.DisposeAsync();
         await _connection.DisposeAsync();
     }
 }
