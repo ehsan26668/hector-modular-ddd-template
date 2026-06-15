@@ -32,7 +32,7 @@
 | ADR-0028 | [Integration Event Bus Abstraction](/docs/adr/0028-integration-event-bus-abstraction.md) | Superseded | 2026-06-14 |
 | ADR-0029 | [Integration Event Versioning Strategy](/docs/adr/0029-integration-event-versioning-strategy.md) | Accepted | 2026-06-14 |
 | ADR-0030 | [Event Naming and Contract Stability Rules](/docs/adr/0030-event-naming-and-contract-stability-rules.md) | **Implemented** | 2026-06-15 |
-| ADR-0031 | [Event Schema Evolution Strategy](/docs/adr/0031-event-schema-evolution-strategy.md) | Proposed | 2026-06-07 |
+| ADR-0031 | [Event Schema Evolution Strategy](/docs/adr/0031-event-schema-evolution-strategy.md) | **Implemented** | 2026-06-15 |
 | ADR-0032 | [Event Metadata and Correlation Strategy](/docs/adr/0032-event-metadata-and-correlation-strategy.md) | Proposed | 2026-06-07 |
 | ADR-0033 | [Event Ordering and Delivery Guarantees](/docs/adr/0033-event-ordering-and-delivery-guarantees.md) | Proposed | 2026-06-07 |
 | ADR-0034 | [Dead Letter and Poison Message Handling](/docs/adr/0034-dead-letter-and-poison-message-handling.md) | Proposed | 2026-06-07 |
