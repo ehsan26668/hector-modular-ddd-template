@@ -14,12 +14,23 @@ public static class DependencyInjection
     public static IServiceCollection AddHectorPersistenceBuildingBlocks(
         this IServiceCollection services)
     {
-        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(EfCoreTransactionPipelineBehavior<,>));
-        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(InboxPipelineBehavior<,>));
+        ArgumentNullException.ThrowIfNull(services);
+
+        services.TryAddEnumerable(
+            ServiceDescriptor.Scoped(
+                typeof(IPipelineBehavior<,>),
+                typeof(EfCoreTransactionPipelineBehavior<,>)));
+
+        services.TryAddEnumerable(
+            ServiceDescriptor.Scoped(
+                typeof(IPipelineBehavior<,>),
+                typeof(InboxPipelineBehavior<,>)));
 
         services.TryAddScoped<IInboxStore, EfCoreInboxStore>();
 
         services.TryAddScoped<IOutboxMessageFactory, DefaultOutboxMessageFactory>();
+
+        services.TryAddScoped<IIntegrationEventBus, OutboxIntegrationEventBus>();
 
         services.TryAddSingleton<IOutboxEventTypeResolver>(sp =>
         {

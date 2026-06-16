@@ -10,7 +10,12 @@ public static class DependencyInjection
     public static IServiceCollection AddHectorApplicationBuildingBlocks(
         this IServiceCollection services)
     {
-        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        ArgumentNullException.ThrowIfNull(services);
+
+        services.TryAddEnumerable(
+            ServiceDescriptor.Scoped(
+                typeof(IPipelineBehavior<,>),
+                typeof(ValidationBehavior<,>)));
 
         services.TryAddSingleton<ICorrelationContextAccessor, CorrelationContextAccessor>();
 
