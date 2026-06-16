@@ -1,5 +1,7 @@
 using Hector.BuildingBlocks.Application.Messaging;
+using Hector.BuildingBlocks.Application.Messaging.Correlation;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Hector.BuildingBlocks.Application;
 
@@ -9,6 +11,8 @@ public static class DependencyInjection
         this IServiceCollection services)
     {
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
+        services.TryAddSingleton<ICorrelationContextAccessor, CorrelationContextAccessor>();
 
         return services;
     }

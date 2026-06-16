@@ -4,6 +4,7 @@
     <Project Path="src/Framework/Hector.BuildingBlocks.Application/Hector.BuildingBlocks.Application.csproj" />
     <Project Path="src/Framework/Hector.BuildingBlocks.Domain/Hector.BuildingBlocks.Domain.csproj" />
     <Project Path="src/Framework/Hector.BuildingBlocks.Persistence/Hector.BuildingBlocks.Persistence.csproj" />
+    <Project Path="src/Framework/Hector.BuildingBlocks.Web/Hector.BuildingBlocks.Web.csproj" />
   </Folder>
   <Folder Name="/src/Modules/" />
   <Folder Name="/src/Modules/Projects/" />
@@ -36,6 +37,7 @@
     <Project Path="tests/UnitTests/Hector.BuildingBlocks.Application.UnitTests/Hector.BuildingBlocks.Application.UnitTests.csproj" />
     <Project Path="tests/UnitTests/Hector.BuildingBlocks.Domain.UnitTests/Hector.BuildingBlocks.Domain.UnitTests.csproj" />
     <Project Path="tests/UnitTests/Hector.BuildingBlocks.Persistence.UnitTests/Hector.BuildingBlocks.Persistence.UnitTests.csproj" />
+    <Project Path="tests/UnitTests/Hector.BuildingBlocks.Web.UnitTests/Hector.BuildingBlocks.Web.UnitTests.csproj" />
     <Project Path="tests/UnitTests/Hector.Modules.Projects.Application.UnitTests/Hector.Modules.Projects.Application.UnitTests.csproj" />
     <Project Path="tests/UnitTests/Hector.Modules.Projects.Domain.UnitTests/Hector.Modules.Projects.Domain.UnitTests.csproj" />
   </Folder>
