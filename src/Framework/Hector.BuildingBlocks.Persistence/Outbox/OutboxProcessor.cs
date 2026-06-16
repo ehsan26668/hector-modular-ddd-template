@@ -24,11 +24,13 @@ public sealed class OutboxProcessor(
 
         var lockedUntil = now.Add(outboxOptions.LockDuration);
 
+        var processableMessages =
+            OutboxProcessingPolicy.IsProcessableExpression(outboxOptions);
+
         var messageIds = await dbContext.OutboxMessages
+            .Where(processableMessages)
             .Where(m =>
                 m.ProcessedOn == null &&
-                m.DeadLetteredOn == null &&
-                m.RetryCount < outboxOptions.MaxRetryCount &&
                 (m.LockedUntil == null || m.LockedUntil < now))
             .OrderBy(m => m.OccurredOn)
             .ThenBy(m => m.Id)
@@ -40,11 +42,10 @@ public sealed class OutboxProcessor(
             return;
 
         var lockedCount = await dbContext.OutboxMessages
+            .Where(processableMessages)
             .Where(m =>
                 messageIds.Contains(m.Id) &&
                 m.ProcessedOn == null &&
-                m.DeadLetteredOn == null &&
-                m.RetryCount < outboxOptions.MaxRetryCount &&
                 (m.LockedUntil == null || m.LockedUntil < now))
             .ExecuteUpdateAsync(
                 setters => setters
@@ -56,10 +57,10 @@ public sealed class OutboxProcessor(
             return;
 
         var messages = await dbContext.OutboxMessages
+            .Where(processableMessages)
             .Where(m =>
                 m.LockId == lockId &&
-                m.ProcessedOn == null &&
-                m.DeadLetteredOn == null)
+                m.ProcessedOn == null)
             .OrderBy(m => m.OccurredOn)
             .ThenBy(m => m.Id)
             .ToListAsync(cancellationToken);
@@ -84,25 +85,25 @@ public sealed class OutboxProcessor(
                 message.ProcessedOn = attemptTime;
                 message.LastAttemptedOn = attemptTime;
                 message.Error = null;
+                message.LockedUntil = null;
 
                 activity?.SetStatus(ActivityStatusCode.Ok);
             }
             catch (Exception ex)
             {
                 message.RetryCount++;
-
                 message.LastAttemptedOn = attemptTime;
-
                 message.Error = Truncate(ex.ToString(), outboxOptions.MaxErrorLength);
 
                 if (message.RetryCount >= outboxOptions.MaxRetryCount)
                 {
-                    message.DeadLetteredOn = attemptTime;
-                    message.DeadLetterReason = message.Error;
+                    var failureReason = Truncate(ex.Message, outboxOptions.MaxErrorLength);
+
+                    message.MarkAsPoison(failureReason, attemptTime);
 
                     logger.LogError(
                         ex,
-                        "Outbox message {MessageId} moved to dead letter after {RetryCount} retries",
+                        "Outbox message {MessageId} marked as poison after {RetryCount} retries",
                         message.Id,
                         message.RetryCount);
                 }
@@ -126,6 +127,7 @@ public sealed class OutboxProcessor(
                 activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
                 activity?.AddException(ex);
             }
+
             finally
             {
                 message.LockId = null;

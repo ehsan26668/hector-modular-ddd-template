@@ -14,15 +14,21 @@ internal sealed class OutboxCleaner(
 
         var cutoff = DateTime.UtcNow - options.Value.RetentionPeriod;
 
+        // Eligible messages:
+        // 1) Processed messages older than retention
+        // 2) Poisoned messages older than retention (based on FailedOn)
         var messages = await context.OutboxMessages
             .Where(message =>
-                message.ProcessedOn != null &&
-                message.ProcessedOn < cutoff)
-            .OrderBy(message => message.ProcessedOn)
+                (message.ProcessedOn != null && message.ProcessedOn < cutoff) ||
+                (message.IsPoisoned &&
+                 message.FailedOn != null &&
+                 message.FailedOn < cutoff))
+            .OrderBy(message => message.ProcessedOn ?? message.FailedOn)
             .Take(options.Value.CleanupBatchSize)
             .ToListAsync(cancellationToken);
 
-        if (messages.Count == 0) return;
+        if (messages.Count == 0)
+            return;
 
         context.OutboxMessages.RemoveRange(messages);
 

@@ -1,6 +1,6 @@
 # ADR-0041: End-to-End Correlation Propagation
 
-- **Status:** Proposed
+- **Status:** partial implementation
 - **Date:** 2026-06-16
 
 ## Context

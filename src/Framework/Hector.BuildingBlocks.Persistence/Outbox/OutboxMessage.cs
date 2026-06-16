@@ -32,7 +32,17 @@ public sealed class OutboxMessage
 
     public Guid? LockId { get; set; }
 
-    public DateTime? DeadLetteredOn { get; set; }
+    public DateTime? FailedOn { get; set; }
 
-    public string? DeadLetterReason { get; set; }
+    public string? FailureReason { get; set; }
+
+    public bool IsPoisoned { get; set; }
+
+    public void MarkAsPoison(string failureReason, DateTime utcNow)
+    {
+        IsPoisoned = true;
+        FailedOn = utcNow;
+        FailureReason = failureReason;
+        LockedUntil = null;
+    }
 }
