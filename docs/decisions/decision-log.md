@@ -34,9 +34,9 @@
 | ADR-0030 | [Event Naming and Contract Stability Rules](/docs/adr/0030-event-naming-and-contract-stability-rules.md) | **Implemented** | 2026-06-15 |
 | ADR-0031 | [Event Schema Evolution Strategy](/docs/adr/0031-event-schema-evolution-strategy.md) | **Implemented** | 2026-06-15 |
 | ADR-0032 | [Event Metadata and Correlation Strategy](/docs/adr/0032-event-metadata-and-correlation-strategy.md) | **Implemented** | 2026-06-16 |
-| ADR-0033 | [Event Ordering and Delivery Guarantees](/docs/adr/0033-event-ordering-and-delivery-guarantees.md) | Proposed | 2026-06-07 |
+| ADR-0033 | [Event Ordering and Delivery Guarantees](/docs/adr/0033-event-ordering-and-delivery-guarantees.md) | **Implemented** | 2026-06-07 |
 | ADR-0034 | [Dead Letter and Poison Message Handling](/docs/adr/0034-dead-letter-and-poison-message-handling.md) | Proposed | 2026-06-07 |
-| ADR-0035 | [Consumer Idempotency Strategy](/docs/adr/0035-consumer-idempotency-strategy.md) | Proposed | 2026-06-07 |
+| ADR-0035 | [Consumer Idempotency Strategy](/docs/adr/0035-consumer-idempotency-strategy.md) | **Implemented** | 2026-06-16 |
 | ADR-0036 | [Architecture Guard Tests](/docs/adr/0036-architecture-guard-tests.md) | Accepted | 2026-06-07 |
 | ADR-0037 | [Introduce ModuleLoader for Automatic Module Registration](/docs/adr/0037-introduce-module-loader-for-auto-registration.md) | Proposed | 2026-06-07 |
 | ADR-0038 | [Enforce Pure Transactional Outbox and Remove Immediate Domain Event Dispatch](/docs/adr/0038-enforce-pure-transactional-outbox-and-remove-immediate-domain-event-dispatch.md) | Accepted | 2026-06-07 |

@@ -11,4 +11,10 @@ public sealed class OutboxOptions
     public TimeSpan RetentionPeriod { get; init; } = TimeSpan.FromDays(7);
 
     public int CleanupBatchSize { get; init; } = 100;
+
+    public TimeSpan InitialRetryDelay { get; init; } = TimeSpan.FromSeconds(5);
+
+    public TimeSpan MaxRetryDelay { get; init; } = TimeSpan.FromMinutes(10);
+
+    public int MaxErrorLength { get; init; } = 2000;
 }

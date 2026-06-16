@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -11,29 +12,38 @@ public sealed class OutboxProcessor(
     IOptions<OutboxOptions> options)
     : IOutboxProcessor
 {
+    private static readonly ActivitySource ActivitySource = new("Hector.Outbox");
+
     public async Task ProcessAsync(CancellationToken cancellationToken)
     {
         var outboxOptions = options.Value;
+
         var now = DateTime.UtcNow;
+
         var lockId = Guid.NewGuid();
+
         var lockedUntil = now.Add(outboxOptions.LockDuration);
 
         var messageIds = await dbContext.OutboxMessages
             .Where(m =>
                 m.ProcessedOn == null &&
+                m.DeadLetteredOn == null &&
                 m.RetryCount < outboxOptions.MaxRetryCount &&
                 (m.LockedUntil == null || m.LockedUntil < now))
             .OrderBy(m => m.OccurredOn)
+            .ThenBy(m => m.Id)
             .Take(outboxOptions.BatchSize)
             .Select(m => m.Id)
             .ToListAsync(cancellationToken);
 
-        if (messageIds.Count == 0) return;
+        if (messageIds.Count == 0)
+            return;
 
         var lockedCount = await dbContext.OutboxMessages
             .Where(m =>
                 messageIds.Contains(m.Id) &&
                 m.ProcessedOn == null &&
+                m.DeadLetteredOn == null &&
                 m.RetryCount < outboxOptions.MaxRetryCount &&
                 (m.LockedUntil == null || m.LockedUntil < now))
             .ExecuteUpdateAsync(
@@ -42,57 +52,106 @@ public sealed class OutboxProcessor(
                     .SetProperty(m => m.LockedUntil, lockedUntil),
                 cancellationToken);
 
-        if (lockedCount == 0) return;
+        if (lockedCount == 0)
+            return;
 
         var messages = await dbContext.OutboxMessages
             .Where(m =>
                 m.LockId == lockId &&
                 m.ProcessedOn == null &&
-                m.RetryCount < outboxOptions.MaxRetryCount)
+                m.DeadLetteredOn == null)
             .OrderBy(m => m.OccurredOn)
+            .ThenBy(m => m.Id)
             .ToListAsync(cancellationToken);
 
-        if (messages.Count == 0) return;
+        if (messages.Count == 0)
+            return;
 
-        try
+        foreach (var message in messages)
         {
-            await publisher.PublishAsync(messages, cancellationToken);
+            using var activity = ActivitySource.StartActivity("Outbox.ProcessMessage");
 
-            var processedOn = DateTime.UtcNow;
+            activity?.SetTag("outbox.message_id", message.Id);
+            activity?.SetTag("outbox.type", message.Type);
+            activity?.SetTag("outbox.retry_count", message.RetryCount);
 
-            foreach (var message in messages)
+            var attemptTime = DateTime.UtcNow;
+
+            try
             {
-                message.ProcessedOn = processedOn;
-                message.LastAttemptedOn = processedOn;
+                await publisher.PublishAsync([message], cancellationToken);
+
+                message.ProcessedOn = attemptTime;
+                message.LastAttemptedOn = attemptTime;
                 message.Error = null;
-                message.LockId = null;
-                message.LockedUntil = null;
+
+                activity?.SetStatus(ActivityStatusCode.Ok);
             }
-
-            logger.LogInformation(
-                "Processed {Count} outbox messages",
-                messages.Count);
-        }
-        catch (Exception ex)
-        {
-            var attemptedOn = DateTime.UtcNow;
-
-            foreach (var message in messages)
+            catch (Exception ex)
             {
                 message.RetryCount++;
-                message.LastAttemptedOn = attemptedOn;
-                message.Error = ex.Message;
-                message.LockId = null;
-                message.LockedUntil = null;
-            }
 
-            logger.LogError(
-                ex,
-                "Failed to process outbox batch of {Count} messages",
-                messages.Count);
+                message.LastAttemptedOn = attemptTime;
+
+                message.Error = Truncate(ex.ToString(), outboxOptions.MaxErrorLength);
+
+                if (message.RetryCount >= outboxOptions.MaxRetryCount)
+                {
+                    message.DeadLetteredOn = attemptTime;
+                    message.DeadLetterReason = message.Error;
+
+                    logger.LogError(
+                        ex,
+                        "Outbox message {MessageId} moved to dead letter after {RetryCount} retries",
+                        message.Id,
+                        message.RetryCount);
+                }
+                else
+                {
+                    var delay = CalculateRetryDelay(
+                        message.RetryCount,
+                        outboxOptions.InitialRetryDelay,
+                        outboxOptions.MaxRetryDelay);
+
+                    message.LockedUntil = attemptTime.Add(delay);
+
+                    logger.LogWarning(
+                        ex,
+                        "Retrying outbox message {MessageId}. Retry {RetryCount}. Next attempt in {Delay}",
+                        message.Id,
+                        message.RetryCount,
+                        delay);
+                }
+
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                activity?.AddException(ex);
+            }
+            finally
+            {
+                message.LockId = null;
+            }
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    private static TimeSpan CalculateRetryDelay(
+        int retryCount,
+        TimeSpan initialDelay,
+        TimeSpan maxDelay)
+    {
+        var delayMs = initialDelay.TotalMilliseconds * Math.Pow(2, retryCount - 1);
+
+        var capped = Math.Min(delayMs, maxDelay.TotalMilliseconds);
+
+        return TimeSpan.FromMilliseconds(capped);
+    }
+
+    private static string Truncate(string value, int maxLength)
+    {
+        if (value.Length <= maxLength)
+            return value;
+
+        return value[..maxLength];
+    }
 }

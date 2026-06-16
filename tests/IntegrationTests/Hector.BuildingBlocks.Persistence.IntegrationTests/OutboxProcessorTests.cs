@@ -175,7 +175,8 @@ public sealed class OutboxProcessorTests
         stored.RetryCount.Should().Be(1);
         stored.Error.Should().Contain("boom");
         stored.LockId.Should().BeNull();
-        stored.LockedUntil.Should().BeNull();
+        stored.LockedUntil.Should().NotBeNull();
+        stored.LockedUntil.Should().BeAfter(DateTime.UtcNow);
         stored.ProcessedOn.Should().BeNull();
     }
 

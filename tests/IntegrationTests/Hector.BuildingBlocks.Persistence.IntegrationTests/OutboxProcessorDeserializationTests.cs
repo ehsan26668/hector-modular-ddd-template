@@ -59,7 +59,8 @@ public sealed class OutboxProcessorDeserializationTests
         message.Error.Should().NotBeNullOrWhiteSpace();
         message.Error.Should().Contain("could not be resolved");
         message.LockId.Should().BeNull();
-        message.LockedUntil.Should().BeNull();
+        message.LockedUntil.Should().NotBeNull();
+        message.LockedUntil.Should().BeAfter(DateTime.UtcNow);
 
         await mediator.DidNotReceiveWithAnyArgs()
             .PublishAsync<INotification>(default!, default);
