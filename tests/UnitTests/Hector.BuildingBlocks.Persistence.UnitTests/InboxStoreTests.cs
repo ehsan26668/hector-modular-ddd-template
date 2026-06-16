@@ -1,11 +1,9 @@
 using FluentAssertions;
 using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Inbox;
-using Hector.BuildingBlocks.Persistence.Outbox;
 using Hector.Testing.Persistence;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
-using static Hector.Testing.Persistence.PersistenceTestInfrastructure;
 
 namespace Hector.BuildingBlocks.Persistence.UnitTests;
 
@@ -21,15 +19,11 @@ public sealed class InboxStoreTests
             .Options;
 
         var assemblyProvider = Substitute.For<IStronglyTypedIdAssemblyProvider>();
-        var outboxSerializer = new SystemTextJsonOutboxEventSerializer(
-            new AttributedOutboxEventTypeResolver(
-                [typeof(TestDomainEvent).Assembly]));
 
         await using var context = new TestDbContext(
             options,
             assemblyProvider,
-            new NoOpDomainEventDispatcher(),
-            outboxSerializer);
+            new NoOpDomainEventDispatcher());
         await context.Database.EnsureCreatedAsync();
 
         var store = new EfCoreInboxStore(context);
@@ -59,15 +53,11 @@ public sealed class InboxStoreTests
             .Options;
 
         var assemblyProvider = Substitute.For<IStronglyTypedIdAssemblyProvider>();
-        var outboxSerializer = new SystemTextJsonOutboxEventSerializer(
-            new AttributedOutboxEventTypeResolver(
-                [typeof(TestDomainEvent).Assembly]));
 
         await using var context = new TestDbContext(
             options,
             assemblyProvider,
-            new NoOpDomainEventDispatcher(),
-            outboxSerializer);
+            new NoOpDomainEventDispatcher());
         await context.Database.EnsureCreatedAsync();
 
         var store = new EfCoreInboxStore(context);
@@ -99,15 +89,11 @@ public sealed class InboxStoreTests
             .Options;
 
         var assemblyProvider = Substitute.For<IStronglyTypedIdAssemblyProvider>();
-        var outboxSerializer = new SystemTextJsonOutboxEventSerializer(
-            new AttributedOutboxEventTypeResolver(
-                [typeof(TestDomainEvent).Assembly]));
 
         await using var context = new TestDbContext(
             options,
             assemblyProvider,
-            new NoOpDomainEventDispatcher(),
-            outboxSerializer);
+            new NoOpDomainEventDispatcher());
         await context.Database.EnsureCreatedAsync();
 
         var store = new EfCoreInboxStore(context);
@@ -139,9 +125,8 @@ public sealed class InboxStoreTests
     private sealed class TestDbContext(
         DbContextOptions options,
         IStronglyTypedIdAssemblyProvider assemblyProvider,
-        IDomainEventDispatcher domainEventDispatcher,
-        IOutboxEventSerializer outboxSerializer)
-        : HectorDbContext(options, assemblyProvider, domainEventDispatcher, outboxSerializer)
+        IDomainEventDispatcher domainEventDispatcher)
+        : HectorDbContext(options, assemblyProvider, domainEventDispatcher)
     {
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

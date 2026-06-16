@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace Hector.BuildingBlocks.Persistence.IntegrationTests;
 
@@ -32,10 +33,12 @@ public sealed class OutboxProcessorDeserializationTests
         await dbContext.SaveChangesAsync();
 
         var mediator = Substitute.For<IMediator>();
+        var serializer = Substitute.For<IOutboxEventSerializer>();
 
-        var publisher = new OutboxPublisher(
-            mediator,
-            PersistenceTestInfrastructure.OutboxSerializer);
+        serializer.Deserialize(Arg.Any<OutboxMessage>())
+                  .Throws(new InvalidOperationException("Event type could not be resolved"));
+
+        var publisher = new OutboxPublisher(mediator, serializer);
 
         var processor = new OutboxProcessor(
             dbContext,
@@ -52,7 +55,8 @@ public sealed class OutboxProcessorDeserializationTests
         await processor.ProcessAsync(CancellationToken.None);
 
         // Assert
-        var message = await dbContext.OutboxMessages.SingleAsync(x => x.Id == messageId);
+        var message = await dbContext.OutboxMessages
+            .SingleAsync(x => x.Id == messageId);
 
         message.ProcessedOn.Should().BeNull();
         message.RetryCount.Should().Be(1);
@@ -62,7 +66,7 @@ public sealed class OutboxProcessorDeserializationTests
         message.LockedUntil.Should().NotBeNull();
         message.LockedUntil.Should().BeAfter(DateTime.UtcNow);
 
-        await mediator.DidNotReceiveWithAnyArgs()
-            .PublishAsync<INotification>(default!, default);
+        await mediator.DidNotReceive()
+            .PublishAsync(Arg.Any<INotification>(), Arg.Any<CancellationToken>());
     }
 }

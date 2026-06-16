@@ -17,6 +17,7 @@ public sealed class ProjectCreatedDomainEventHandlerTests
 
         var projectId = ProjectId.New();
         var projectName = "Test Project";
+
         var domainEvent = new ProjectCreatedDomainEvent(projectId, projectName);
 
         // Act
@@ -25,6 +26,7 @@ public sealed class ProjectCreatedDomainEventHandlerTests
         // Assert
         await integrationEventBus.Received(1).PublishAsync(
             Arg.Is<ProjectCreatedIntegrationEvent>(e =>
+                e.MessageId != Guid.Empty &&
                 e.ProjectId == projectId.Value &&
                 e.Name == projectName),
             Arg.Any<CancellationToken>());

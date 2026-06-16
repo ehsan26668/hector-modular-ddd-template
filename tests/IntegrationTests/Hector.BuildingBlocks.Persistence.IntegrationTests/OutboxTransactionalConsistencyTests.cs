@@ -56,13 +56,11 @@ public sealed class OutboxTransactionalConsistencyTests
     }
 
     private sealed class AtomicityTestDbContext(
-        DbContextOptions<AtomicityTestDbContext> options)
-        : HectorDbContext(
-            options,
-            new EmptyStronglyTypedIdAssemblyProvider(),
-            new NoOpDomainEventDispatcher(),
-            new SystemTextJsonOutboxEventSerializer(
-                new AttributedOutboxEventTypeResolver([])))
+    DbContextOptions<AtomicityTestDbContext> options)
+    : HectorDbContext(
+        options,
+        new EmptyStronglyTypedIdAssemblyProvider(),
+        new NoOpDomainEventDispatcher())
     {
         public DbSet<FailingWriteEntity> FailingWriteEntities => Set<FailingWriteEntity>();
 

@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence;
-using Hector.BuildingBlocks.Persistence.Outbox;
 using Hector.Modules.Projects.Domain;
 using Hector.Modules.Projects.Infrastructure;
 using Hector.Modules.Projects.Infrastructure.Persistence;
@@ -49,8 +48,7 @@ public sealed class ProjectsStronglyTypedIdMappingTests
                 [
                     new ProjectsStronglyTypedIdAssemblyProvider()
                 ]),
-            new NoOpDomainEventDispatcher(),
-            new NoOpSerializer());
+            new NoOpDomainEventDispatcher());
     }
 
     private sealed class NoOpDomainEventDispatcher : IDomainEventDispatcher
@@ -59,17 +57,5 @@ public sealed class ProjectsStronglyTypedIdMappingTests
             IEnumerable<IDomainEvent> domainEvents,
             CancellationToken cancellationToken = default)
             => Task.CompletedTask;
-    }
-
-    private sealed class NoOpSerializer : IOutboxEventSerializer
-    {
-        public string GetTypeName(INotification notification)
-            => notification.GetType().AssemblyQualifiedName!;
-
-        public string Serialize(INotification notification)
-            => "{}";
-
-        public INotification Deserialize(OutboxMessage message)
-            => throw new NotSupportedException();
     }
 }

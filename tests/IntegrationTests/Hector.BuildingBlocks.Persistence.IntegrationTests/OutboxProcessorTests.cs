@@ -1,4 +1,3 @@
-using System.Text.Json;
 using FluentAssertions;
 using Hector.BuildingBlocks.Application.Messaging;
 using Hector.BuildingBlocks.Domain.Primitives;
@@ -7,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using static Hector.Testing.Persistence.PersistenceTestInfrastructure;
 
 namespace Hector.BuildingBlocks.Persistence.IntegrationTests;
@@ -40,17 +40,21 @@ public sealed class OutboxProcessorTests
         await using var context = await CreateContextAsync(connection);
 
         var mediator = Substitute.For<IMediator>();
-        var publisher = new OutboxPublisher(mediator, OutboxSerializer);
+        var serializer = Substitute.For<IOutboxEventSerializer>();
+        var publisher = new OutboxPublisher(mediator, serializer);
         var processor = CreateProcessor(context, publisher);
 
-        var domainEvent = new TestDomainEvent(Guid.NewGuid());
+        var integrationEvent = Substitute.For<INotification>();
+
+        serializer.Deserialize(Arg.Any<OutboxMessage>())
+            .Returns(integrationEvent);
 
         context.OutboxMessages.Add(new OutboxMessage
         {
             Id = Guid.NewGuid(),
             Type = EventName,
             Version = EventVersion,
-            Content = JsonSerializer.Serialize(domainEvent),
+            Content = "{}",
             OccurredOn = DateTime.UtcNow
         });
 
@@ -62,7 +66,7 @@ public sealed class OutboxProcessorTests
 
         // Assert
         await mediator.Received(1)
-            .PublishAsync(Arg.Any<INotification>(), Arg.Any<CancellationToken>());
+            .PublishAsync(integrationEvent, Arg.Any<CancellationToken>());
 
         var stored = await context.OutboxMessages.SingleAsync();
         stored.ProcessedOn.Should().NotBeNull();
@@ -70,6 +74,7 @@ public sealed class OutboxProcessorTests
         stored.RetryCount.Should().Be(0);
         stored.Error.Should().BeNull();
     }
+
 
     // ------------------------------
     // 3️⃣ Retry & Failure
@@ -83,10 +88,16 @@ public sealed class OutboxProcessorTests
         await using var context = await CreateContextAsync(connection);
 
         var mediator = Substitute.For<IMediator>();
+        var serializer = Substitute.For<IOutboxEventSerializer>();
+        var integrationEvent = Substitute.For<INotification>();
+
+        serializer.Deserialize(Arg.Any<OutboxMessage>())
+            .Returns(integrationEvent);
+
         mediator.PublishAsync(Arg.Any<INotification>(), Arg.Any<CancellationToken>())
             .Returns(_ => throw new Exception("boom"));
 
-        var publisher = new OutboxPublisher(mediator, OutboxSerializer);
+        var publisher = new OutboxPublisher(mediator, serializer);
         var processor = CreateProcessor(context, publisher);
 
         context.OutboxMessages.Add(new OutboxMessage
@@ -94,7 +105,7 @@ public sealed class OutboxProcessorTests
             Id = Guid.NewGuid(),
             Type = EventName,
             Version = EventVersion,
-            Content = JsonSerializer.Serialize(new TestDomainEvent(Guid.NewGuid())),
+            Content = "{}",
             OccurredOn = DateTime.UtcNow
         });
 
@@ -107,7 +118,7 @@ public sealed class OutboxProcessorTests
         var stored = await context.OutboxMessages.SingleAsync();
         stored.RetryCount.Should().Be(1);
         stored.Error.Should().Contain("boom");
-        stored.IsPoisoned.Should().BeFalse(); // Still recoverable
+        stored.IsPoisoned.Should().BeFalse();
         stored.ProcessedOn.Should().BeNull();
     }
 
@@ -119,11 +130,16 @@ public sealed class OutboxProcessorTests
         await using var context = await CreateContextAsync(connection);
 
         var mediator = Substitute.For<IMediator>();
+        var serializer = Substitute.For<IOutboxEventSerializer>();
+        var integrationEvent = Substitute.For<INotification>();
+
+        serializer.Deserialize(Arg.Any<OutboxMessage>())
+            .Returns(integrationEvent);
+
         mediator.PublishAsync(Arg.Any<INotification>(), Arg.Any<CancellationToken>())
             .Returns(_ => throw new Exception("permanent failure"));
 
-        var publisher = new OutboxPublisher(mediator, OutboxSerializer);
-        // تنظیم حداکثر تلاش برای تست سریع‌تر
+        var publisher = new OutboxPublisher(mediator, serializer);
         var options = new OutboxOptions { MaxRetryCount = 1 };
         var processor = CreateProcessor(context, publisher, options);
 
@@ -149,8 +165,8 @@ public sealed class OutboxProcessorTests
         stored.FailureReason.Should().Contain("permanent failure");
         stored.RetryCount.Should().Be(1);
 
-        // اطمینان از اینکه دیگر پردازش نمی‌شود
-        await mediator.Received(1).PublishAsync(Arg.Any<INotification>(), Arg.Any<CancellationToken>());
+        await mediator.Received(1)
+            .PublishAsync(integrationEvent, Arg.Any<CancellationToken>());
     }
 
     // ------------------------------
@@ -165,7 +181,12 @@ public sealed class OutboxProcessorTests
         await using var context = await CreateContextAsync(connection);
 
         var mediator = Substitute.For<IMediator>();
-        var publisher = new OutboxPublisher(mediator, OutboxSerializer);
+        var serializer = Substitute.For<IOutboxEventSerializer>();
+
+        serializer.Deserialize(Arg.Any<OutboxMessage>())
+            .Throws(new Exception("Deserialization failed"));
+
+        var publisher = new OutboxPublisher(mediator, serializer);
         var processor = CreateProcessor(context, publisher);
 
         context.OutboxMessages.Add(new OutboxMessage
@@ -187,5 +208,8 @@ public sealed class OutboxProcessorTests
         stored.RetryCount.Should().Be(1);
         stored.IsPoisoned.Should().BeFalse();
         stored.ProcessedOn.Should().BeNull();
+
+        await mediator.DidNotReceive()
+            .PublishAsync(Arg.Any<INotification>(), Arg.Any<CancellationToken>());
     }
 }

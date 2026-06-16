@@ -8,15 +8,14 @@ namespace Hector.BuildingBlocks.Persistence.IntegrationTests;
 
 public sealed class HectorDbContextTests
 {
-    private const string EventName = "test.persistence-domain-event";
-    private const int EventVersion = 1;
-
     [Fact]
-    public async Task Should_PersistOutboxMessage_When_AggregateRaisesDomainEvent()
+    public async Task Should_DispatchDomainEvents_When_AggregateRaisesDomainEvent()
     {
         // Arrange
         using var connection = CreateOpenSqliteConnection();
-        await using var context = await CreateContextAsync(connection);
+        var domainEventDispatcher = new RecordingDomainEventDispatcher();
+
+        await using var context = await CreateContextAsync(connection, domainEventDispatcher);
 
         var aggregate = TestAggregate.Create();
         aggregate.RaiseTestEvent();
@@ -27,12 +26,7 @@ public sealed class HectorDbContextTests
         await context.SaveChangesAsync();
 
         // Assert
-        var outboxMessages = await context.Set<OutboxMessage>().ToListAsync();
-
-        outboxMessages.Should().ContainSingle();
-        outboxMessages[0].Type.Should().Be(EventName);
-        outboxMessages[0].Version.Should().Be(EventVersion);
-        outboxMessages[0].Content.Should().Contain(aggregate.Id.Value.ToString());
+        domainEventDispatcher.DispatchedEvents.Should().ContainSingle();
     }
 
     [Fact]
@@ -72,28 +66,6 @@ public sealed class HectorDbContextTests
         // Assert
         await act.Should().ThrowAsync<DbUpdateException>();
         ((IHasDomainEvents)aggregate).GetDomainEvents().Should().NotBeEmpty();
-    }
-
-    [Fact]
-    public async Task Should_NotPersistOutboxMessage_When_PersistenceFails()
-    {
-        // Arrange
-        using var connection = CreateOpenSqliteConnection();
-        await using var context = await CreateFailingContextAsync(connection);
-
-        var aggregate = TestAggregate.Create();
-        aggregate.RaiseTestEvent();
-
-        context.Add(aggregate);
-
-        // Act
-        Func<Task> act = () => context.SaveChangesAsync();
-
-        // Assert
-        await act.Should().ThrowAsync<DbUpdateException>();
-
-        var outboxMessages = await context.Set<OutboxMessage>().ToListAsync();
-        outboxMessages.Should().BeEmpty();
     }
 
     [Fact]

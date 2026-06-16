@@ -10,6 +10,27 @@ namespace Hector.BuildingBlocks.Persistence.UnitTests;
 public sealed class OutboxIntegrationEventBusTests
 {
     [Fact]
+    public async Task Should_AddOutboxMessage_When_PublishAsyncIsCalled()
+    {
+        // Arrange
+        var context = Substitute.For<DbContext>();
+        var factory = Substitute.For<IOutboxMessageFactory>();
+
+        var integrationEvent = Substitute.For<IIntegrationEvent>();
+        var message = new OutboxMessage();
+
+        factory.Create(integrationEvent).Returns(message);
+
+        var bus = new OutboxIntegrationEventBus(context, factory);
+
+        // Act
+        await bus.PublishAsync(integrationEvent, CancellationToken.None);
+
+        // Assert
+        context.Set<OutboxMessage>().Received().Add(message);
+    }
+
+    [Fact]
     public async Task Should_ThrowArgumentNullException_When_IntegrationEventIsNull()
     {
         // Arrange
