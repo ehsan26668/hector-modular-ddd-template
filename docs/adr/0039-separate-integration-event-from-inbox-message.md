@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Implemented
 
 ## Context
 
@@ -26,3 +26,10 @@ We will decouple these concerns by introducing a dedicated marker interface for 
 - **Positive:** Prevents infrastructure leakage from Persistence into Application layer.
 - **Positive:** Cleaner and more intention-revealing Event Bus API.
 - **Neutral:** Requires refactoring existing integration events.
+
+## Status Update (Final)
+
+The separation between Integration Events and Inbox Messages is now fully implemented.
+The publish path depends exclusively on IIntegrationEvent and IIntegrationEventBus,
+and Inbox concerns remain strictly consumer-side. Tests for ProjectCreatedDomainEventHandler
+and OutboxIntegrationEventBus verify and enforce the architecture boundaries.
