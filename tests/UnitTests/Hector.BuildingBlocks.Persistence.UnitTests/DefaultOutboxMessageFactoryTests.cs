@@ -130,5 +130,10 @@ public sealed class DefaultOutboxMessageFactoryTests
         serializer.Received(1).Serialize(integrationEvent);
     }
 
-    private sealed record TestIntegrationEvent(Guid MessageId) : IIntegrationEvent;
+    private sealed record TestIntegrationEvent(Guid MessageId) : IIntegrationEvent
+    {
+        public Guid CorrelationId { get; init; }
+        public Guid? CausationId { get; init; }
+        public string? TraceId { get; init; }
+    }
 }

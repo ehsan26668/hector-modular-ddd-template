@@ -42,4 +42,4 @@
 | ADR-0038 | [Enforce Pure Transactional Outbox and Remove Immediate Domain Event Dispatch](/docs/adr/0038-enforce-pure-transactional-outbox-and-remove-immediate-domain-event-dispatch.md) | Accepted | 2026-06-07 |
 | ADR-0039 | [Separate Integration Event from Inbox Message](/docs/adr/0039-separate-integration-event-from-inbox-message.md) | Accepted | 2026-06-14 |
 | ADR-0040 | [Module-Level Registration of Integration Event Contract Assemblies for Outbox Resolution](/docs/adr/0040-module-level-outbox-event-contract-registration.md) | **Implemented** | 2026-06-15 |
-| ADR-0041 | [End-to-End Correlation Propagation](/docs/adr/0041-end-to-end-correlation-propagation.md) | **partial implementation** | 2026-06-16 |
+| ADR-0041 | [End-to-End Correlation Propagation](/docs/adr/0041-end-to-end-correlation-propagation.md) | **Implemented** | 2026-06-16 |

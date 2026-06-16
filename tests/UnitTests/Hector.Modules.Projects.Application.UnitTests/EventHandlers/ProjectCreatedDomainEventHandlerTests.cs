@@ -1,4 +1,5 @@
 using Hector.BuildingBlocks.Application.Messaging;
+using Hector.BuildingBlocks.Application.Messaging.Correlation;
 using Hector.Modules.Projects.Application.EventHandlers;
 using Hector.Modules.Projects.Contracts.Events;
 using Hector.Modules.Projects.Domain;
@@ -13,7 +14,8 @@ public sealed class ProjectCreatedDomainEventHandlerTests
     {
         // Arrange
         var integrationEventBus = Substitute.For<IIntegrationEventBus>();
-        var handler = new ProjectCreatedDomainEventHandler(integrationEventBus);
+        var correlationContextAccessor = Substitute.For<ICorrelationContextAccessor>();
+        var handler = new ProjectCreatedDomainEventHandler(integrationEventBus, correlationContextAccessor);
 
         var projectId = ProjectId.New();
         var projectName = "Test Project";

@@ -1,8 +1,11 @@
+using Hector.BuildingBlocks.Application.Messaging.Correlation;
+
 namespace Hector.BuildingBlocks.Application.Messaging.Inbox;
 
 public sealed class InboxPipelineBehavior<TRequest, TResponse>(
     IInboxStore inbox,
-    IModuleIdentity moduleIdentity)
+    IModuleIdentity moduleIdentity,
+    ICorrelationContextAccessor correlationContextAccessor)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
@@ -11,7 +14,10 @@ public sealed class InboxPipelineBehavior<TRequest, TResponse>(
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
-        if (request is not IIntegrationEvent integrationEvent) return await next();
+        if (request is not IIntegrationEvent integrationEvent)
+        {
+            return await next();
+        }
 
         var consumer = moduleIdentity.ModuleName;
 
@@ -20,7 +26,17 @@ public sealed class InboxPipelineBehavior<TRequest, TResponse>(
             consumer,
             cancellationToken);
 
-        if (!stored) return default!;
+        if (!stored)
+        {
+            return default!;
+        }
+
+        var context = new CorrelationContext(
+            integrationEvent.CorrelationId,
+            integrationEvent.MessageId,
+            integrationEvent.TraceId);
+
+        using var scope = correlationContextAccessor.BeginScope(context);
 
         return await next();
     }

@@ -16,6 +16,14 @@ public sealed class DefaultOutboxMessageFactory(
         var metadata = typeResolver.GetMetadata(integrationEvent.GetType());
         var correlation = correlationContextAccessor.Current;
 
+        var correlationId = correlation?.CorrelationId ??
+            (integrationEvent.CorrelationId != Guid.Empty
+                ? integrationEvent.CorrelationId
+                : integrationEvent.MessageId);
+
+        var causationId = correlation?.CausationId ?? integrationEvent.CausationId;
+        var traceId = correlation?.TraceId ?? integrationEvent.TraceId;
+
         return new OutboxMessage
         {
             Id = integrationEvent.MessageId,
@@ -23,10 +31,11 @@ public sealed class DefaultOutboxMessageFactory(
             Version = metadata.Version,
             Content = serializer.Serialize(integrationEvent),
             OccurredOn = DateTime.UtcNow,
-            CorrelationId = correlation?.CorrelationId ?? integrationEvent.MessageId,
-            CausationId = correlation?.CausationId,
-            TraceId = correlation?.TraceId,
+            CorrelationId = correlationId,
+            CausationId = causationId,
+            TraceId = traceId,
             Producer = integrationEvent.GetType().Assembly.GetName().Name ?? "unknown"
         };
     }
+
 }

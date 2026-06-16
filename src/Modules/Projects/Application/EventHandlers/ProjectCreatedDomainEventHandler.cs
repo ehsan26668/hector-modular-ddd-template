@@ -1,23 +1,28 @@
 using Hector.BuildingBlocks.Application.Messaging;
+using Hector.BuildingBlocks.Application.Messaging.Correlation;
 using Hector.Modules.Projects.Contracts.Events;
 using Hector.Modules.Projects.Domain;
 
 namespace Hector.Modules.Projects.Application.EventHandlers;
 
 public sealed class ProjectCreatedDomainEventHandler(
-    IIntegrationEventBus integrationEventBus)
+    IIntegrationEventBus integrationEventBus,
+    ICorrelationContextAccessor correlationContextAccessor)
     : INotificationHandler<ProjectCreatedDomainEvent>
 {
     public async Task HandleAsync(ProjectCreatedDomainEvent domainEvent, CancellationToken cancellationToken)
     {
-        // 1. Map Domain Event to Integration Event
-        var integrationEvent = new ProjectCreatedIntegrationEvent(
-            Guid.NewGuid(),
-            domainEvent.ProjectId.Value,
-            domainEvent.Name
-        );
+        var context = correlationContextAccessor.Current;
+        var messageId = Guid.NewGuid();
 
-        // 2. Publish Integration Event
+        var integrationEvent = new ProjectCreatedIntegrationEvent(
+            messageId,
+            context?.CorrelationId ?? messageId,
+            context?.CausationId,
+            context?.TraceId,
+            domainEvent.ProjectId.Value,
+            domainEvent.Name);
+
         await integrationEventBus.PublishAsync(integrationEvent, cancellationToken);
     }
 }

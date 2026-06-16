@@ -1,14 +1,21 @@
 using FluentAssertions;
 using Hector.BuildingBlocks.Application.Messaging;
+using Hector.BuildingBlocks.Application.Messaging.Correlation;
 using Hector.BuildingBlocks.Application.Messaging.Inbox;
 using NSubstitute;
-using Xunit;
 
 namespace Hector.BuildingBlocks.Application.UnitTests.Messaging;
 
 public sealed class InboxPipelineBehaviorTests
 {
-    private sealed record TestIntegrationEvent(Guid MessageId) : IIntegrationEvent, IRequest<object>;
+    private sealed record TestIntegrationEvent(Guid MessageId) : IIntegrationEvent, IRequest<object>
+    {
+        public Guid CorrelationId { get; init; } = Guid.NewGuid();
+
+        public Guid? CausationId { get; init; }
+
+        public string? TraceId { get; init; }
+    }
 
     [Fact]
     public async Task Should_InvokeHandler_When_MessageIsNotDuplicate()
@@ -16,6 +23,7 @@ public sealed class InboxPipelineBehaviorTests
         // Arrange
         var inboxStore = Substitute.For<IInboxStore>();
         var moduleIdentity = Substitute.For<IModuleIdentity>();
+        var correlationContextAccessor = new CorrelationContextAccessor();
 
         moduleIdentity.ModuleName.Returns("projects");
 
@@ -24,7 +32,8 @@ public sealed class InboxPipelineBehaviorTests
 
         var behavior = new InboxPipelineBehavior<TestIntegrationEvent, object>(
             inboxStore,
-            moduleIdentity);
+            moduleIdentity,
+            correlationContextAccessor);
 
         var integrationEvent = new TestIntegrationEvent(Guid.NewGuid());
         var nextCalled = false;
@@ -48,6 +57,7 @@ public sealed class InboxPipelineBehaviorTests
         // Arrange
         var inboxStore = Substitute.For<IInboxStore>();
         var moduleIdentity = Substitute.For<IModuleIdentity>();
+        var correlationContextAccessor = new CorrelationContextAccessor();
 
         moduleIdentity.ModuleName.Returns("projects");
 
@@ -56,7 +66,8 @@ public sealed class InboxPipelineBehaviorTests
 
         var behavior = new InboxPipelineBehavior<TestIntegrationEvent, object>(
             inboxStore,
-            moduleIdentity);
+            moduleIdentity,
+            correlationContextAccessor);
 
         var integrationEvent = new TestIntegrationEvent(Guid.NewGuid());
         var nextCalled = false;

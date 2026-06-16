@@ -142,5 +142,10 @@ public sealed class OutboxIntegrationEventBusTests
         messageFactory.Received(1).Create(integrationEvent);
     }
 
-    private sealed record TestIntegrationEvent(Guid MessageId) : IIntegrationEvent;
+    private sealed record TestIntegrationEvent(Guid MessageId) : IIntegrationEvent
+    {
+        public Guid CorrelationId { get; init; } = Guid.NewGuid();
+        public Guid? CausationId { get; init; }
+        public string? TraceId { get; init; }
+    }
 }
