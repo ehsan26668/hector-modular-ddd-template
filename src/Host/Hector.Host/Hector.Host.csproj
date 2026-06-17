@@ -14,6 +14,8 @@
     <ProjectReference Include="..\..\Framework\Hector.BuildingBlocks.Application\Hector.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\..\Framework\Hector.BuildingBlocks.Persistence\Hector.BuildingBlocks.Persistence.csproj" />
     <ProjectReference Include="..\..\Framework\Hector.BuildingBlocks.Web\Hector.BuildingBlocks.Web.csproj" />
+
+    <ProjectReference Include="..\..\Modules\Projects\Infrastructure\Hector.Modules.Projects.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

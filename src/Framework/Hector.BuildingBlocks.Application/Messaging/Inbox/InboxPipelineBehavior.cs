@@ -4,7 +4,7 @@ namespace Hector.BuildingBlocks.Application.Messaging.Inbox;
 
 public sealed class InboxPipelineBehavior<TRequest, TResponse>(
     IInboxStore inbox,
-    IModuleIdentity moduleIdentity,
+    IInboxConsumerNameProvider consumerNameProvider,
     ICorrelationContextAccessor correlationContextAccessor)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
@@ -19,7 +19,7 @@ public sealed class InboxPipelineBehavior<TRequest, TResponse>(
             return await next();
         }
 
-        var consumer = moduleIdentity.Name;
+        var consumer = consumerNameProvider.ConsumerName;
 
         var stored = await inbox.TryStoreAsync(
             integrationEvent.MessageId,

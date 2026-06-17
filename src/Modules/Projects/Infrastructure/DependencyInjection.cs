@@ -1,4 +1,4 @@
-using Hector.BuildingBlocks.Application.Messaging;
+using Hector.BuildingBlocks.Application.Messaging.Inbox;
 using Hector.BuildingBlocks.Persistence;
 using Hector.BuildingBlocks.Persistence.Outbox;
 using Hector.Modules.Projects.Contracts;
@@ -22,10 +22,14 @@ public static class DependencyInjection
 
         services.AddHectorPersistenceBuildingBlocks();
 
-        services.AddSingleton<IModuleIdentity, ProjectsModuleIdentity>();
+        services.AddSingleton<IInboxConsumerNameProvider>(
+            _ => new StaticInboxConsumerNameProvider("Projects"));
 
         services.AddOutboxEventContracts(
             typeof(ProjectsContractsAssemblyMarker).Assembly);
+
+        services.AddSingleton<IStronglyTypedIdAssemblyProvider,
+            ProjectsStronglyTypedIdAssemblyProvider>();
 
         services.AddDbContext<ProjectsDbContext>(options =>
         {

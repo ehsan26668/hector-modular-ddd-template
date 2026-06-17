@@ -3,10 +3,10 @@ using Hector.BuildingBlocks.Application.Messaging;
 
 namespace Hector.ArchitectureTests;
 
-public sealed class ModuleIdentityArchitectureTests
+public sealed class ModuleCompositionArchitectureTests
 {
     [Fact]
-    public void Every_Module_ShouldExpose_ExactlyOne_ModuleIdentity()
+    public void Every_Module_ShouldExpose_ExactlyOne_ModuleCompositionRoot()
     {
         // Arrange
         var moduleAssemblies = AppDomain.CurrentDomain
@@ -15,22 +15,22 @@ public sealed class ModuleIdentityArchitectureTests
             .ToList();
 
         // Act
-        var identities = moduleAssemblies
+        var modules = moduleAssemblies
             .SelectMany(a => a.GetTypes())
             .Where(t =>
-                typeof(IModuleIdentity).IsAssignableFrom(t) &&
+                typeof(IModule).IsAssignableFrom(t) &&
                 !t.IsAbstract &&
                 !t.IsInterface)
             .ToList();
 
         // Assert
-        identities.Should().NotBeEmpty(
-            "Every module must expose exactly one module identity according to ADR-0037.");
+        modules.Should().NotBeEmpty(
+            "Every module must expose exactly one module composition root according to ADR-0037.");
 
-        identities
+        modules
             .GroupBy(t => t.Assembly)
             .All(g => g.Count() == 1)
             .Should()
-            .BeTrue("Each module must expose exactly one IModuleIdentity.");
+            .BeTrue("Each module must expose exactly one IModule implementation.");
     }
 }

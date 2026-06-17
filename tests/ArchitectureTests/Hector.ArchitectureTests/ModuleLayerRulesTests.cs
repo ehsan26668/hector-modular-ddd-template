@@ -70,23 +70,24 @@ public sealed class ModuleLayerRulesTests
     }
 
     [Fact]
-    public void Should_HaveModuleIdentity_When_ModuleExists()
+    public void Should_HaveSingleModuleCompositionRoot_When_ModuleExists()
     {
         // Arrange
         var infrastructureAssembly =
             typeof(ProjectsDbContext).Assembly;
 
         // Act
-        var identities = infrastructureAssembly
+        var modules = infrastructureAssembly
             .GetTypes()
             .Where(t =>
-                typeof(IModuleIdentity).IsAssignableFrom(t) &&
-                !t.IsAbstract)
+                typeof(IModule).IsAssignableFrom(t) &&
+                !t.IsAbstract &&
+                !t.IsInterface)
             .ToList();
 
         // Assert
-        identities.Should().ContainSingle(
-            "Each module must define exactly one module identity according to ADR-0037.");
+        modules.Should().ContainSingle(
+            "Each module must define exactly one module composition root according to ADR-0037.");
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using Hector.BuildingBlocks.Application.Messaging;
 using Hector.BuildingBlocks.Application.Messaging.Inbox;
+using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Inbox;
 using Hector.BuildingBlocks.Persistence.Outbox;
 using Hector.BuildingBlocks.Persistence.Transactions;
@@ -27,10 +28,9 @@ public static class DependencyInjection
                 typeof(InboxPipelineBehavior<,>)));
 
         services.TryAddScoped<IInboxStore, EfCoreInboxStore>();
-
         services.TryAddScoped<IOutboxMessageFactory, DefaultOutboxMessageFactory>();
-
         services.TryAddScoped<IIntegrationEventBus, OutboxIntegrationEventBus>();
+        services.TryAddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
         services.TryAddSingleton<IOutboxEventTypeResolver>(sp =>
         {

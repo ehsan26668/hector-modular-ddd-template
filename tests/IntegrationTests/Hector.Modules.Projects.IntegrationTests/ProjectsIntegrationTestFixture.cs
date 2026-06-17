@@ -1,57 +1,25 @@
-using Hector.BuildingBlocks.Application;
-using Hector.BuildingBlocks.Domain.Primitives;
-using Hector.BuildingBlocks.Persistence;
-using Hector.Modules.Projects.Application;
-using Hector.Modules.Projects.Infrastructure;
-using Hector.Modules.Projects.Infrastructure.Persistence;
-using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Hector.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Hector.Modules.Projects.IntegrationTests;
 
-public sealed class ProjectsIntegrationTestFixture : IAsyncDisposable
+public sealed class ProjectsIntegrationTestFixture : IDisposable
 {
-    private readonly SqliteConnection _connection;
-    private readonly ServiceProvider _serviceProvider;
+    private readonly TestApplicationFactory _factory;
 
     public ProjectsIntegrationTestFixture()
     {
-        _connection = new SqliteConnection("Data Source=:memory:");
-        _connection.Open();
-
-        var services = new ServiceCollection();
-
-        var configuration = new ConfigurationBuilder().Build();
-
-        services.AddHectorApplicationBuildingBlocks();
-
-        services.AddProjectsApplication();
-
-        services.AddProjectsInfrastructure(
-            configuration,
-            options =>
-            {
-                options.UseSqlite(_connection);
-            });
-
-        services.AddSingleton<IStronglyTypedIdAssemblyProvider, ProjectsStronglyTypedIdAssemblyProvider>();
-
-        services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
-
-        _serviceProvider = services.BuildServiceProvider();
-
-        using var scope = _serviceProvider.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<ProjectsDbContext>();
-        context.Database.EnsureCreated();
+        // Arrange
+        _factory = new TestApplicationFactory();
     }
 
-    public IServiceScope CreateScope() => _serviceProvider.CreateScope();
-
-    public async ValueTask DisposeAsync()
+    public IServiceScope CreateScope()
     {
-        await _serviceProvider.DisposeAsync();
-        await _connection.DisposeAsync();
+        return _factory.Services.CreateScope();
+    }
+
+    public void Dispose()
+    {
+        _factory.Dispose();
     }
 }

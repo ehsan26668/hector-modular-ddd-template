@@ -3,10 +3,12 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Framework\Hector.BuildingBlocks.Domain\Hector.BuildingBlocks.Domain.csproj" />
     <ProjectReference Include="..\..\..\src\Framework\Hector.BuildingBlocks.Persistence\Hector.BuildingBlocks.Persistence.csproj" />
+    <ProjectReference Include="..\..\..\src\Host\Hector.Host\Hector.Host.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
   </ItemGroup>
 

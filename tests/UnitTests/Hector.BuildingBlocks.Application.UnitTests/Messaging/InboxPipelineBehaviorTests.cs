@@ -22,17 +22,17 @@ public sealed class InboxPipelineBehaviorTests
     {
         // Arrange
         var inboxStore = Substitute.For<IInboxStore>();
-        var moduleIdentity = Substitute.For<IModuleIdentity>();
+        var consumerNameProvider = Substitute.For<IInboxConsumerNameProvider>();
         var correlationContextAccessor = new CorrelationContextAccessor();
 
-        moduleIdentity.Name.Returns("projects");
+        consumerNameProvider.ConsumerName.Returns("projects");
 
         inboxStore.TryStoreAsync(Arg.Any<Guid>(), "projects", Arg.Any<CancellationToken>())
             .Returns(true);
 
         var behavior = new InboxPipelineBehavior<TestIntegrationEvent, object>(
             inboxStore,
-            moduleIdentity,
+            consumerNameProvider,
             correlationContextAccessor);
 
         var integrationEvent = new TestIntegrationEvent(Guid.NewGuid());
@@ -56,17 +56,17 @@ public sealed class InboxPipelineBehaviorTests
     {
         // Arrange
         var inboxStore = Substitute.For<IInboxStore>();
-        var moduleIdentity = Substitute.For<IModuleIdentity>();
+        var consumerNameProvider = Substitute.For<IInboxConsumerNameProvider>();
         var correlationContextAccessor = new CorrelationContextAccessor();
 
-        moduleIdentity.Name.Returns("projects");
+        consumerNameProvider.ConsumerName.Returns("projects");
 
         inboxStore.TryStoreAsync(Arg.Any<Guid>(), "projects", Arg.Any<CancellationToken>())
             .Returns(false);
 
         var behavior = new InboxPipelineBehavior<TestIntegrationEvent, object>(
             inboxStore,
-            moduleIdentity,
+            consumerNameProvider,
             correlationContextAccessor);
 
         var integrationEvent = new TestIntegrationEvent(Guid.NewGuid());

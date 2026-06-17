@@ -13,21 +13,21 @@ public sealed class InboxCorrelationBehaviorTests
     {
         // Arrange
         var inboxStore = Substitute.For<IInboxStore>();
-        var moduleIdentity = Substitute.For<IModuleIdentity>();
+        var consumerNameProvider = Substitute.For<IInboxConsumerNameProvider>();
         var accessor = new CorrelationContextAccessor();
 
         var messageId = Guid.NewGuid();
         var correlationId = Guid.NewGuid();
 
+        consumerNameProvider.ConsumerName.Returns("Projects");
+
         inboxStore
             .TryStoreAsync(messageId, "Projects", Arg.Any<CancellationToken>())
             .Returns(true);
 
-        moduleIdentity.Name.Returns("Projects");
-
         var behavior = new InboxPipelineBehavior<TestIntegrationEvent, bool>(
             inboxStore,
-            moduleIdentity,
+            consumerNameProvider,
             accessor);
 
         var integrationEvent = new TestIntegrationEvent(
@@ -60,21 +60,21 @@ public sealed class InboxCorrelationBehaviorTests
     {
         // Arrange
         var inboxStore = Substitute.For<IInboxStore>();
-        var moduleIdentity = Substitute.For<IModuleIdentity>();
+        var consumerNameProvider = Substitute.For<IInboxConsumerNameProvider>();
         var accessor = new CorrelationContextAccessor();
 
         var messageId = Guid.NewGuid();
         var correlationId = Guid.NewGuid();
 
+        consumerNameProvider.ConsumerName.Returns("Projects");
+
         inboxStore
             .TryStoreAsync(messageId, "Projects", Arg.Any<CancellationToken>())
             .Returns(true);
 
-        moduleIdentity.Name.Returns("Projects");
-
         var behavior = new InboxPipelineBehavior<TestIntegrationEvent, bool>(
             inboxStore,
-            moduleIdentity,
+            consumerNameProvider,
             accessor);
 
         var integrationEvent = new TestIntegrationEvent(
@@ -98,20 +98,20 @@ public sealed class InboxCorrelationBehaviorTests
     {
         // Arrange
         var inboxStore = Substitute.For<IInboxStore>();
-        var moduleIdentity = Substitute.For<IModuleIdentity>();
+        var consumerNameProvider = Substitute.For<IInboxConsumerNameProvider>();
         var accessor = new CorrelationContextAccessor();
 
         var messageId = Guid.NewGuid();
+
+        consumerNameProvider.ConsumerName.Returns("Projects");
 
         inboxStore
             .TryStoreAsync(messageId, "Projects", Arg.Any<CancellationToken>())
             .Returns(false);
 
-        moduleIdentity.Name.Returns("Projects");
-
         var behavior = new InboxPipelineBehavior<TestIntegrationEvent, bool>(
             inboxStore,
-            moduleIdentity,
+            consumerNameProvider,
             accessor);
 
         var integrationEvent = new TestIntegrationEvent(

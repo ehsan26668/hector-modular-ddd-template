@@ -3,9 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Hector.BuildingBlocks.Application.Messaging;
 
-public interface IModuleIdentity
+public interface IModule
 {
-    string Name { get; }
-
     void Register(IServiceCollection services, IConfiguration configuration);
 }
