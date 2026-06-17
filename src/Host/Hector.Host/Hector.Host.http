@@ -1,0 +1,6 @@
+@Hector.Host_HostAddress = http://localhost:5155
+
+GET {{Hector.Host_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

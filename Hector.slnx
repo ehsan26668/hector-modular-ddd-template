@@ -6,6 +6,9 @@
     <Project Path="src/Framework/Hector.BuildingBlocks.Persistence/Hector.BuildingBlocks.Persistence.csproj" />
     <Project Path="src/Framework/Hector.BuildingBlocks.Web/Hector.BuildingBlocks.Web.csproj" />
   </Folder>
+  <Folder Name="/src/Host/">
+    <Project Path="src/Host/Hector.Host/Hector.Host.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/" />
   <Folder Name="/src/Modules/Projects/" />
   <Folder Name="/src/Modules/Projects/Application/">
