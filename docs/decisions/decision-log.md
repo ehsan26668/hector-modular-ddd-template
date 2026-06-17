@@ -38,7 +38,7 @@
 | ADR-0034 | [Dead Letter and Poison Message Handling](/docs/adr/0034-dead-letter-and-poison-message-handling.md) | **Implemented** | 2026-06-07 |
 | ADR-0035 | [Consumer Idempotency Strategy](/docs/adr/0035-consumer-idempotency-strategy.md) | **Implemented** | 2026-06-16 |
 | ADR-0036 | [Architecture Guard Tests](/docs/adr/0036-architecture-guard-tests.md) | Accepted | 2026-06-07 |
-| ADR-0037 | [Introduce ModuleLoader for Automatic Module Registration](/docs/adr/0037-introduce-module-loader-for-auto-registration.md) | Proposed | 2026-06-07 |
+| ADR-0037 | [Introduce ModuleLoader for Automatic Module Registration](/docs/adr/0037-introduce-module-loader-for-auto-registration.md) | Accepted | 2026-06-17 |
 | ADR-0038 | [Enforce Transactional Outbox for Integration Events](/docs/adr/0038-enforce-transactional-outbox-for-integration-events.md) | Accepted | 2026-06-07 |
 | ADR-0039 | [Separate Integration Event from Inbox Message](/docs/adr/0039-separate-integration-event-from-inbox-message.md) | **Implemented** | 2026-06-14 |
 | ADR-0040 | [Module-Level Registration of Integration Event Contract Assemblies for Outbox Resolution](/docs/adr/0040-module-level-outbox-event-contract-registration.md) | **Implemented** | 2026-06-15 |

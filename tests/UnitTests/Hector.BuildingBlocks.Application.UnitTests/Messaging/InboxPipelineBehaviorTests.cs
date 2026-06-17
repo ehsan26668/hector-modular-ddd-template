@@ -25,7 +25,7 @@ public sealed class InboxPipelineBehaviorTests
         var moduleIdentity = Substitute.For<IModuleIdentity>();
         var correlationContextAccessor = new CorrelationContextAccessor();
 
-        moduleIdentity.ModuleName.Returns("projects");
+        moduleIdentity.Name.Returns("projects");
 
         inboxStore.TryStoreAsync(Arg.Any<Guid>(), "projects", Arg.Any<CancellationToken>())
             .Returns(true);
@@ -59,7 +59,7 @@ public sealed class InboxPipelineBehaviorTests
         var moduleIdentity = Substitute.For<IModuleIdentity>();
         var correlationContextAccessor = new CorrelationContextAccessor();
 
-        moduleIdentity.ModuleName.Returns("projects");
+        moduleIdentity.Name.Returns("projects");
 
         inboxStore.TryStoreAsync(Arg.Any<Guid>(), "projects", Arg.Any<CancellationToken>())
             .Returns(false);

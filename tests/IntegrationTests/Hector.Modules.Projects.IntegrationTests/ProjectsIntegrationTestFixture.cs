@@ -1,7 +1,12 @@
+using Hector.BuildingBlocks.Application;
+using Hector.BuildingBlocks.Domain.Primitives;
+using Hector.BuildingBlocks.Persistence;
+using Hector.Modules.Projects.Application;
 using Hector.Modules.Projects.Infrastructure;
 using Hector.Modules.Projects.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Hector.Modules.Projects.IntegrationTests;
@@ -18,10 +23,22 @@ public sealed class ProjectsIntegrationTestFixture : IAsyncDisposable
 
         var services = new ServiceCollection();
 
-        services.AddProjectsModule(options =>
-        {
-            options.UseSqlite(_connection);
-        });
+        var configuration = new ConfigurationBuilder().Build();
+
+        services.AddHectorApplicationBuildingBlocks();
+
+        services.AddProjectsApplication();
+
+        services.AddProjectsInfrastructure(
+            configuration,
+            options =>
+            {
+                options.UseSqlite(_connection);
+            });
+
+        services.AddSingleton<IStronglyTypedIdAssemblyProvider, ProjectsStronglyTypedIdAssemblyProvider>();
+
+        services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
         _serviceProvider = services.BuildServiceProvider();
 
@@ -30,10 +47,7 @@ public sealed class ProjectsIntegrationTestFixture : IAsyncDisposable
         context.Database.EnsureCreated();
     }
 
-    public IServiceScope CreateScope()
-    {
-        return _serviceProvider.CreateScope();
-    }
+    public IServiceScope CreateScope() => _serviceProvider.CreateScope();
 
     public async ValueTask DisposeAsync()
     {

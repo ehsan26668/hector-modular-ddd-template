@@ -23,7 +23,7 @@ public sealed class InboxCorrelationBehaviorTests
             .TryStoreAsync(messageId, "Projects", Arg.Any<CancellationToken>())
             .Returns(true);
 
-        moduleIdentity.ModuleName.Returns("Projects");
+        moduleIdentity.Name.Returns("Projects");
 
         var behavior = new InboxPipelineBehavior<TestIntegrationEvent, bool>(
             inboxStore,
@@ -70,7 +70,7 @@ public sealed class InboxCorrelationBehaviorTests
             .TryStoreAsync(messageId, "Projects", Arg.Any<CancellationToken>())
             .Returns(true);
 
-        moduleIdentity.ModuleName.Returns("Projects");
+        moduleIdentity.Name.Returns("Projects");
 
         var behavior = new InboxPipelineBehavior<TestIntegrationEvent, bool>(
             inboxStore,
@@ -107,7 +107,7 @@ public sealed class InboxCorrelationBehaviorTests
             .TryStoreAsync(messageId, "Projects", Arg.Any<CancellationToken>())
             .Returns(false);
 
-        moduleIdentity.ModuleName.Returns("Projects");
+        moduleIdentity.Name.Returns("Projects");
 
         var behavior = new InboxPipelineBehavior<TestIntegrationEvent, bool>(
             inboxStore,

@@ -19,7 +19,7 @@ public sealed class InboxPipelineBehavior<TRequest, TResponse>(
             return await next();
         }
 
-        var consumer = moduleIdentity.ModuleName;
+        var consumer = moduleIdentity.Name;
 
         var stored = await inbox.TryStoreAsync(
             integrationEvent.MessageId,

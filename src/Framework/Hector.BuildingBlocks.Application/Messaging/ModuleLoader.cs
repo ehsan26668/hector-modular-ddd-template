@@ -1,55 +1,30 @@
 using System.Reflection;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Hector.BuildingBlocks.Application.Messaging;
 
-public static class ModuleLoader
+public static class ModuleLoade
 {
     public static IServiceCollection AddModules(
         this IServiceCollection services,
+        IConfiguration configuration,
         params Assembly[] assemblies)
     {
-        var moduleIdentities = assemblies
+        var moduleTypes = assemblies
             .SelectMany(a => a.GetTypes())
             .Where(t =>
                 typeof(IModuleIdentity).IsAssignableFrom(t) &&
                 !t.IsAbstract &&
-                !t.IsInterface)
-            .ToList();
+                !t.IsInterface);
 
-        foreach (var moduleType in moduleIdentities)
+        foreach (var moduleType in moduleTypes)
         {
             var module = (IModuleIdentity)Activator.CreateInstance(moduleType)!;
 
-            RegisterModule(services, moduleType.Assembly);
+            module.Register(services, configuration);
         }
 
         return services;
-    }
-
-    private static void RegisterModule(
-        IServiceCollection services,
-        Assembly moduleAssembly)
-    {
-        var dependencyInjectionType = moduleAssembly
-            .GetTypes()
-            .FirstOrDefault(t =>
-                t.Name == "DependencyInjection" &&
-                t.IsSealed &&
-                t.IsAbstract);
-
-        if (dependencyInjectionType is null)
-            return;
-
-        var method = dependencyInjectionType
-            .GetMethods(BindingFlags.Public | BindingFlags.Static)
-            .FirstOrDefault(m =>
-                m.Name == "AddApplication" ||
-                m.Name == "AddInfrastructure");
-
-        if (method is null)
-            return;
-
-        method.Invoke(null, [services]);
     }
 }

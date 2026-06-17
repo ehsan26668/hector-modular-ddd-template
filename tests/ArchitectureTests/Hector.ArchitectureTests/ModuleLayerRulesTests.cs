@@ -9,7 +9,7 @@ using NetArchTest.Rules;
 
 namespace Hector.ArchitectureTests;
 
-public sealed class ModuleLoaderArchitectureTests
+public sealed class ModuleLayerRulesTests
 {
     private const string DomainNamespace = "Hector.Modules.Projects.Domain";
     private const string ApplicationNamespace = "Hector.Modules.Projects.Application";
@@ -73,13 +73,15 @@ public sealed class ModuleLoaderArchitectureTests
     public void Should_HaveModuleIdentity_When_ModuleExists()
     {
         // Arrange
-        var applicationAssembly =
-            typeof(ProjectsApplicationAssemblyMarker).Assembly;
+        var infrastructureAssembly =
+            typeof(ProjectsDbContext).Assembly;
 
         // Act
-        var identities = applicationAssembly
+        var identities = infrastructureAssembly
             .GetTypes()
-            .Where(t => typeof(IModuleIdentity).IsAssignableFrom(t) && !t.IsAbstract)
+            .Where(t =>
+                typeof(IModuleIdentity).IsAssignableFrom(t) &&
+                !t.IsAbstract)
             .ToList();
 
         // Assert

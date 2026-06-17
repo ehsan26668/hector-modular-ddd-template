@@ -2,76 +2,93 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
-After ADR-0019 (StronglyTypedId assembly scanning), the system now supports:
+Following the architectural decisions in:
 
-- Automatic discovery of strongly typed id assemblies
-- Composite assembly providers
-- Reflection-based registration patterns
+- ADR-0017 (Standardize Feature Module Structure)
+- ADR-0019 (Simplify StronglyTypedId and Use Assembly Scanning)
+- ADR-0020 (One DbContext per Feature Module)
 
-However, module registration in the application composition root is still manual.
+the system already relies on assembly scanning and convention-based registration for several infrastructure concerns.
 
-Currently, each module requires explicit registration of:
+However, module registration in the composition root (Host) is still manual.
 
-- Application layer services
+Currently, each module requires explicit registration inside Program.cs for:
+
+- Application services
 - Mediator handlers
 - Infrastructure services
 - DbContext
 - StronglyTypedId assembly providers
 
-As the number of modules grows, manual registration introduces:
+As the number of modules grows, this approach introduces several problems:
 
-- Boilerplate
-- Risk of missed registrations
-- Increased coupling in Program.cs
-- Reduced scalability of the Modular Monolith pattern
+- Boilerplate in the composition root
+- Risk of forgetting module registrations
+- Increased coupling between Host and feature modules
+- Reduced scalability of the Modular Monolith architecture
+To maintain true modular boundaries, the Host must not have compile‑time knowledge of individual modules.
 
-To evolve the template into a production-grade modular monolith, a standardized module bootstrap mechanism is required.
+Therefore a standardized mechanism is required for automatic module discovery and registration.
 
 ---
 
 ## Decision
 
-Introduce a `ModuleLoader` responsible for:
+Introduce a ModuleLoader infrastructure responsible for automatic module discovery and registration.
 
-1. Discovering all feature modules automatically.
-2. Registering:
-   - Application services
-   - Mediator handlers
-   - Infrastructure services
-   - DbContexts
-   - StronglyTypedId providers
-3. Enforcing module boundaries through reflection-based scanning.
-4. Providing a single extension method:
+Modules will expose a minimal contract:
 
 ```csharp
-builder.Services.AddModules(configuration);
-```
-
-Each module will expose a minimal contract, for example:
-
-```csharp
-public interface IModule
+public interface IModuleIdentity
 {
+    string Name { get; }
+
     void Register(IServiceCollection services, IConfiguration configuration);
 }
 ```
 
-Or alternatively, a marker-based scanning strategy:
+Each feature module must provide an implementation of this interface.
+
+Example:
 
 ```csharp
-IModuleAssemblyMarker
+public sealed class ProjectsModuleIdentity : IModuleIdentity
+{
+    public string Name => "Projects";
+
+    public void Register(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddProjectsApplication();
+        services.AddProjectsInfrastructure(configuration);
+    }
+}
 ```
 
-The final design will favor:
+The system will introduce a ModuleLoader responsible for:
 
-- Convention over configuration
-- Zero manual wiring per module
-- Strict layering rules
-- Deterministic startup behavior
+- Discovering implementations of IModuleIdentity
+- Instantiating them
+- Executing their Register method
+
+Discovery will be implemented using reflection-based assembly scanning.
+
+The Host will use a single extension method:
+
+```csharp
+builder.Services.AddModules(builder.Configuration);
+```
+
+The ModuleLoader will:
+
+1. Scan loaded assemblies
+2. Locate all IModuleIdentity implementations
+3. Register module services automatically
+
+This ensures the Host remains decoupled from feature modules.
 
 ---
 
@@ -80,43 +97,43 @@ The final design will favor:
 ### Positive
 
 - Eliminates manual module wiring
-- Improves scalability of Modular Monolith
+- Keeps Host independent from feature modules
+- Enables scalable Modular Monolith architecture
 - Reduces startup composition errors
-- Aligns with production-grade .NET modular architectures
-- Enables future dynamic module loading
-- Simplifies template adoption
+- Enables convention-based module onboarding
+- New modules require zero changes in Host
 
 ### Negative
 
-- Additional reflection at startup
-- Slight increase in architectural complexity
-- Requires strong architectural tests to prevent abuse
+- Introduces reflection during application startup
+- Requires clear architectural rules to avoid misuse
+- Requires additional architectural tests
 
 ---
 
 ## Architectural Principles Reinforced
 
-- High cohesion per module
-- Low coupling between modules
-- Convention-driven infrastructure
-- Explicit boundaries
+- Modular Monolith architecture
 - Self-contained feature modules
+- Low coupling between modules
+- Convention over configuration
+- Explicit composition root
 
 ---
 
 ## Future Work
 
-- Define ModuleLoader contract shape
-- Add architecture guard tests
-- Evaluate performance impact of scanning
-- Consider dynamic module enable/disable support
-- Possibly introduce ModuleManifest metadata
+- Implement ModuleLoader
+- Add architecture tests ensuring every module exposes IModuleIdentity
+- Validate module discovery behavior
+- Evaluate startup performance impact
+- Consider module metadata (ModuleManifest) for advanced scenarios
 
 ---
 
 ## Related ADRs
 
-- ADR-0017: Standardize Feature Module Structure
-- ADR-0019: Simplify StronglyTypedId and Use Assembly Scanning
-- ADR-0020: One DbContext per Feature Module
-- ADR-0036: Architecture Guard Tests
+- ADR-0017 — Standardize Feature Module Structure
+- ADR-0019 — Simplify StronglyTypedId and Use Assembly Scanning
+- ADR-0020 — Adopt One DbContext per Feature Module
+- ADR-0036 — Architecture Guard Tests
