@@ -1,4 +1,4 @@
-![.NET](https://img.shields.io/badge/.NET-8-blue)
+![.NET](https://img.shields.io/badge/.NET-10-blue)
 ![Architecture](https://img.shields.io/badge/architecture-DDD%20%7C%20Modular-brightgreen)
 ![Tests](https://img.shields.io/badge/tests-unit%20%7C%20integration-success)
 ![License](https://img.shields.io/badge/license-MIT-green)
