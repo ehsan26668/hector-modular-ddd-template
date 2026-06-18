@@ -1,5 +1,9 @@
 # Hector — Modular DDD .NET Template
 
+![.NET](https://img.shields.io/badge/.NET-10-blue)
+![Architecture](https://img.shields.io/badge/Architecture-DDD-green)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+
 Hector is a **modular Domain‑Driven Design (DDD) architecture template for .NET** designed for building scalable and maintainable enterprise systems.
 
 It provides a clean architectural foundation with:
@@ -13,10 +17,31 @@ It provides a clean architectural foundation with:
 - Inbox Pattern (Idempotent Consumers)
 - Background Event Processing
 - EF Core integration
+- Architecture tests
 - High test coverage
 - Architecture Decision Records (ADR)
 
-The project is designed as a **reference architecture and starter template** for modular monoliths and systems that may evolve toward distributed architectures.
+The project is designed as a **reference architecture and starter template** for modular monoliths that can evolve toward distributed systems.
+
+---
+
+## Quick Start
+
+1. Click **"Use this template"** on GitHub
+2. Clone your new repository
+3. Run:
+
+```bash
+dotnet restore
+dotnet build
+dotnet test
+```
+
+1. Run the host:
+
+```bash
+dotnet run --project src/Host/Hector.Host
+```
 
 ---
 
@@ -40,9 +65,6 @@ The project is designed as a **reference architecture and starter template** for
 - Architecture Decision Records
 - Trade‑offs
 - Extension Points
-- Development Workflow
-- Contribution Guide
-- Future Improvements
 
 ---
 
@@ -70,8 +92,6 @@ Business logic lives inside **aggregates and value objects**, not in application
 
 The domain layer is the **source of truth for business rules**.
 
----
-
 ### Explicit Boundaries
 
 The system is divided into **feature modules**.
@@ -82,33 +102,27 @@ Each module owns:
 - its application logic
 - its persistence configuration
 
-Modules communicate through **contracts**, not direct coupling.
-
----
+Modules communicate through **events and contracts**, not direct coupling.
 
 ### Thin Application Layer
 
 Application handlers orchestrate use cases but **do not contain business logic**.
 
-Handlers typically:
+Typical responsibilities:
 
-- create or load aggregates
+- load or create aggregates
 - invoke domain behavior
 - persist changes
-
----
 
 ### Persistence Ignorance
 
 Domain models have **no dependency on EF Core**.
 
-Persistence concerns are implemented in the **Persistence layer**.
-
----
+Infrastructure concerns live in the **Persistence layer**.
 
 ### Testable Architecture
 
-All building blocks are designed to be easily tested through:
+All building blocks are designed for:
 
 - unit tests
 - integration tests
@@ -117,8 +131,6 @@ All building blocks are designed to be easily tested through:
 ---
 
 ## System Architecture
-
-The system follows a **layered modular architecture**.
 
 ```text
 Application Layer
@@ -133,19 +145,14 @@ Persistence Layer
 Transactional Outbox
         │
         ▼
-Background Processor
+Outbox Processor
         │
         ▼
-Mediator.PublishAsync
+Integration Event Bus
         │
         ▼
 Inbox Pattern
-        │
-        ▼
-Integration Event Handler
 ```
-
-Feature modules sit on top of the shared framework building blocks.
 
 ---
 
@@ -154,10 +161,13 @@ Feature modules sit on top of the shared framework building blocks.
 ```text
 src/
  ├─ Framework/
- │
  │   ├─ Hector.BuildingBlocks.Domain
  │   ├─ Hector.BuildingBlocks.Application
- │   └─ Hector.BuildingBlocks.Persistence
+ │   ├─ Hector.BuildingBlocks.Persistence
+ │   └─ Hector.BuildingBlocks.Web
+ │
+ ├─ Host/
+ │   └─ Hector.Host
  │
  └─ Modules/
      └─ Projects
@@ -167,23 +177,22 @@ src/
          └─ Contracts
 ```
 
-Tests are organized separately:
+Tests:
 
 ```text
 tests/
  ├─ UnitTests
- └─ IntegrationTests
+ ├─ IntegrationTests
+ └─ ArchitectureTests
 ```
 
 ---
 
 ## Core Building Blocks
 
-The architecture is composed of three core building block libraries.
-
 ### BuildingBlocks.Domain
 
-Contains domain modeling primitives:
+Domain primitives:
 
 - Entity
 - AggregateRoot
@@ -192,29 +201,37 @@ Contains domain modeling primitives:
 - DomainException
 - StronglyTypedId
 
----
-
 ### BuildingBlocks.Application
 
-Contains application layer abstractions:
+Application abstractions:
 
 - ICommand
+- IQuery
 - IRequest
 - ICommandHandler
+- IQueryHandler
 - IRequestHandler
 - IMediator
-- Pipeline behaviors
-
----
+- IPipelineBehavior
+- ModuleLoader
 
 ### BuildingBlocks.Persistence
 
-Contains persistence infrastructure:
+Infrastructure components:
 
 - Base DbContext
 - Domain event dispatcher
+- Outbox processor
+- Inbox store
 - Strongly typed ID converters
-- Assembly scanning utilities
+
+### BuildingBlocks.Web
+
+Web infrastructure:
+
+- Correlation middleware
+- Request correlation propagation
+- HTTP integration support
 
 ---
 
@@ -224,51 +241,25 @@ The domain layer contains the **core business model**.
 
 ### Entity
 
-Entities represent objects with identity.
-
 ```csharp
 Entity<TId>
 ```
 
-Equality is determined by identity rather than full state.
-
----
+Entities are compared by identity.
 
 ### Aggregate Root
-
-Aggregates define **consistency boundaries**.
 
 ```csharp
 AggregateRoot<TId>
 ```
 
-Aggregates:
+Responsibilities:
 
 - enforce invariants
-- manage internal state
+- manage state
 - raise domain events
 
-Domain events are stored internally:
-
-```csharp
-private readonly List<IDomainEvent> _domainEvents
-```
-
-Available methods:
-
-```csharp
-RaiseDomainEvent()
-GetDomainEvents()
-ClearDomainEvents()
-```
-
-Event ordering is preserved by insertion order.
-
----
-
 ### Value Objects
-
-Value objects represent immutable domain concepts defined purely by their values.
 
 Characteristics:
 
@@ -276,24 +267,14 @@ Characteristics:
 - structural equality
 - no identity
 
----
-
 ### Domain Exceptions
-
-Domain rules are enforced through explicit exceptions.
 
 ```text
 DomainException
 BusinessRuleViolationException
 ```
 
----
-
 ### Guard Pattern
-
-Domain invariants are protected through guard methods.
-
-Example:
 
 ```csharp
 Ensure.NotEmpty(name, "Project name cannot be empty");
@@ -302,8 +283,6 @@ Ensure.NotEmpty(name, "Project name cannot be empty");
 ---
 
 ## Strongly Typed ID Strategy
-
-Instead of primitive identifiers, the system uses **Strongly Typed IDs**.
 
 Example:
 
@@ -316,7 +295,6 @@ Benefits:
 - prevents ID mixups
 - eliminates primitive obsession
 - improves domain expressiveness
-- improves compile‑time safety
 
 ---
 
@@ -324,83 +302,54 @@ Benefits:
 
 Strongly typed IDs are mapped automatically using:
 
-```csharp
-StronglyTypedIdValueConverter
-CompositeStronglyTypedIdAssemblyProvider
-StronglyTypedIdRegistrationExtensions
-```
-
-Assembly scanning registers converters automatically.
+- StronglyTypedIdValueConverter
+- CompositeStronglyTypedIdAssemblyProvider
+- StronglyTypedIdRegistrationExtensions
 
 ---
 
 ## Application Layer
 
-The application layer implements **CQRS using an internal mediator**.
-
-Core abstractions:
+The application layer implements **CQRS with an internal mediator**.
 
 ```csharp
 ICommand
-IRequest
-ICommandHandler
-IRequestHandler
+IQuery
 IMediator
+ICommandHandler
+IQueryHandler
 IPipelineBehavior
 ```
-
----
 
 ### Command Flow
 
 ```text
 Command
-   ↓
+  ↓
 Mediator
-   ↓
+  ↓
 Pipeline Behaviors
-   ↓
+  ↓
 Command Handler
-   ↓
+  ↓
 Repository
-   ↓
+  ↓
 DbContext SaveChanges
 ```
-
-Handlers coordinate use cases but **do not contain business rules**.
-
----
-
-### Pipeline Behaviors
-
-Pipeline behaviors allow cross‑cutting concerns.
-
-Example:
-
-```text
-ValidationBehavior
-```
-
-Additional behaviors may implement:
-
-- logging
-- authorization
-- transactions
-- metrics
 
 ---
 
 ## Persistence Layer
 
-Persistence is implemented using **EF Core**.
+Persistence uses **EF Core**.
 
-Central component:
+Base context:
 
 ```csharp
 HectorDbContext
 ```
 
-Each module provides its own DbContext.
+Each module has its own context.
 
 Example:
 
@@ -408,49 +357,57 @@ Example:
 ProjectsDbContext : HectorDbContext
 ```
 
-This enables **one DbContext per feature module**.
+---
+
+## Domain Event & Messaging Pipeline
+
+```text
+1. Aggregate raises domain event
+2. DbContext collects events
+3. State changes saved
+4. Events written to Outbox
+5. Outbox processor publishes events
+```
 
 ---
 
-## Domain Event Pipeline
+## Transactional Outbox
 
-Domain events are automatically dispatched during persistence.
-
-Pipeline sequence:
+Ensures reliable event delivery.
 
 ```text
-1. Aggregates raise domain events
-2. DbContext collects events
-3. State changes are persisted
-4. Domain events are dispatched
-5. Events are cleared
+Domain Event
+   ↓
+OutboxMessage
+   ↓
+Outbox Processor
+   ↓
+Integration Event Bus
 ```
 
-Implementation location:
+Benefits:
 
-```csharp
-HectorDbContext.SaveChangesAsync()
+- reliable event publishing
+- no lost events
+- eventual consistency support
+
+---
+
+## Inbox Pattern
+
+Provides **idempotent event processing**.
+
+Each processed message is recorded.
+
+```text
+MessageId + Consumer
 ```
 
-Dispatcher:
-
-```csharp
-DomainEventDispatcher
-```
-
-Publishing mechanism:
-
-```csharp
-mediator.PublishAsync(domainEvent)
-```
-
-Events are dispatched sequentially.
+Duplicate messages are ignored.
 
 ---
 
 ## Feature Module Architecture
-
-Each feature module contains four layers.
 
 ```text
 Module
@@ -465,197 +422,103 @@ Example:
 ```text
 Projects
  ├─ Domain
- │   ├─ Project
- │   ├─ ProjectId
- │   └─ ProjectCreatedDomainEvent
- │
  ├─ Application
- │   └─ CreateProjectCommand
- │
  ├─ Infrastructure
- │   ├─ ProjectsDbContext
- │   └─ ProjectRepository
- │
  └─ Contracts
 ```
 
-Modules are designed to be **independently evolvable**.
-
 ---
 
-## End‑to‑End Command Flow
+## End‑to‑End Flow
 
-Example use case: **Create Project**.
+Example: **Create Project**
 
 ```text
 CreateProjectCommand
-        ↓
-CreateProjectCommandHandler
-        ↓
-Project.Create(name)
-        ↓
-ProjectCreatedDomainEvent raised
-        ↓
-ProjectRepository.AddAsync
-        ↓
-DbContext.SaveChangesAsync
-        ↓
-DomainEventDispatcher
-        ↓
-Mediator.Publish
+      ↓
+CommandHandler
+      ↓
+Aggregate.Create()
+      ↓
+DomainEvent
+      ↓
+Outbox
+      ↓
+Outbox Processor
 ```
 
 ---
 
 ## Testing Strategy
 
-The template includes several types of tests.
+### Unit Tests
 
-### Domain Unit Tests
-
-Validate domain logic and invariants.
+Validate domain logic.
 
 Examples:
 
-```csharp
-AggregateRootTests
-EntityTests
-ProjectTests
-```
+- AggregateRootTests
+- EntityTests
+- ProjectTests
 
----
+### Integration Tests
 
-### Application Tests
-
-Validate mediator behavior and pipeline execution.
+Validate EF Core and messaging pipeline.
 
 Examples:
 
-```csharp
-MediatorTests
-ValidationBehaviorTests
-```
+- HectorDbContextTests
+- OutboxProcessorTests
 
----
+### Architecture Tests
 
-### Persistence Tests
-
-Verify EF Core integration and event dispatch behavior.
+Verify structural rules.
 
 Examples:
 
-```csharp
-HectorDbContextTests
-StronglyTypedIdMappingTests
-```
-
----
-
-### Module Integration Tests
-
-Test complete application flows.
-
-Example:
-
-```csharp
-CreateProjectTests
-```
-
-These tests validate:
-
-```text
-Command → Handler → Repository → DbContext → Database
-```
-
-SQLite in‑memory is used as the test database.
+- LayerDependencyTests
+- ModuleLayerRulesTests
+- QueryHandlerSideEffectTests
 
 ---
 
 ## Architecture Decision Records
 
-All major architectural decisions are documented as ADRs.
+Architectural decisions are documented in `docs/adr`.
 
 Examples:
 
-```text
-0005 Domain Events
-0008 Strongly Typed IDs
-0013 Base DbContext and Domain Event Dispatch Strategy
-0014 Internal Mediator for CQRS
-0016 Domain Event Dispatch in EF Save Pipeline
-0020 One DbContext per Feature Module
-```
+- Domain Events
+- Strongly Typed IDs
+- Transactional Outbox
+- Inbox Pattern
+- Module Structure
 
 ---
 
 ## Trade‑offs
 
-### Simplicity vs Reliability
-
-Domain events currently use **commit‑first dispatch**.
-
 Advantages:
 
-- simple
-- minimal infrastructure
-- easy to reason about
+- strong architectural boundaries
+- explicit domain modeling
+- reliable messaging
 
-Limitations:
+Costs:
 
-- not guaranteed delivery
-- not suitable for distributed messaging without an outbox
+- additional infrastructure complexity
+- more abstractions compared to CRUD architectures
 
 ---
 
 ## Extension Points
 
-The architecture supports multiple extensions.
+Possible future additions:
 
-Possible additions:
-
-- transactional outbox
-- event bus integration
+- external message brokers
 - distributed modules
 - saga orchestration
-- background event processing
-- module isolation per database
-
----
-
-## Development Workflow
-
-Typical development flow:
-
-1. Model domain aggregate
-2. Implement domain behavior
-3. Raise domain events
-4. Write unit tests
-5. Create command handler
-6. Implement repository
-7. Write integration test
-
----
-
-## Contribution Guide
-
-When contributing to the architecture:
-
-- follow the existing module structure
-- write unit tests for domain logic
-- document architectural changes using ADRs
-- avoid placing business logic inside handlers
-- keep modules loosely coupled
-
----
-
-## Future Improvements
-
-Potential enhancements:
-
-- transactional outbox
-- distributed event bus
-- module communication contracts
-- background event processing
+- read model projections
 - multi‑tenant support
 - observability instrumentation
 
@@ -663,15 +526,40 @@ Potential enhancements:
 
 ## Summary
 
-Hector provides a robust foundation for building domain‑driven systems in .NET.
+Hector provides a strong foundation for **DDD‑oriented modular systems in .NET**.
 
 Core strengths:
 
 - strongly modeled domain
 - modular architecture
 - mediator‑based application layer
-- automatic domain event dispatch
+- transactional outbox & inbox
 - strongly typed identifiers
-- extensive test coverage
+- architecture guard tests
 
-The template prioritizes **clarity, maintainability, and architectural discipline** while remaining lightweight enough for real‑world projects.
+The template prioritizes **clarity, maintainability, and architectural discipline** while remaining practical for real‑world systems.
+
+---
+
+## v1.0.0 – Initial Stable Release
+
+This is the first stable release of Hector.
+
+Included capabilities:
+
+- Modular Monolith Architecture
+- CQRS with internal mediator
+- Transactional Outbox
+- Inbox pattern (idempotent consumers)
+- End-to-end correlation support
+- Architecture guard tests
+- Strongly typed identifiers
+- ADR documentation
+
+This version is considered production-ready as a reference modular DDD template.
+
+---
+
+## License
+
+This project is licensed under the MIT License.
