@@ -1,11 +1,6 @@
-![.NET](https://img.shields.io/badge/.NET-10-blue)
-![Architecture](https://img.shields.io/badge/architecture-DDD%20%7C%20Modular-brightgreen)
-![Tests](https://img.shields.io/badge/tests-unit%20%7C%20integration-success)
-![License](https://img.shields.io/badge/license-MIT-green)
-
 # Hector — Modular DDD .NET Template
 
-Hector is a **modular Domain‑Driven Design (DDD) architecture template for .NET** designed for building scalable, maintainable enterprise systems.
+Hector is a **modular Domain‑Driven Design (DDD) architecture template for .NET** designed for building scalable and maintainable enterprise systems.
 
 It provides a clean architectural foundation with:
 
@@ -21,7 +16,7 @@ It provides a clean architectural foundation with:
 - High test coverage
 - Architecture Decision Records (ADR)
 
-The project is designed as a **reference architecture and starter template** for modular monoliths and evolving distributed systems.
+The project is designed as a **reference architecture and starter template** for modular monoliths and systems that may evolve toward distributed architectures.
 
 ---
 
@@ -61,7 +56,7 @@ Key objectives:
 - Keep infrastructure concerns isolated
 - Enable modular evolution of the system
 - Provide strong type safety
-- Ensure architecture decisions are documented
+- Ensure architectural decisions are documented
 
 Hector is optimized for **modular monolith architectures that can evolve toward microservices**.
 
@@ -79,7 +74,7 @@ The domain layer is the **source of truth for business rules**.
 
 ### Explicit Boundaries
 
-The system is split into **feature modules**.
+The system is divided into **feature modules**.
 
 Each module owns:
 
@@ -125,7 +120,7 @@ All building blocks are designed to be easily tested through:
 
 The system follows a **layered modular architecture**.
 
-```text
+```
 Application Layer
         │
         ▼
@@ -156,14 +151,12 @@ Feature modules sit on top of the shared framework building blocks.
 
 ## Project Structure
 
-```text
+```
 src/
  ├─ Framework/
  │
  │   ├─ Hector.BuildingBlocks.Domain
- │   │
  │   ├─ Hector.BuildingBlocks.Application
- │   │
  │   └─ Hector.BuildingBlocks.Persistence
  │
  └─ Modules/
@@ -176,7 +169,7 @@ src/
 
 Tests are organized separately:
 
-```text
+```
 tests/
  ├─ UnitTests
  └─ IntegrationTests
@@ -188,7 +181,7 @@ tests/
 
 The architecture is composed of three core building block libraries.
 
-## BuildingBlocks.Domain
+### BuildingBlocks.Domain
 
 Contains domain modeling primitives:
 
@@ -201,7 +194,7 @@ Contains domain modeling primitives:
 
 ---
 
-## BuildingBlocks.Application
+### BuildingBlocks.Application
 
 Contains application layer abstractions:
 
@@ -214,7 +207,7 @@ Contains application layer abstractions:
 
 ---
 
-## BuildingBlocks.Persistence
+### BuildingBlocks.Persistence
 
 Contains persistence infrastructure:
 
@@ -229,13 +222,11 @@ Contains persistence infrastructure:
 
 The domain layer contains the **core business model**.
 
-Key components include:
-
-## Entity
+### Entity
 
 Entities represent objects with identity.
 
-```text
+```
 Entity<TId>
 ```
 
@@ -243,11 +234,11 @@ Equality is determined by identity rather than full state.
 
 ---
 
-## Aggregate Root
+### Aggregate Root
 
 Aggregates define **consistency boundaries**.
 
-```text
+```
 AggregateRoot<TId>
 ```
 
@@ -259,13 +250,13 @@ Aggregates:
 
 Domain events are stored internally:
 
-```text
+```
 private readonly List<IDomainEvent> _domainEvents
 ```
 
-Methods available to aggregates:
+Available methods:
 
-```text
+```
 RaiseDomainEvent()
 GetDomainEvents()
 ClearDomainEvents()
@@ -275,9 +266,9 @@ Event ordering is preserved by insertion order.
 
 ---
 
-## Value Objects
+### Value Objects
 
-Value objects represent immutable domain concepts defined only by their values.
+Value objects represent immutable domain concepts defined purely by their values.
 
 Characteristics:
 
@@ -287,24 +278,24 @@ Characteristics:
 
 ---
 
-## Domain Exceptions
+### Domain Exceptions
 
 Domain rules are enforced through explicit exceptions.
 
-```text
+```
 DomainException
 BusinessRuleViolationException
 ```
 
 ---
 
-## Guard Pattern
+### Guard Pattern
 
 Domain invariants are protected through guard methods.
 
 Example:
 
-```text
+```
 Ensure.NotEmpty(name, "Project name cannot be empty");
 ```
 
@@ -316,7 +307,7 @@ Instead of primitive identifiers, the system uses **Strongly Typed IDs**.
 
 Example:
 
-```text
+```
 public sealed class ProjectId : StronglyTypedId<ProjectId>
 ```
 
@@ -333,7 +324,7 @@ Benefits:
 
 Strongly typed IDs are mapped automatically using:
 
-```text
+```
 StronglyTypedIdValueConverter
 CompositeStronglyTypedIdAssemblyProvider
 StronglyTypedIdRegistrationExtensions
@@ -349,7 +340,7 @@ The application layer implements **CQRS using an internal mediator**.
 
 Core abstractions:
 
-```text
+```
 ICommand
 IRequest
 ICommandHandler
@@ -360,9 +351,9 @@ IPipelineBehavior
 
 ---
 
-## Command Flow
+### Command Flow
 
-```text
+```
 Command
    ↓
 Mediator
@@ -380,17 +371,17 @@ Handlers coordinate use cases but **do not contain business rules**.
 
 ---
 
-## Pipeline Behaviors
+### Pipeline Behaviors
 
 Pipeline behaviors allow cross‑cutting concerns.
 
 Example:
 
-```text
-ValidationBehavior
+```
+ValidationBehaviorf
 ```
 
-Additional behaviors can implement:
+Additional behaviors may implement:
 
 - logging
 - authorization
@@ -405,7 +396,7 @@ Persistence is implemented using **EF Core**.
 
 Central component:
 
-```text
+```
 HectorDbContext
 ```
 
@@ -413,7 +404,7 @@ Each module provides its own DbContext.
 
 Example:
 
-```text
+```
 ProjectsDbContext : HectorDbContext
 ```
 
@@ -427,7 +418,7 @@ Domain events are automatically dispatched during persistence.
 
 Pipeline sequence:
 
-```text
+```
 1. Aggregates raise domain events
 2. DbContext collects events
 3. State changes are persisted
@@ -435,23 +426,21 @@ Pipeline sequence:
 5. Events are cleared
 ```
 
----
+Implementation location:
 
-## Implementation Location
-
-```text
+```
 HectorDbContext.SaveChangesAsync()
 ```
 
-The dispatcher:
+Dispatcher:
 
-```text
+```
 DomainEventDispatcher
 ```
 
-The dispatcher publishes events through the mediator:
+Publishing mechanism:
 
-```text
+```
 mediator.PublishAsync(domainEvent)
 ```
 
@@ -459,31 +448,11 @@ Events are dispatched sequentially.
 
 ---
 
-## Persistence Pipeline Behavior
-
-```text
-Collect domain events
-        ↓
-Persist database changes
-        ↓
-Dispatch domain events
-        ↓
-Clear domain events
-```
-
-Important guarantees:
-
-- events dispatch **only after successful persistence**
-- events remain if persistence fails
-- dispatch exceptions propagate upward
-
----
-
 ## Feature Module Architecture
 
 Each feature module contains four layers.
 
-```text
+```
 Module
  ├─ Domain
  ├─ Application
@@ -493,7 +462,7 @@ Module
 
 Example:
 
-```text
+```
 Projects
  ├─ Domain
  │   ├─ Project
@@ -516,11 +485,9 @@ Modules are designed to be **independently evolvable**.
 
 ## End‑to‑End Command Flow
 
-Example use case:
+Example use case: **Create Project**.
 
-Create Project.
-
-```text
+```
 CreateProjectCommand
         ↓
 CreateProjectCommandHandler
@@ -544,13 +511,13 @@ Mediator.Publish
 
 The template includes several types of tests.
 
-## Domain Unit Tests
+### Domain Unit Tests
 
 Validate domain logic and invariants.
 
 Examples:
 
-```text
+```
 AggregateRootTests
 EntityTests
 ProjectTests
@@ -558,45 +525,45 @@ ProjectTests
 
 ---
 
-## Application Tests
+### Application Tests
 
 Validate mediator behavior and pipeline execution.
 
 Examples:
 
-```text
+```
 MediatorTests
 ValidationBehaviorTests
 ```
 
 ---
 
-## Persistence Tests
+### Persistence Tests
 
-Verify EF integration and event dispatch behavior.
+Verify EF Core integration and event dispatch behavior.
 
 Examples:
 
-```text
+```
 HectorDbContextTests
 StronglyTypedIdMappingTests
 ```
 
 ---
 
-## Module Integration Tests
+### Module Integration Tests
 
 Test complete application flows.
 
 Example:
 
-```text
+```
 CreateProjectTests
 ```
 
 These tests validate:
 
-```text
+```
 Command → Handler → Repository → DbContext → Database
 ```
 
@@ -610,7 +577,7 @@ All major architectural decisions are documented as ADRs.
 
 Examples:
 
-```text
+```
 0005 Domain Events
 0008 Strongly Typed IDs
 0013 Base DbContext and Domain Event Dispatch Strategy
@@ -623,9 +590,9 @@ Examples:
 
 ## Trade‑offs
 
-## Simplicity vs Reliability
+### Simplicity vs Reliability
 
-Domain events use **commit‑first dispatch**.
+Domain events currently use **commit‑first dispatch**.
 
 Advantages:
 
@@ -673,10 +640,10 @@ Typical development flow:
 
 When contributing to the architecture:
 
-- follow existing module structure
+- follow the existing module structure
 - write unit tests for domain logic
-- document architectural changes with ADRs
-- avoid placing business logic in handlers
+- document architectural changes using ADRs
+- avoid placing business logic inside handlers
 - keep modules loosely coupled
 
 ---
@@ -685,12 +652,12 @@ When contributing to the architecture:
 
 Potential enhancements:
 
-- Outbox Pattern
-- Distributed Event Bus
-- Module Communication Contracts
-- Background Event Processing
-- Multi‑tenant support
-- Observability instrumentation
+- transactional outbox
+- distributed event bus
+- module communication contracts
+- background event processing
+- multi‑tenant support
+- observability instrumentation
 
 ---
 
@@ -707,4 +674,4 @@ Core strengths:
 - strongly typed identifiers
 - extensive test coverage
 
-The template prioritizes **clarity, maintainability, and architectural discipline** while remaining lightweight enough for real-world projects.
+The template prioritizes **clarity, maintainability, and architectural discipline** while remaining lightweight enough for real‑world projects.
