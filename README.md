@@ -120,7 +120,7 @@ All building blocks are designed to be easily tested through:
 
 The system follows a **layered modular architecture**.
 
-```
+```text
 Application Layer
         │
         ▼
@@ -151,7 +151,7 @@ Feature modules sit on top of the shared framework building blocks.
 
 ## Project Structure
 
-```
+```text
 src/
  ├─ Framework/
  │
@@ -169,7 +169,7 @@ src/
 
 Tests are organized separately:
 
-```
+```text
 tests/
  ├─ UnitTests
  └─ IntegrationTests
@@ -226,7 +226,7 @@ The domain layer contains the **core business model**.
 
 Entities represent objects with identity.
 
-```
+```csharp
 Entity<TId>
 ```
 
@@ -238,7 +238,7 @@ Equality is determined by identity rather than full state.
 
 Aggregates define **consistency boundaries**.
 
-```
+```csharp
 AggregateRoot<TId>
 ```
 
@@ -250,13 +250,13 @@ Aggregates:
 
 Domain events are stored internally:
 
-```
+```csharp
 private readonly List<IDomainEvent> _domainEvents
 ```
 
 Available methods:
 
-```
+```csharp
 RaiseDomainEvent()
 GetDomainEvents()
 ClearDomainEvents()
@@ -282,7 +282,7 @@ Characteristics:
 
 Domain rules are enforced through explicit exceptions.
 
-```
+```text
 DomainException
 BusinessRuleViolationException
 ```
@@ -295,7 +295,7 @@ Domain invariants are protected through guard methods.
 
 Example:
 
-```
+```csharp
 Ensure.NotEmpty(name, "Project name cannot be empty");
 ```
 
@@ -307,7 +307,7 @@ Instead of primitive identifiers, the system uses **Strongly Typed IDs**.
 
 Example:
 
-```
+```csharp
 public sealed class ProjectId : StronglyTypedId<ProjectId>
 ```
 
@@ -324,7 +324,7 @@ Benefits:
 
 Strongly typed IDs are mapped automatically using:
 
-```
+```csharp
 StronglyTypedIdValueConverter
 CompositeStronglyTypedIdAssemblyProvider
 StronglyTypedIdRegistrationExtensions
@@ -340,7 +340,7 @@ The application layer implements **CQRS using an internal mediator**.
 
 Core abstractions:
 
-```
+```csharp
 ICommand
 IRequest
 ICommandHandler
@@ -353,7 +353,7 @@ IPipelineBehavior
 
 ### Command Flow
 
-```
+```text
 Command
    ↓
 Mediator
@@ -377,8 +377,8 @@ Pipeline behaviors allow cross‑cutting concerns.
 
 Example:
 
-```
-ValidationBehaviorf
+```text
+ValidationBehavior
 ```
 
 Additional behaviors may implement:
@@ -396,7 +396,7 @@ Persistence is implemented using **EF Core**.
 
 Central component:
 
-```
+```csharp
 HectorDbContext
 ```
 
@@ -404,7 +404,7 @@ Each module provides its own DbContext.
 
 Example:
 
-```
+```csharp
 ProjectsDbContext : HectorDbContext
 ```
 
@@ -418,7 +418,7 @@ Domain events are automatically dispatched during persistence.
 
 Pipeline sequence:
 
-```
+```text
 1. Aggregates raise domain events
 2. DbContext collects events
 3. State changes are persisted
@@ -428,19 +428,19 @@ Pipeline sequence:
 
 Implementation location:
 
-```
+```csharp
 HectorDbContext.SaveChangesAsync()
 ```
 
 Dispatcher:
 
-```
+```csharp
 DomainEventDispatcher
 ```
 
 Publishing mechanism:
 
-```
+```csharp
 mediator.PublishAsync(domainEvent)
 ```
 
@@ -452,7 +452,7 @@ Events are dispatched sequentially.
 
 Each feature module contains four layers.
 
-```
+```text
 Module
  ├─ Domain
  ├─ Application
@@ -462,7 +462,7 @@ Module
 
 Example:
 
-```
+```text
 Projects
  ├─ Domain
  │   ├─ Project
@@ -487,7 +487,7 @@ Modules are designed to be **independently evolvable**.
 
 Example use case: **Create Project**.
 
-```
+```text
 CreateProjectCommand
         ↓
 CreateProjectCommandHandler
@@ -517,7 +517,7 @@ Validate domain logic and invariants.
 
 Examples:
 
-```
+```csharp
 AggregateRootTests
 EntityTests
 ProjectTests
@@ -531,7 +531,7 @@ Validate mediator behavior and pipeline execution.
 
 Examples:
 
-```
+```csharp
 MediatorTests
 ValidationBehaviorTests
 ```
@@ -544,7 +544,7 @@ Verify EF Core integration and event dispatch behavior.
 
 Examples:
 
-```
+```csharp
 HectorDbContextTests
 StronglyTypedIdMappingTests
 ```
@@ -557,13 +557,13 @@ Test complete application flows.
 
 Example:
 
-```
+```csharp
 CreateProjectTests
 ```
 
 These tests validate:
 
-```
+```text
 Command → Handler → Repository → DbContext → Database
 ```
 
@@ -577,7 +577,7 @@ All major architectural decisions are documented as ADRs.
 
 Examples:
 
-```
+```text
 0005 Domain Events
 0008 Strongly Typed IDs
 0013 Base DbContext and Domain Event Dispatch Strategy

@@ -1,3 +1,4 @@
+using System.Reflection;
 using FluentAssertions;
 using Hector.BuildingBlocks.Application.Messaging;
 
@@ -9,28 +10,33 @@ public sealed class ModuleCompositionArchitectureTests
     public void Every_Module_ShouldExpose_ExactlyOne_ModuleCompositionRoot()
     {
         // Arrange
-        var moduleAssemblies = AppDomain.CurrentDomain
-            .GetAssemblies()
-            .Where(a => a.GetName().Name!.StartsWith("Hector.Modules."))
+        var moduleInfrastructureAssemblies = Directory
+            .EnumerateFiles(AppContext.BaseDirectory, "Hector.Modules.*.Infrastructure.dll")
+            .Select(Assembly.LoadFrom)
             .ToList();
 
         // Act
-        var modules = moduleAssemblies
-            .SelectMany(a => a.GetTypes())
-            .Where(t =>
-                typeof(IModule).IsAssignableFrom(t) &&
-                !t.IsAbstract &&
-                !t.IsInterface)
+        var moduleCompositionRoots = moduleInfrastructureAssemblies
+            .Select(assembly => new
+            {
+                Assembly = assembly,
+                Modules = assembly
+                    .GetTypes()
+                    .Where(type =>
+                        typeof(IModule).IsAssignableFrom(type) &&
+                        !type.IsAbstract &&
+                        !type.IsInterface)
+                    .ToList()
+            })
             .ToList();
 
         // Assert
-        modules.Should().NotBeEmpty(
-            "Every module must expose exactly one module composition root according to ADR-0037.");
+        moduleInfrastructureAssemblies.Should().NotBeEmpty(
+            "ADR-0037 requires every module infrastructure assembly to expose one composition root.");
 
-        modules
-            .GroupBy(t => t.Assembly)
-            .All(g => g.Count() == 1)
+        moduleCompositionRoots
+            .Where(result => result.Modules.Count != 1)
             .Should()
-            .BeTrue("Each module must expose exactly one IModule implementation.");
+            .BeEmpty("each module infrastructure assembly must expose exactly one IModule implementation.");
     }
 }

@@ -3,15 +3,10 @@ using Hector.Modules.Projects.Domain;
 
 namespace Hector.Modules.Projects.Application.Commands;
 
-public sealed class CreateProjectCommandHandler
-    : ICommandHandler<CreateProjectCommand, ProjectId>
+public sealed class CreateProjectCommandHandler(
+    IProjectRepository repository)
+        : ICommandHandler<CreateProjectCommand, ProjectId>
 {
-    private readonly IProjectRepository _repository;
-
-    public CreateProjectCommandHandler(IProjectRepository repository)
-    {
-        _repository = repository;
-    }
 
     public async Task<ProjectId> HandleAsync(
         CreateProjectCommand request,
@@ -19,7 +14,7 @@ public sealed class CreateProjectCommandHandler
     {
         var project = Project.Create(request.Name);
 
-        await _repository.AddAsync(project, cancellationToken);
+        await repository.AddAsync(project, cancellationToken);
 
         return project.Id;
     }
