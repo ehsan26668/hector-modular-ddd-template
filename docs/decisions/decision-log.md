@@ -44,3 +44,4 @@
 | ADR-0040 | [Module-Level Registration of Integration Event Contract Assemblies for Outbox Resolution](/docs/adr/0040-module-level-outbox-event-contract-registration.md) | **Implemented** | 2026-06-15 |
 | ADR-0041 | [End-to-End Correlation Propagation](/docs/adr/0041-end-to-end-correlation-propagation.md) | **Implemented** | 2026-06-16 |
 | ADR-0043 | [Introduce Query Side for CQRS Read Models](/docs/adr/0043-introduce-query-side-for-cqrs-read-models.md) | **Implemented** | 2026-06-18 |
+| ADR-0044 | [Package Hector as a .NET SDK Template](/docs/adr/0044-package-hector-as-dotnet-template.md) | Proposed | 2026-06-18 |
