@@ -23,10 +23,16 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Shared\Hector.Testing\Hector.Testing.csproj" />
-    
+    <ProjectReference Include="..\..\Shared\Hector.Persistence.Testing\Hector.Persistence.Testing.csproj" />
+
     <ProjectReference Include="..\..\..\src\Framework\Hector.BuildingBlocks.Persistence\Hector.BuildingBlocks.Persistence.csproj" />
     <ProjectReference Include="..\..\..\src\Framework\Hector.BuildingBlocks.Application\Hector.BuildingBlocks.Application.csproj" />
+  </ItemGroup>
+
+  <!--#if (sampleModule) -->
+  <ItemGroup>
     <ProjectReference Include="..\..\..\src\Modules\Projects\Domain\Hector.Modules.Projects.Domain.csproj" />
   </ItemGroup>
+  <!--#endif -->
 
 </Project>

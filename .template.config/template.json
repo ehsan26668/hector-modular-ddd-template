@@ -1,18 +1,86 @@
 {
     "$schema": "https://json.schemastore.org/template",
     "author": "Hector",
-    "classifications": [
-        "DDD",
-        "Modular Monolith",
-        "CQRS"
-    ],
     "identity": "Hector.Template.ModularDDD",
     "name": "Hector Modular DDD Template",
     "shortName": "hectorddd",
+    "description": "Production-ready Modular Monolith template with DDD, CQRS, Outbox, Inbox, and architecture tests.",
     "sourceName": "Hector",
     "preferNameDirectory": true,
+    "classifications": [
+        "DDD",
+        "Modular Monolith",
+        "CQRS",
+        "Clean Architecture"
+    ],
     "tags": {
         "language": "C#",
         "type": "project"
-    }
+    },
+    "symbols": {
+        "includeDocs": {
+            "type": "parameter",
+            "datatype": "bool",
+            "defaultValue": "true"
+        },
+        "sampleModule": {
+            "type": "parameter",
+            "datatype": "bool",
+            "defaultValue": "true"
+        },
+        "architectureTests": {
+            "type": "parameter",
+            "datatype": "bool",
+            "defaultValue": "true"
+        }
+    },
+    "sources": [
+        {
+            "source": "./",
+            "target": "./",
+            "exclude": [
+                ".git/**",
+                ".vs/**",
+                ".idea/**",
+                ".vscode/**",
+                ".github/**",
+                ".template.config/**",
+                "**/bin/**",
+                "**/Bin/**",
+                "**/BIN/**",
+                "**/obj/**",
+                "**/Obj/**",
+                "**/OBJ/**",
+                "tests/TemplateTests/**"
+            ],
+            "modifiers": [
+                {
+                    "condition": "(!includeDocs)",
+                    "exclude": [
+                        "docs/**"
+                    ]
+                },
+                {
+                    "condition": "(!sampleModule)",
+                    "exclude": [
+                        "src/Modules/Projects/**",
+                        "tests/IntegrationTests/Hector.Modules.Projects.IntegrationTests/**",
+                        "tests/UnitTests/Hector.Modules.Projects.Application.UnitTests/**",
+                        "tests/UnitTests/Hector.Modules.Projects.Domain.UnitTests/**"
+                    ]
+                },
+                {
+                    "condition": "(!architectureTests || !sampleModule)",
+                    "exclude": [
+                        "tests/ArchitectureTests/**"
+                    ]
+                }
+            ]
+        }
+    ],
+    "primaryOutputs": [
+        {
+            "path": "Hector.slnx"
+        }
+    ]
 }

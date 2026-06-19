@@ -17,6 +17,8 @@ public static class DependencyInjection
     {
         ArgumentNullException.ThrowIfNull(services);
 
+        services.AddOptions<OutboxEventContractOptions>();
+
         services.TryAddEnumerable(
             ServiceDescriptor.Scoped(
                 typeof(IPipelineBehavior<,>),
@@ -27,15 +29,18 @@ public static class DependencyInjection
                 typeof(IPipelineBehavior<,>),
                 typeof(InboxPipelineBehavior<,>)));
 
-        services.TryAddScoped<IInboxStore, EfCoreInboxStore>();
-        services.TryAddScoped<IOutboxMessageFactory, DefaultOutboxMessageFactory>();
-        services.TryAddScoped<IIntegrationEventBus, OutboxIntegrationEventBus>();
         services.TryAddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
-        services.TryAddSingleton<IOutboxEventTypeResolver>(sp =>
+        services.TryAddScoped<IInboxStore, EfCoreInboxStore>();
+
+        services.TryAddScoped<IOutboxMessageFactory, DefaultOutboxMessageFactory>();
+        services.TryAddScoped<IIntegrationEventBus, OutboxIntegrationEventBus>();
+
+        services.TryAddSingleton<IOutboxEventTypeResolver>(serviceProvider =>
         {
-            OutboxEventContractOptions options =
-                sp.GetRequiredService<IOptions<OutboxEventContractOptions>>().Value;
+            var options = serviceProvider
+                .GetRequiredService<IOptions<OutboxEventContractOptions>>()
+                .Value;
 
             return new AttributedOutboxEventTypeResolver(options.Assemblies);
         });

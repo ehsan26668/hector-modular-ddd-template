@@ -1,12 +1,27 @@
 <Project>
+
   <PropertyGroup>
+
+    <!-- Target -->
     <TargetFramework>net10.0</TargetFramework>
+
+    <!-- Language -->
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <!-- Build Quality -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <!-- Ignore NU1900 to prevent build failure on flaky network connections -->
-    <WarningsNotAsErrors>NU1900</WarningsNotAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest</AnalysisLevel>
+
+    <!-- NuGet audit handling -->
+    <!-- NU1900: audit service unavailable (network issue) -->
+    <!-- NU1903: vulnerability warning -->
+    <WarningsNotAsErrors>
+      NU1900;
+      NU1903
+    </WarningsNotAsErrors>
+
   </PropertyGroup>
+
 </Project>

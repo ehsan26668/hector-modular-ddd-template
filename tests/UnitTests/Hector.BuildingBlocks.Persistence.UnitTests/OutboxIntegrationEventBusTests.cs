@@ -3,7 +3,7 @@ using Hector.BuildingBlocks.Application.Messaging;
 using Hector.BuildingBlocks.Persistence.Outbox;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
-using static Hector.Testing.Persistence.PersistenceTestInfrastructure;
+using static Hector.Persistence.Testing.PersistenceTestInfrastructure;
 
 namespace Hector.BuildingBlocks.Persistence.UnitTests;
 

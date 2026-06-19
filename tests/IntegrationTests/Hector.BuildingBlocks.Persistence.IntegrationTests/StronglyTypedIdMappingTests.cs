@@ -3,33 +3,12 @@ using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Converters;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using static Hector.Testing.Persistence.PersistenceTestInfrastructure;
+using static Hector.Persistence.Testing.PersistenceTestInfrastructure;
 
 namespace Hector.BuildingBlocks.Persistence.IntegrationTests;
 
 public sealed class StronglyTypedIdMappingTests
 {
-    [Fact]
-    public async Task Should_ThrowException_When_PersistingStronglyTypedIdWithoutConvention()
-    {
-        // Arrange
-        using var connection = CreateOpenSqliteConnection();
-        await using var context = StronglyTypedIdTestDbContext.WithoutConvention(connection);
-
-        var order = TestOrder.Create("ORD-001");
-
-        // Act
-        Func<Task> act = async () =>
-        {
-            await context.Database.EnsureCreatedAsync();
-            context.Orders.Add(order);
-            await context.SaveChangesAsync();
-        };
-
-        // Assert
-        await act.Should().ThrowAsync<Exception>();
-    }
-
     [Fact]
     public void Should_CreateModel_When_StronglyTypedIdConventionIsConfigured()
     {

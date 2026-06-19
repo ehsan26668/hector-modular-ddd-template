@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Inbox;
-using Hector.Testing.Persistence;
+using Hector.Persistence.Testing;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 

@@ -1,8 +1,7 @@
 using FluentAssertions;
 using Hector.BuildingBlocks.Domain.Primitives;
-using Hector.BuildingBlocks.Persistence.Outbox;
 using Microsoft.EntityFrameworkCore;
-using static Hector.Testing.Persistence.PersistenceTestInfrastructure;
+using static Hector.Persistence.Testing.PersistenceTestInfrastructure;
 
 namespace Hector.BuildingBlocks.Persistence.IntegrationTests;
 

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
-using static Hector.Testing.Persistence.PersistenceTestInfrastructure;
+using static Hector.Persistence.Testing.PersistenceTestInfrastructure;
 
 namespace Hector.BuildingBlocks.Persistence.IntegrationTests;
 

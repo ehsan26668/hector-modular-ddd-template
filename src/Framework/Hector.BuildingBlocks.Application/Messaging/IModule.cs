@@ -5,5 +5,7 @@ namespace Hector.BuildingBlocks.Application.Messaging;
 
 public interface IModule
 {
-    void Register(IServiceCollection services, IConfiguration configuration);
+    void Register(
+        IServiceCollection services,
+        IConfiguration configuration);
 }

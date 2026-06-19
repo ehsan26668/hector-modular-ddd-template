@@ -2,7 +2,7 @@ using FluentAssertions;
 using Hector.BuildingBlocks.Application.Messaging;
 using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence.Outbox;
-using Hector.Testing.Persistence;
+using Hector.Persistence.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;

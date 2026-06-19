@@ -9,8 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Hector.Modules.Projects.IntegrationTests;
 
-public sealed class CreateProjectTests(
-    ProjectsIntegrationTestFixture fixture)
+public sealed class CreateProjectTests(ProjectsIntegrationTestFixture fixture)
     : IClassFixture<ProjectsIntegrationTestFixture>
 {
     [Fact]
@@ -18,7 +17,6 @@ public sealed class CreateProjectTests(
     {
         // Arrange
         using var scope = fixture.CreateScope();
-
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
         var context = scope.ServiceProvider.GetRequiredService<ProjectsDbContext>();
         var serializer = scope.ServiceProvider.GetRequiredService<IOutboxEventSerializer>();
@@ -31,24 +29,20 @@ public sealed class CreateProjectTests(
 
         // Assert
 
-        // 1️⃣ Persistence
+        // 1️⃣ Persistence Verification
         var createdProject = await context.Projects.FirstOrDefaultAsync(p => p.Id == projectId);
-
         createdProject.Should().NotBeNull();
         createdProject!.Name.Should().Be(projectName);
 
-        // 2️⃣ Outbox Message existence
+        // 2️⃣ Outbox Message Verification (Ensures Domain Events & Outbox work)
         var outboxMessage = await context.Set<OutboxMessage>().SingleAsync();
-
         outboxMessage.Type.Should().Be("projects.project-created");
 
-        // 3️⃣ Integration event payload (Domain → Integration bridge)
+        // 3️⃣ Integration Event Verification (Ensures Domain -> Integration Bridge works)
         var deserializedEvent = serializer.Deserialize(outboxMessage);
-
         deserializedEvent.Should().BeOfType<ProjectCreatedIntegrationEvent>();
 
         var integrationEvent = (ProjectCreatedIntegrationEvent)deserializedEvent;
-
         integrationEvent.ProjectId.Should().Be(projectId.Value);
         integrationEvent.Name.Should().Be(projectName);
     }

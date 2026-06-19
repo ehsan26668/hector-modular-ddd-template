@@ -32,6 +32,7 @@ public sealed class ProjectCreatedDomainEventHandlerTests
         // Assert
         await _integrationEventBus.Received(1).PublishAsync(
             Arg.Is<ProjectCreatedIntegrationEvent>(e =>
+                e != null &&
                 e.MessageId != Guid.Empty &&
                 e.ProjectId == projectId.Value &&
                 e.Name == projectName),
@@ -59,6 +60,7 @@ public sealed class ProjectCreatedDomainEventHandlerTests
         // Assert
         await _integrationEventBus.Received(1).PublishAsync(
             Arg.Is<ProjectCreatedIntegrationEvent>(e =>
+                e != null &&
                 e.CorrelationId == correlationId &&
                 e.CausationId == causationId &&
                 e.TraceId == traceId),
@@ -79,6 +81,7 @@ public sealed class ProjectCreatedDomainEventHandlerTests
         // Assert
         await _integrationEventBus.Received(1).PublishAsync(
             Arg.Is<ProjectCreatedIntegrationEvent>(e =>
+                e != null &&
                 e.CorrelationId == e.MessageId &&
                 e.CausationId == null),
             Arg.Any<CancellationToken>());

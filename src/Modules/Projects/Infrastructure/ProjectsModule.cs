@@ -7,7 +7,9 @@ namespace Hector.Modules.Projects.Infrastructure;
 
 public sealed class ProjectsModule : IModule
 {
-    public void Register(IServiceCollection services, IConfiguration configuration)
+    public void Register(
+        IServiceCollection services,
+        IConfiguration configuration)
     {
         services.AddProjectsApplication();
         services.AddProjectsInfrastructure(configuration);

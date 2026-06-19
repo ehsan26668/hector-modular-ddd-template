@@ -14,7 +14,9 @@
     <ProjectReference Include="..\..\Framework\Hector.BuildingBlocks.Application\Hector.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\..\Framework\Hector.BuildingBlocks.Persistence\Hector.BuildingBlocks.Persistence.csproj" />
     <ProjectReference Include="..\..\Framework\Hector.BuildingBlocks.Web\Hector.BuildingBlocks.Web.csproj" />
+  </ItemGroup>
 
+  <ItemGroup Condition="'$(sampleModule)' == 'true'">
     <ProjectReference Include="..\..\Modules\Projects\Infrastructure\Hector.Modules.Projects.Infrastructure.csproj" />
   </ItemGroup>
 

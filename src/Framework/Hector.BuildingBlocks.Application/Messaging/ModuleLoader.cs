@@ -1,9 +1,7 @@
-using System.Reflection;
-using Hector.BuildingBlocks.Application.Messaging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Hector.BuildingBlocks.Application.Modules;
+namespace Hector.BuildingBlocks.Application.Messaging;
 
 public static class ModuleLoader
 {
@@ -11,9 +9,8 @@ public static class ModuleLoader
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var assemblies = DiscoverModuleAssemblies();
-
-        var modules = assemblies
+        var modules = AppDomain.CurrentDomain
+            .GetAssemblies()
             .SelectMany(a => a.GetTypes())
             .Where(t =>
                 typeof(IModule).IsAssignableFrom(t) &&
@@ -27,13 +24,5 @@ public static class ModuleLoader
         }
 
         return services;
-    }
-
-    private static IEnumerable<Assembly> DiscoverModuleAssemblies()
-    {
-        return AppDomain.CurrentDomain
-            .GetAssemblies()
-            .Where(a =>
-                a.GetName().Name!.StartsWith("Hector.Modules."));
     }
 }

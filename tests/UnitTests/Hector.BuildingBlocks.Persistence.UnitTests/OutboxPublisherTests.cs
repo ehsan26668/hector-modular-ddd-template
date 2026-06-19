@@ -172,8 +172,15 @@ public sealed class OutboxPublisherTests
         var publishedEvents = new List<INotification>();
 
         mediator
-            .When(x => x.PublishAsync(Arg.Any<INotification>(), Arg.Any<CancellationToken>()))
-            .Do(call => publishedEvents.Add(call.Arg<INotification>()));
+        .When(x => x.PublishAsync(Arg.Any<INotification>(), Arg.Any<CancellationToken>()))
+        .Do(call =>
+        {
+            var notification = call.Arg<INotification>();
+
+            Assert.NotNull(notification);
+
+            publishedEvents.Add(notification!);
+        });
 
         // Act
         await publisher.PublishAsync(messages, CancellationToken.None);

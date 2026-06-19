@@ -9,8 +9,25 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+  </ItemGroup>
+
+  <!--#if (useSqlite) -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+  </ItemGroup>
+  <!--#endif -->
+
+  <!--#if (usePostgres) -->
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+  <!--#endif -->
+
+  <!--#if (useSqlServer) -->
+  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
   </ItemGroup>
+  <!--#endif -->
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Framework\Hector.BuildingBlocks.Persistence\Hector.BuildingBlocks.Persistence.csproj" />

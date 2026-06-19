@@ -7,6 +7,7 @@ using Hector.Modules.Projects.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Hector.Modules.Projects.Infrastructure;
 
@@ -17,19 +18,14 @@ public static class DependencyInjection
         IConfiguration configuration,
         Action<DbContextOptionsBuilder>? optionsOverride = null)
     {
-        ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(configuration);
+        services.TryAddScoped<IStronglyTypedIdAssemblyProvider, ProjectsStronglyTypedIdAssemblyProvider>();
 
-        services.AddHectorPersistenceBuildingBlocks();
-
-        services.AddSingleton<IInboxConsumerNameProvider>(
-            _ => new StaticInboxConsumerNameProvider("Projects"));
-
+        // ✅ Correct contract registration (ADR‑0040)
         services.AddOutboxEventContracts(
             typeof(ProjectsContractsAssemblyMarker).Assembly);
 
-        services.AddSingleton<IStronglyTypedIdAssemblyProvider,
-            ProjectsStronglyTypedIdAssemblyProvider>();
+        services.TryAddScoped<IInboxConsumerNameProvider>(_ =>
+            new StaticInboxConsumerNameProvider("ProjectsModuleConsumer"));
 
         services.AddDbContext<ProjectsDbContext>(options =>
         {
@@ -39,9 +35,20 @@ public static class DependencyInjection
                 return;
             }
 
-            options.UseSqlServer(
-                configuration.GetConnectionString("Projects"));
+#if (useSqlite)
+            var connectionString = configuration.GetConnectionString("Sqlite");
+            options.UseSqlite(connectionString);
+#elif (usePostgres)
+            var connectionString = configuration.GetConnectionString("Postgres");
+            options.UseNpgsql(connectionString);
+#elif (useSqlServer)
+            var connectionString = configuration.GetConnectionString("SqlServer");
+            options.UseSqlServer(connectionString);
+#endif
         });
+
+        services.AddScoped<HectorDbContext>(sp =>
+            sp.GetRequiredService<ProjectsDbContext>());
 
         services.AddScoped<DbContext>(sp =>
             sp.GetRequiredService<ProjectsDbContext>());

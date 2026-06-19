@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Hector.BuildingBlocks.Persistence.Inbox;
 
-public sealed class EfCoreInboxStore(DbContext context) : IInboxStore
+public sealed class EfCoreInboxStore(HectorDbContext context) : IInboxStore
 {
     public async Task<bool> TryStoreAsync(
         Guid messageId,

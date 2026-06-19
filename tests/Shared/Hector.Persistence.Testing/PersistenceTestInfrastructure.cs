@@ -1,11 +1,11 @@
+using System.Reflection;
 using Hector.BuildingBlocks.Application.Messaging;
 using Hector.BuildingBlocks.Domain.Primitives;
 using Hector.BuildingBlocks.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
 
-namespace Hector.Testing.Persistence;
+namespace Hector.Persistence.Testing;
 
 public static class PersistenceTestInfrastructure
 {
