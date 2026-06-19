@@ -45,3 +45,5 @@
 | ADR-0041 | [End-to-End Correlation Propagation](/docs/adr/0041-end-to-end-correlation-propagation.md) | **Implemented** | 2026-06-16 |
 | ADR-0043 | [Introduce Query Side for CQRS Read Models](/docs/adr/0043-introduce-query-side-for-cqrs-read-models.md) | **Implemented** | 2026-06-18 |
 | ADR-0044 | [Package Hector as a .NET SDK Template](/docs/adr/0044-package-hector-as-dotnet-template.md) | **Implemented** | 2026-06-18 |
+| ADR-0045 | [Publish Hector as an Installable .NET Template](/docs/adr/0045-publish-hector-template-as-installable-package.md) | Accepted | 2026-06-19 |
+| ADR-0046 | [Framework and Product Co‑Evolution Strategy](/docs/adr/0046-framework-product-coevolution-strategy.md) | Accepted | 2026-06-19 |
