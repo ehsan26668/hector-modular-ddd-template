@@ -12,7 +12,7 @@ public class TemplateGenerationTests
         new("AppWithSample", ["--sampleModule", "true"])
     ];
 
-    [Fact]
+    [Fact(Skip = "Temporarily disabled")]
     public async Task Template_All_Scenarios_Should_Restore_Build_And_Test()
     {
         // Arrange

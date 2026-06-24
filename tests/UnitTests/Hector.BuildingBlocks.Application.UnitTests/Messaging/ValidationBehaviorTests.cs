@@ -1,6 +1,7 @@
 using FluentAssertions;
 using FluentValidation;
 using Hector.BuildingBlocks.Application.Messaging;
+using Hector.BuildingBlocks.Application.Results;
 using Hector.BuildingBlocks.Application.UnitTests.Infrastructure;
 using Hector.BuildingBlocks.Application.UnitTests.TestDoubles;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,12 +23,13 @@ public sealed class ValidationBehaviorTests
         var result = await fixture.Mediator.SendAsync(new TestCommand("Hector"));
 
         // Assert
-        result.Should().Be("OK");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be("OK");
         fixture.ExecutionOrder.Should().Equal("Handler");
     }
 
     [Fact]
-    public async Task Should_ThrowValidationException_When_RequestIsInvalid()
+    public async Task Should_ReturnFailureResult_When_RequestIsInvalid()
     {
         // Arrange
         var fixture = CreateFixture(services =>
@@ -36,10 +38,13 @@ public sealed class ValidationBehaviorTests
         });
 
         // Act
-        var act = async () => await fixture.Mediator.SendAsync(new TestCommand(string.Empty));
+        var result = await fixture.Mediator.SendAsync(new TestCommand(string.Empty));
 
         // Assert
-        await act.Should().ThrowAsync<ValidationException>();
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("validation.failed");
+        result.Error.Category.Should().Be(ErrorCategory.Validation);
+
         fixture.ExecutionOrder.Should().BeEmpty();
     }
 
@@ -54,13 +59,28 @@ public sealed class ValidationBehaviorTests
         });
 
         // Act
-        var act = async () => await fixture.Mediator.SendAsync(new TestCommand(string.Empty));
+        var result = await fixture.Mediator.SendAsync(new TestCommand(string.Empty));
 
         // Assert
-        var exception = await act.Should().ThrowAsync<ValidationException>();
-        exception.Which.Errors.Should().HaveCount(2);
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("validation.failed");
+        result.Error.Category.Should().Be(ErrorCategory.Validation);
+
+        result.Error.Metadata.Should().NotBeNull();
+        result.Error.Metadata!.Should().ContainKey("failures");
+
+        var failures = result.Error.Metadata["failures"]
+            .Should().BeAssignableTo<IReadOnlyDictionary<string, string[]>>()
+            .Subject;
+
+        failures.Should().ContainKey("Name");
+
+        failures["Name"].Should().Contain(error => error.Contains("must not be empty"));
+        failures["Name"].Should().Contain(error => error.Contains("at least 3 characters"));
+
         fixture.ExecutionOrder.Should().BeEmpty();
     }
+
 
     [Fact]
     public async Task Should_InvokeHandler_When_NoValidatorsAreRegistered()
@@ -72,7 +92,8 @@ public sealed class ValidationBehaviorTests
         var result = await fixture.Mediator.SendAsync(new TestCommand("Hector"));
 
         // Assert
-        result.Should().Be("OK");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be("OK");
         fixture.ExecutionOrder.Should().Equal("Handler");
     }
 
@@ -103,7 +124,7 @@ public sealed class ValidationBehaviorTests
         {
             services.AddSingleton<CancellationCapture>();
             services.AddTransient<IValidator<TestCommand>, TestCommandValidator>();
-            services.AddTransient<IRequestHandler<TestCommand, string>, CancellationAwareCommandHandler>();
+            services.AddTransient<ICommandHandler<TestCommand, string>, CancellationAwareCommandHandler>();
         });
 
         using var cancellationTokenSource = new CancellationTokenSource();
@@ -122,7 +143,7 @@ public sealed class ValidationBehaviorTests
         var fixture = CreateFixture();
 
         // Act
-        var act = async () => await fixture.Mediator.SendAsync<string>(null!);
+        var act = async () => await fixture.Mediator.SendAsync<Result<string>>(null!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -139,12 +160,12 @@ public sealed class ValidationBehaviorTests
         });
 
         // Act
-        var behaviors = fixture.GetServices<IPipelineBehavior<TestCommand, string>>();
+        var behaviors = fixture.GetServices<IPipelineBehavior<TestCommand, Result<string>>>();
         var validators = fixture.GetServices<IValidator<TestCommand>>();
 
         // Assert
         behaviors.Should().HaveCount(1);
-        behaviors[0].Should().BeOfType<ValidationBehavior<TestCommand, string>>();
+        behaviors[0].Should().BeOfType<ValidationBehavior<TestCommand, Result<string>>>();
 
         validators.Should().HaveCount(2);
         validators.Should().ContainSingle(v => v.GetType() == typeof(EmptyNameValidator));
@@ -186,7 +207,7 @@ public sealed class ValidationBehaviorTests
     {
         return new MediatorTestFixture(services =>
         {
-            services.AddTransient<IRequestHandler<TestCommand, string>, TrackingCommandHandler>();
+            services.AddTransient<ICommandHandler<TestCommand, string>, TrackingCommandHandler>();
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
             configureServices?.Invoke(services);

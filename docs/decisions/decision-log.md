@@ -47,3 +47,11 @@
 | ADR-0044 | [Package Hector as a .NET SDK Template](/docs/adr/0044-package-hector-as-dotnet-template.md) | **Implemented** | 2026-06-18 |
 | ADR-0045 | [Publish Hector as an Installable .NET Template](/docs/adr/0045-publish-hector-template-as-installable-package.md) | Accepted | 2026-06-19 |
 | ADR-0046 | [Framework and Product Co‑Evolution Strategy](/docs/adr/0046-framework-product-coevolution-strategy.md) | Accepted | 2026-06-19 |
+| ADR-0047 | [Standardize Result Pattern for Application Layer](/docs/adr/ADR-0047-standardize-result-pattern.md) | Accepted | 2026-06-23 |
+| ADR-0048 | [Adopt Result-Based Validation Handling](/docs/adr/ADR-0048-adopt-result-based-validation-handling.md) | Accepted | 2026-06-23 |
+| ADR-0049 | [Adopt Result-Based Query Responses](/docs/adr/ADR-0049-adopt-result-based-query-responses.md) | Accepted | 2026-06-23 |
+| ADR-0050 | [Establish Application Error Taxonomy](/docs/adr/ADR-0050-establish-application-error-taxonomy.md) | Accepted | 2026-06-23 |
+| ADR-0051 | [Define Allowed Error Categories for Commands and Queries](/docs/adr/ADR-0051-define-allowed-error-categories-for-commands-and-queries.md) | Accepted | 2026-06-23 |
+| ADR-0052 | [Introduce Result Error Object Model](/docs/adr/ADR-0052-introduce-result-error-object-model.md) | Accepted | 2026-06-23 |
+| ADR-0053 | [Define Result Factory and Standard Error Codes](/docs/adr/ADR-0053-define-result-factory-and-standard-error.md) | Accepted | 2026-06-23 |
+| ADR-0054 | [Adopt Result‑Based Error Handling Architecture](/docs/adr/ADR‑0054-adopt-result‑based-error-handling-architecture.md) | Accepted | 2026-06-23 |

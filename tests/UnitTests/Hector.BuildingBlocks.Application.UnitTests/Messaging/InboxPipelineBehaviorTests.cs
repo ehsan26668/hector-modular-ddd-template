@@ -45,7 +45,7 @@ public sealed class InboxPipelineBehaviorTests
         }
 
         // Act
-        await behavior.HandleAsync(integrationEvent, Next, CancellationToken.None);
+        await behavior.Handle(integrationEvent, Next, CancellationToken.None);
 
         // Assert
         nextCalled.Should().BeTrue();
@@ -79,7 +79,7 @@ public sealed class InboxPipelineBehaviorTests
         }
 
         // Act
-        await behavior.HandleAsync(integrationEvent, Next, CancellationToken.None);
+        await behavior.Handle(integrationEvent, Next, CancellationToken.None);
 
         // Assert
         nextCalled.Should().BeFalse();

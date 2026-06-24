@@ -1,8 +1,8 @@
 using FluentAssertions;
 using Hector.BuildingBlocks.Application.Messaging;
+using Hector.BuildingBlocks.Application.Results;
 using Hector.BuildingBlocks.Application.UnitTests.Infrastructure;
 using Hector.BuildingBlocks.Application.UnitTests.TestDoubles;
-
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Hector.BuildingBlocks.Application.UnitTests.Messaging;
@@ -15,14 +15,16 @@ public sealed class MediatorTests
         // Arrange
         var fixture = new MediatorTestFixture(services =>
         {
-            services.AddTransient<IRequestHandler<TestCommand, string>, TestCommandHandler>();
+            services.AddTransient<ICommandHandler<TestCommand, string>, TestCommandHandler>();
         });
 
         // Act
         var result = await fixture.Mediator.SendAsync(new TestCommand("Hector"));
 
         // Assert
-        result.Should().Be("Hello Hector");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be("Hello Hector");
+
         fixture.ExecutionOrder.Should().Equal("Handler");
     }
 
@@ -32,14 +34,15 @@ public sealed class MediatorTests
         // Arrange
         var fixture = new MediatorTestFixture(services =>
         {
-            services.AddTransient<IRequestHandler<TestQuery, int>, TestQueryHandler>();
+            services.AddTransient<IQueryHandler<TestQuery, int>, TestQueryHandler>();
         });
 
         // Act
         var result = await fixture.Mediator.SendAsync(new TestQuery(21));
 
         // Assert
-        result.Should().Be(42);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(42);
     }
 
     [Fact]
@@ -61,15 +64,17 @@ public sealed class MediatorTests
         // Arrange
         var fixture = new MediatorTestFixture(services =>
         {
-            services.AddTransient<IRequestHandler<TestCommand, string>, TestCommandHandler>();
-            services.AddTransient<IPipelineBehavior<TestCommand, string>, TrackingPipelineBehavior>();
+            services.AddTransient<ICommandHandler<TestCommand, string>, TestCommandHandler>();
+            services.AddTransient<IPipelineBehavior<TestCommand, Result<string>>, TrackingPipelineBehavior>();
         });
 
         // Act
         var result = await fixture.Mediator.SendAsync(new TestCommand("Hector"));
 
         // Assert
-        result.Should().Be("Hello Hector");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be("Hello Hector");
+
         fixture.ExecutionOrder.Should().Equal(
             "Pipeline:Before",
             "Handler",
@@ -82,16 +87,18 @@ public sealed class MediatorTests
         // Arrange
         var fixture = new MediatorTestFixture(services =>
         {
-            services.AddTransient<IRequestHandler<TestCommand, string>, TestCommandHandler>();
-            services.AddTransient<IPipelineBehavior<TestCommand, string>, FirstPipelineBehavior>();
-            services.AddTransient<IPipelineBehavior<TestCommand, string>, SecondPipelineBehavior>();
+            services.AddTransient<ICommandHandler<TestCommand, string>, TestCommandHandler>();
+            services.AddTransient<IPipelineBehavior<TestCommand, Result<string>>, FirstPipelineBehavior>();
+            services.AddTransient<IPipelineBehavior<TestCommand, Result<string>>, SecondPipelineBehavior>();
         });
 
         // Act
         var result = await fixture.Mediator.SendAsync(new TestCommand("Hector"));
 
         // Assert
-        result.Should().Be("Hello Hector");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be("Hello Hector");
+
         fixture.ExecutionOrder.Should().Equal(
             "First:Before",
             "Second:Before",
@@ -106,15 +113,17 @@ public sealed class MediatorTests
         // Arrange
         var fixture = new MediatorTestFixture(services =>
         {
-            services.AddTransient<IRequestHandler<TestCommand, string>, TestCommandHandler>();
-            services.AddTransient<IPipelineBehavior<TestCommand, string>, ShortCircuitPipelineBehavior>();
+            services.AddTransient<ICommandHandler<TestCommand, string>, TestCommandHandler>();
+            services.AddTransient<IPipelineBehavior<TestCommand, Result<string>>, ShortCircuitPipelineBehavior>();
         });
 
         // Act
         var result = await fixture.Mediator.SendAsync(new TestCommand("Hector"));
 
         // Assert
-        result.Should().Be("ShortCircuited");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be("ShortCircuited");
+
         fixture.ExecutionOrder.Should().Equal("ShortCircuit");
     }
 
@@ -124,7 +133,7 @@ public sealed class MediatorTests
         // Arrange
         var fixture = new MediatorTestFixture(services =>
         {
-            services.AddTransient<IRequestHandler<TestCommand, string>, ThrowingCommandHandler>();
+            services.AddTransient<ICommandHandler<TestCommand, string>, ThrowingCommandHandler>();
         });
 
         // Act
@@ -143,7 +152,7 @@ public sealed class MediatorTests
         var fixture = new MediatorTestFixture(services =>
         {
             services.AddSingleton<CancellationCapture>();
-            services.AddTransient<IRequestHandler<TestCommand, string>, CancellationAwareCommandHandler>();
+            services.AddTransient<ICommandHandler<TestCommand, string>, CancellationAwareCommandHandler>();
         });
 
         using var cancellationTokenSource = new CancellationTokenSource();
@@ -152,7 +161,8 @@ public sealed class MediatorTests
         await fixture.Mediator.SendAsync(new TestCommand("Hector"), cancellationTokenSource.Token);
 
         // Assert
-        fixture.GetRequiredService<CancellationCapture>().Token.Should().Be(cancellationTokenSource.Token);
+        fixture.GetRequiredService<CancellationCapture>()
+            .Token.Should().Be(cancellationTokenSource.Token);
     }
 
     [Fact]
@@ -162,8 +172,8 @@ public sealed class MediatorTests
         var fixture = new MediatorTestFixture(services =>
         {
             services.AddSingleton<CancellationCapture>();
-            services.AddTransient<IRequestHandler<TestCommand, string>, TestCommandHandler>();
-            services.AddTransient<IPipelineBehavior<TestCommand, string>, CancellationAwarePipelineBehavior>();
+            services.AddTransient<ICommandHandler<TestCommand, string>, TestCommandHandler>();
+            services.AddTransient<IPipelineBehavior<TestCommand, Result<string>>, CancellationAwarePipelineBehavior>();
         });
 
         using var cancellationTokenSource = new CancellationTokenSource();
@@ -172,7 +182,8 @@ public sealed class MediatorTests
         await fixture.Mediator.SendAsync(new TestCommand("Hector"), cancellationTokenSource.Token);
 
         // Assert
-        fixture.GetRequiredService<CancellationCapture>().Token.Should().Be(cancellationTokenSource.Token);
+        fixture.GetRequiredService<CancellationCapture>()
+            .Token.Should().Be(cancellationTokenSource.Token);
     }
 
     [Fact]
@@ -231,7 +242,8 @@ public sealed class MediatorTests
         await fixture.Mediator.PublishAsync(new TestNotification(), cancellationTokenSource.Token);
 
         // Assert
-        fixture.GetRequiredService<CancellationCapture>().Token.Should().Be(cancellationTokenSource.Token);
+        fixture.GetRequiredService<CancellationCapture>()
+            .Token.Should().Be(cancellationTokenSource.Token);
     }
 
     [Fact]
@@ -254,7 +266,7 @@ public sealed class MediatorTests
         var fixture = new MediatorTestFixture();
 
         // Act
-        var act = async () => await fixture.Mediator.SendAsync<string>(null!);
+        var act = async () => await fixture.Mediator.SendAsync<Result<string>>(null!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();

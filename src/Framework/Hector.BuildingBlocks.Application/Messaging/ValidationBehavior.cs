@@ -1,45 +1,81 @@
 using FluentValidation;
+using Hector.BuildingBlocks.Application.Results;
 
 namespace Hector.BuildingBlocks.Application.Messaging;
 
 internal sealed class ValidationBehavior<TRequest, TResponse>(
     IEnumerable<IValidator<TRequest>> validators)
     : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
 {
-    private readonly IValidator<TRequest>[] _validators = validators?.ToArray()
-        ?? throw new ArgumentNullException(nameof(validators));
-
-    public async Task<TResponse> HandleAsync(
+    public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentNullException.ThrowIfNull(next);
+        var validatorList = validators as IValidator<TRequest>[] ?? [.. validators];
 
-        if (_validators.Length == 0)
+        if (validatorList.Length == 0)
         {
-            return await next().ConfigureAwait(false);
+            return await next();
         }
 
-        var results = await Task.WhenAll(
-                _validators.Select(validator =>
-                    validator.ValidateAsync(
-                        new ValidationContext<TRequest>(request),
-                        cancellationToken)))
-            .ConfigureAwait(false);
+        var context = new ValidationContext<TRequest>(request);
 
-        var failures = results
-            .SelectMany(result => result.Errors)
-            .Where(failure => failure is not null)
-            .ToList();
+        var failures = new Dictionary<string, List<string>>();
 
-        if (failures.Count != 0)
+        foreach (var validator in validatorList)
         {
-            throw new ValidationException(failures);
+            var validationResult = await validator.ValidateAsync(context, cancellationToken);
+
+            if (validationResult.IsValid)
+            {
+                continue;
+            }
+
+            foreach (var validationFailure in validationResult.Errors)
+            {
+                if (!failures.TryGetValue(validationFailure.PropertyName, out var list))
+                {
+                    list = [];
+                    failures[validationFailure.PropertyName] = list;
+                }
+
+                list.Add(validationFailure.ErrorMessage);
+            }
         }
 
-        return await next().ConfigureAwait(false);
+        if (failures.Count == 0)
+        {
+            return await next();
+        }
+
+        var failureDictionary = failures.ToDictionary(
+            failure => failure.Key,
+            failure => failure.Value.ToArray());
+
+        var validationError = ValidationError.Create(
+            "validation.failed",
+            "Validation failed",
+            failureDictionary);
+
+        var responseType = typeof(TResponse);
+
+        if (responseType == typeof(Result))
+        {
+            return (TResponse)(object)Result.Failure(validationError);
+        }
+
+        if (responseType.IsGenericType &&
+            responseType.GetGenericTypeDefinition() == typeof(Result<>))
+        {
+            var failureMethod = responseType.GetMethod(nameof(Result<object>.Failure));
+
+            return (TResponse)failureMethod!.Invoke(
+                null,
+                [validationError])!;
+        }
+
+        throw new InvalidOperationException(
+            $"ValidationBehavior can only be used with Result or Result<T>. Response type: {responseType.Name}");
     }
 }

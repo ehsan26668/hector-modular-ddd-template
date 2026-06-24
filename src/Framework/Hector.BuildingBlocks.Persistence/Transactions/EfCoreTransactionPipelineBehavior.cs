@@ -11,7 +11,7 @@ public sealed class EfCoreTransactionPipelineBehavior<TRequest, TResponse>(
     private readonly DbContext _dbContext = dbContext
         ?? throw new ArgumentNullException(nameof(dbContext));
 
-    public async Task<TResponse> HandleAsync(
+    public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)

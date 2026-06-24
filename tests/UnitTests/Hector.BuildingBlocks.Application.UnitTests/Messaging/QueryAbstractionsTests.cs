@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Hector.BuildingBlocks.Application.Messaging;
+using Hector.BuildingBlocks.Application.Results;
 
 namespace Hector.BuildingBlocks.Application.UnitTests.Messaging;
 
@@ -15,7 +16,7 @@ public class QueryAbstractionsTests
         var interfaces = queryType.GetInterfaces();
 
         // Assert
-        interfaces.Should().Contain(typeof(IRequest<string>));
+        interfaces.Should().Contain(typeof(IRequest<Result<string>>));
     }
 
     [Fact]
@@ -28,18 +29,18 @@ public class QueryAbstractionsTests
         var interfaces = handlerType.GetInterfaces();
 
         // Assert
-        interfaces.Should().Contain(typeof(IRequestHandler<TestQuery, string>));
+        interfaces.Should().Contain(typeof(IRequestHandler<TestQuery, Result<string>>));
     }
 
     private sealed record TestQuery : IQuery<string>;
 
     private sealed class TestQueryHandler : IQueryHandler<TestQuery, string>
     {
-        public Task<string> HandleAsync(
+        public Task<Result<string>> Handle(
             TestQuery request,
             CancellationToken cancellationToken = default)
         {
-            return Task.FromResult("ok");
+            return Task.FromResult(Result<string>.Success("ok"));
         }
     }
 }

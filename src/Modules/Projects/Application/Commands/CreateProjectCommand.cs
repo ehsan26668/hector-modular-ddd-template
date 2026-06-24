@@ -3,4 +3,4 @@ using Hector.Modules.Projects.Domain;
 
 namespace Hector.Modules.Projects.Application.Commands;
 
-public record CreateProjectCommand(string Name) : ICommand<ProjectId>;
+public sealed record CreateProjectCommand(string Name) : ICommand<ProjectId>;

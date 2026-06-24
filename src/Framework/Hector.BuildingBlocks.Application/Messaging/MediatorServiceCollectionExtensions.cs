@@ -17,23 +17,26 @@ public static class MediatorServiceCollectionExtensions
         return services;
     }
 
-    private static void RegisterRequestHandlers(
-        IServiceCollection services,
-        Assembly assembly)
+    private static void RegisterRequestHandlers(IServiceCollection services, Assembly assembly)
     {
-        var handlerType = assembly
+        var handlerTypes = assembly
             .GetTypes()
             .Where(t => !t.IsAbstract && !t.IsInterface)
             .SelectMany(t => t.GetInterfaces()
                 .Where(i => i.IsGenericType &&
-                            i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>))
-                .Select(i => new { Handler = t, Service = i }));
+                            (i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>) ||
+                             i.GetGenericTypeDefinition() == typeof(ICommandHandler<,>) ||
+                             i.GetGenericTypeDefinition() == typeof(ICommandHandler<>) ||
+                             i.GetGenericTypeDefinition() == typeof(IQueryHandler<,>)))
+                .Select(i => new { Handler = t, Service = i }))
+            .Distinct();
 
-        foreach (var handler in handlerType)
+        foreach (var handler in handlerTypes)
         {
             services.AddScoped(handler.Service, handler.Handler);
         }
     }
+
 
     private static void RegisterNotificationHandlers(
         IServiceCollection services,

@@ -1,33 +1,37 @@
 using Hector.BuildingBlocks.Application.Messaging;
+using Hector.BuildingBlocks.Application.Results;
 
 namespace Hector.BuildingBlocks.Application.UnitTests.TestDoubles;
 
 internal sealed class TestCommandHandler(
     List<string> executionOrder)
-    : IRequestHandler<TestCommand, string>
+    : ICommandHandler<TestCommand, string>
 {
-    public Task<string> HandleAsync(
+    public Task<Result<string>> Handle(
         TestCommand request,
         CancellationToken cancellationToken = default)
     {
         executionOrder.Add("Handler");
-        return Task.FromResult($"Hello {request.Name}");
+
+        return Task.FromResult(
+            Result<string>.Success($"Hello {request.Name}"));
     }
 }
 
 internal sealed class TestQueryHandler : IQueryHandler<TestQuery, int>
 {
-    public Task<int> HandleAsync(
+    public Task<Result<int>> Handle(
         TestQuery request,
         CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(request.Value * 2);
+        return Task.FromResult(
+            Result<int>.Success(request.Value * 2));
     }
 }
 
-internal sealed class ThrowingCommandHandler : IRequestHandler<TestCommand, string>
+internal sealed class ThrowingCommandHandler : ICommandHandler<TestCommand, string>
 {
-    public Task<string> HandleAsync(
+    public Task<Result<string>> Handle(
         TestCommand request,
         CancellationToken cancellationToken = default)
     {
@@ -37,26 +41,30 @@ internal sealed class ThrowingCommandHandler : IRequestHandler<TestCommand, stri
 
 internal sealed class TrackingCommandHandler(
     List<string> executionOrder)
-    : IRequestHandler<TestCommand, string>
+    : ICommandHandler<TestCommand, string>
 {
-    public Task<string> HandleAsync(
+    public Task<Result<string>> Handle(
         TestCommand request,
         CancellationToken cancellationToken = default)
     {
         executionOrder.Add("Handler");
-        return Task.FromResult("OK");
+
+        return Task.FromResult(
+            Result<string>.Success("OK"));
     }
 }
 
 internal sealed class CancellationAwareCommandHandler(
     CancellationCapture capture)
-    : IRequestHandler<TestCommand, string>
+    : ICommandHandler<TestCommand, string>
 {
-    public Task<string> HandleAsync(
+    public Task<Result<string>> Handle(
         TestCommand request,
         CancellationToken cancellationToken = default)
     {
         capture.Token = cancellationToken;
-        return Task.FromResult("OK");
+
+        return Task.FromResult(
+            Result<string>.Success("OK"));
     }
 }

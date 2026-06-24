@@ -25,20 +25,22 @@ public sealed class CreateProjectTests(ProjectsIntegrationTestFixture fixture)
         var command = new CreateProjectCommand(projectName);
 
         // Act
-        var projectId = await mediator.SendAsync(command, CancellationToken.None);
+        var result = await mediator.SendAsync(command, CancellationToken.None);
 
-        // Assert
+        // Arrange
+        result.IsSuccess.Should().BeTrue();
+        var projectId = result.Value;
 
         // 1️⃣ Persistence Verification
         var createdProject = await context.Projects.FirstOrDefaultAsync(p => p.Id == projectId);
         createdProject.Should().NotBeNull();
         createdProject!.Name.Should().Be(projectName);
 
-        // 2️⃣ Outbox Message Verification (Ensures Domain Events & Outbox work)
+        // 2️⃣ Outbox Message Verification
         var outboxMessage = await context.Set<OutboxMessage>().SingleAsync();
         outboxMessage.Type.Should().Be("projects.project-created");
 
-        // 3️⃣ Integration Event Verification (Ensures Domain -> Integration Bridge works)
+        // 3️⃣ Integration Event Verification
         var deserializedEvent = serializer.Deserialize(outboxMessage);
         deserializedEvent.Should().BeOfType<ProjectCreatedIntegrationEvent>();
 

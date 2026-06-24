@@ -39,7 +39,7 @@ public sealed class InboxCorrelationBehaviorTests
         CorrelationContext? captured = null;
 
         // Act
-        await behavior.HandleAsync(
+        await behavior.Handle(
             integrationEvent,
             () =>
             {
@@ -84,7 +84,7 @@ public sealed class InboxCorrelationBehaviorTests
             null);
 
         // Act
-        await behavior.HandleAsync(
+        await behavior.Handle(
             integrationEvent,
             () => Task.FromResult(true),
             CancellationToken.None);
@@ -123,7 +123,7 @@ public sealed class InboxCorrelationBehaviorTests
         var handlerExecuted = false;
 
         // Act
-        await behavior.HandleAsync(
+        await behavior.Handle(
             integrationEvent,
             () =>
             {
