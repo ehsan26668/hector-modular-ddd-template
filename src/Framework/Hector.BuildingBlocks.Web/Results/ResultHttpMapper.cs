@@ -24,7 +24,7 @@ internal static class ResultHttpMapper
         return HttpResults.Problem(problem);
     }
 
-    public static IResult ToHttpResult<T>(Result<T> result)
+    private static IResult ToHttpResultGeneric<T>(Result<T> result)
     {
         if (result.IsSuccess)
         {
@@ -72,6 +72,13 @@ internal static class ResultHttpMapper
 
         foreach (var metadata in error.Metadata)
         {
+            if (error.Category == ErrorCategory.Validation &&
+                metadata.Key.Equals("errors", StringComparison.OrdinalIgnoreCase))
+            {
+                problem.Extensions["errors"] = metadata.Value;
+                continue;
+            }
+
             problem.Extensions[metadata.Key] = metadata.Value;
         }
 

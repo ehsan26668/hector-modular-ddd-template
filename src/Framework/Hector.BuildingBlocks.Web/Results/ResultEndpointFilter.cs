@@ -6,6 +6,13 @@ namespace Hector.BuildingBlocks.Web.Results;
 
 internal sealed class ResultEndpointFilter : IEndpointFilter
 {
+    private static readonly MethodInfo GenericMapperMethod =
+        typeof(ResultHttpMapper)
+            .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
+            .Single(m =>
+                m.Name == "ToHttpResultGeneric" &&
+                m.IsGenericMethodDefinition);
+
     public async ValueTask<object?> InvokeAsync(
         EndpointFilterInvocationContext context,
         EndpointFilterDelegate next)
@@ -35,13 +42,7 @@ internal sealed class ResultEndpointFilter : IEndpointFilter
 
     private static object InvokeGenericMapper(object result, Type resultType)
     {
-        var genericMapperMethod = typeof(ResultHttpMapper)
-            .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
-            .Single(method =>
-                method.Name == nameof(ResultHttpMapper.ToHttpResult) &&
-                method.IsGenericMethodDefinition);
-
-        var closedMethod = genericMapperMethod.MakeGenericMethod(
+        var closedMethod = GenericMapperMethod.MakeGenericMethod(
             resultType.GetGenericArguments()[0]);
 
         return closedMethod.Invoke(null, [result])!;

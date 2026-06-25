@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Hector.Testing;
 
-public sealed class TestApplicationFactory(
+public class TestApplicationFactory(
     Action<IServiceCollection>? configureTestServices = null)
     : WebApplicationFactory<Program>
 {

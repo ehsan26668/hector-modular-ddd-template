@@ -13,7 +13,6 @@
 
   <Folder Name="/src/Modules/" />
 
-<!--#if (sampleModule) -->
   <Folder Name="/src/Modules/Projects/" />
 
   <Folder Name="/src/Modules/Projects/Application/">
@@ -31,31 +30,23 @@
   <Folder Name="/src/Modules/Projects/Infrastructure/">
     <Project Path="src/Modules/Projects/Infrastructure/Hector.Modules.Projects.Infrastructure.csproj" />
   </Folder>
-<!--#endif -->
-
 
   <Folder Name="/tests/" />
 
-
-<!--#if (architectureTests && sampleModule) -->
   <Folder Name="/tests/ArchitectureTests/">
     <Project Path="tests/ArchitectureTests/Hector.ArchitectureTests/Hector.ArchitectureTests.csproj" />
   </Folder>
-<!--#endif -->
-
 
   <Folder Name="/tests/IntegrationTests/">
+    <Project Path="tests/IntegrationTests/Hector.BuildingBlocks.Web.IntegrationTests/Hector.BuildingBlocks.Web.IntegrationTests.csproj" />
 
-<!--#if (sampleModule) -->
     <Project Path="tests/IntegrationTests/Hector.Modules.Projects.IntegrationTests/Hector.Modules.Projects.IntegrationTests.csproj" />
-<!--#endif -->
 
   </Folder>
 
   <Folder Name="/tests/IntegrationTests/Hector.BuildingBlocks.Persistence.IntegrationTests/">
     <Project Path="tests/IntegrationTests/Hector.BuildingBlocks.Persistence.IntegrationTests/Hector.BuildingBlocks.Persistence.IntegrationTests.csproj" />
   </Folder>
-
 
   <Folder Name="/tests/Shared/">
     <Project Path="tests/Shared/Hector.Persistence.Testing/Hector.Persistence.Testing.csproj" />
@@ -64,22 +55,16 @@
 
 
   <Folder Name="/tests/TemplateTests/">
-<!--#if (includeTemplateValidationTests) -->
     <Project Path="tests/TemplateTests/Hector.TemplateTests/Hector.TemplateTests.csproj" />
-<!--#endif -->
   </Folder>
-
 
   <Folder Name="/tests/UnitTests/">
     <Project Path="tests/UnitTests/Hector.BuildingBlocks.Application.UnitTests/Hector.BuildingBlocks.Application.UnitTests.csproj" />
     <Project Path="tests/UnitTests/Hector.BuildingBlocks.Domain.UnitTests/Hector.BuildingBlocks.Domain.UnitTests.csproj" />
     <Project Path="tests/UnitTests/Hector.BuildingBlocks.Persistence.UnitTests/Hector.BuildingBlocks.Persistence.UnitTests.csproj" />
     <Project Path="tests/UnitTests/Hector.BuildingBlocks.Web.UnitTests/Hector.BuildingBlocks.Web.UnitTests.csproj" />
-
-<!--#if (sampleModule) -->
     <Project Path="tests/UnitTests/Hector.Modules.Projects.Application.UnitTests/Hector.Modules.Projects.Application.UnitTests.csproj" />
     <Project Path="tests/UnitTests/Hector.Modules.Projects.Domain.UnitTests/Hector.Modules.Projects.Domain.UnitTests.csproj" />
-<!--#endif -->
 
   </Folder>
 

@@ -310,23 +310,15 @@ Responsible for:
 ## Testing Strategy
 
     tests
+     ├── ArchitectureTests
      ├── UnitTests
      └── IntegrationTests
 
-Unit tests:
+- ArchitectureTests: Enforce architectural rules (Layer boundaries, naming conventions, module isolation).
+- UnitTests: Focus on domain logic, application behaviors, and building blocks.
+- IntegrationTests: Focus on EF Core mapping, outbox/inbox consistency, and end-to-end module workflows.
 
-- domain logic
-- application behaviors
-- building blocks
-
-Integration tests:
-
-- EF Core mapping
-- Outbox processing
-- Inbox idempotency
-- module interaction
-
-Testing follows TDD principles.
+Testing follows strict TDD principles, with ArchitectureTests acting as the "Guard" for design integrity.
 
 ---
 

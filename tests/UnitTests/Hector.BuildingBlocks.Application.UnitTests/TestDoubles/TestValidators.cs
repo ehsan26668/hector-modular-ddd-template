@@ -43,3 +43,11 @@ internal sealed class CancellationAwareValidator : AbstractValidator<TestCommand
             });
     }
 }
+
+internal sealed class TestResultCommandValidator : AbstractValidator<TestResultCommand>
+{
+    public TestResultCommandValidator()
+    {
+        RuleFor(command => command.Name).NotEmpty();
+    }
+}

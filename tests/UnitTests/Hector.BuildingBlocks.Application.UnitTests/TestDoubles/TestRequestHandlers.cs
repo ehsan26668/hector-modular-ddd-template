@@ -68,3 +68,13 @@ internal sealed class CancellationAwareCommandHandler(
             Result<string>.Success("OK"));
     }
 }
+
+internal sealed class TestResultCommandHandler : IRequestHandler<TestResultCommand, Result>
+{
+    public Task<Result> Handle(
+        TestResultCommand request,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Result.Success());
+    }
+}

@@ -1,6 +1,5 @@
 using Hector.BuildingBlocks.Application.Messaging;
 using Hector.BuildingBlocks.Application.Messaging.Correlation;
-using Hector.BuildingBlocks.Application.Messaging.Inbox;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 

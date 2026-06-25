@@ -81,7 +81,6 @@ public sealed class ValidationBehaviorTests
         fixture.ExecutionOrder.Should().BeEmpty();
     }
 
-
     [Fact]
     public async Task Should_InvokeHandler_When_NoValidatorsAreRegistered()
     {
@@ -178,8 +177,8 @@ public sealed class ValidationBehaviorTests
         // Arrange
         var validators = new IValidator<TestCommand>[]
         {
-        new EmptyNameValidator(),
-        new MinimumLengthValidator()
+            new EmptyNameValidator(),
+            new MinimumLengthValidator()
         };
 
         var command = new TestCommand(string.Empty);
@@ -201,6 +200,45 @@ public sealed class ValidationBehaviorTests
         failures.Should().HaveCount(2);
         failures.Should().Contain(failure => failure.ErrorMessage.Contains("must not be empty"));
         failures.Should().Contain(failure => failure.ErrorMessage.Contains("at least 3 characters"));
+    }
+
+    [Fact]
+    public async Task Should_ReturnFailureResult_When_ResponseTypeIsNonGenericResult_And_RequestIsInvalid()
+    {
+        // Arrange
+        var fixture = CreateFixture(services =>
+        {
+            services.AddTransient<IValidator<TestResultCommand>, TestResultCommandValidator>();
+            services.AddTransient<IRequestHandler<TestResultCommand, Result>, TestResultCommandHandler>();
+        });
+
+        // Act
+        var result = await fixture.Mediator.SendAsync(new TestResultCommand(string.Empty));
+
+        // Assert
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("validation.failed");
+        result.Error.Category.Should().Be(ErrorCategory.Validation);
+        fixture.ExecutionOrder.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Should_ThrowInvalidOperationException_When_ResponseTypeIsNotResultOrGenericResult()
+    {
+        // Arrange
+        var behavior = new ValidationBehavior<TestCommand, string>(
+            [new TestCommandValidator()]);
+
+        // Act
+        Func<Task> act = async () => await behavior.Handle(
+            new TestCommand(string.Empty),
+            () => Task.FromResult("OK"),
+            CancellationToken.None);
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage("ValidationBehavior can only be used with Result or Result<T>. Response type: String");
     }
 
     private static MediatorTestFixture CreateFixture(Action<IServiceCollection>? configureServices = null)
