@@ -2,29 +2,29 @@
 
 | ID | Title | Status | Date | Validation |
 | --- | --- | --- | --- | --- |
-| ADR-0001 | [Adopt Architecture Decision Records](/docs/adr/0001-adopt-architecture-decision-records.md) | Accepted | 2026-06-03 | - |
-| ADR-0002 | [Initialize Modular Monolith Structure](/docs/adr/0002-initialize-project-structure.md) | Accepted | 2026-06-03 | - |
-| ADR-0003 | [Adopt TDD for Building Blocks](/docs/adr/0003-adopt-tdd-for-building-blocks.md) | Accepted | 2026-06-03 | - |
-| ADR-0004 | [Entity Base Class and Identity Strategy](/docs/adr/0004-entity-base-class-and-identity.md) | Accepted | 2026-06-03 | - |
-| ADR-0005 | [Introduce Domain Events](/docs/adr/0005-domain-events.md) | Accepted | 2026-06-03 | - |
-| ADR-0006 | [Domain Exception Hierarchy](/docs/adr/0006-domain-exceptions.md) | Accepted | 2026-06-03 | - |
-| ADR-0007 | [Guard Pattern for Domain Invariants](/docs/adr/0007-guard-pattern-for-domain-invariants.md) | Accepted | 2026-06-03 | - |
-| ADR-0008 | [Use Strongly Typed IDs](/docs/adr/0008-strongly-typed-ids.md) | Accepted | 2026-06-03 | - |
-| ADR-0009 | [Strongly Typed IDs Enhancement](/docs/adr/0009-strongly-typed-ids-enhancement.md) | Accepted | 2026-06-03 | - |
-| ADR-0010 | [Advanced Capabilities for Strongly Typed IDs](/docs/adr/0010-advanced-strongly-typed-id-capabilities.md) | Accepted | 2026-06-03 | - |
-| ADR-0011 | [Eliminate Boilerplate in Strongly Typed IDs Using Self-Referencing Generics](/docs/adr/0011-eliminate-boilerplate-in-strongly-typed-ids-using-self-referencing-generics.md) | Superseded | 2026-06-03 | - |
-| ADR-0012 | [Automated Persistence Mapping for Strongly Typed IDs](/docs/adr/0012-automated-persistence-mapping-for-strongly-typed-ids.md) | Accepted | 2026-06-03 | - |
-| ADR-0013 | [Base DbContext and Domain Event Dispatch Strategy](/docs/adr/0013-base-dbcontext-and-domain-event-dispatch-strategy.md) | Accepted | 2026-06-03 | - |
-| ADR-0014 | [Adopt Internal Mediator for CQRS](/docs/adr/0014-adopt-internal-mediator-for-CQRS.md) | Accepted | 2026-06-03 | - |
-| ADR-0015 | [Implement Mediator-Based Domain Event Dispatcher in Persistence](/docs/adr/0015-implement-mediator-based-domain-event-dispatcher.md) | Accepted | 2026-06-03 | - |
-| ADR-0016 | [Integrate Domain Event Dispatching with EF Core Save Pipeline](/docs/adr/0016-integrate-domain-event-dispatching-with-ef-core-save-pipeline.md) | Accepted | 2026-06-03 | - |
-| ADR-0017 | [Standardize Feature Module Structure](/docs/adr/0017-standardize-feature-module-structure.md) | Accepted | 2026-06-03 | - |
-| ADR-0018 | [Domain Identity Generation Policy](/docs/adr/0018-domain-identity-generation-policy.md) | Accepted | 2026-06-03 | - |
-| ADR-0019 | [Simplify StronglyTypedId and Use Assembly Scanning](/docs/adr/0019-simplify-strongly-typed-id-and-use-assembly-scanning.md) | Accepted | 2026-06-03 | - |
-| ADR-0020 | [Adopt One DbContext per Feature Module](/docs/adr/0020-adopt-one-dbcontext-per-feature-module.md) | Accepted | 2026-06-07 | - |
-| ADR-0021 | [Adopt Transactional Outbox for Domain Event Publishing](/docs/adr/0021-adopt-transactional-outbox-for-domain-events.md) | Accepted | 2026-06-07 | - |
-| ADR-0022 | [Implement Outbox Background Processor](/docs/adr/0022-outbox-background-processor.md) | Accepted | 2026-06-07 | - |
-| ADR-0023 | [Adopt Inbox Pattern for Idempotent Event Handling](/docs/adr/0023-adopt-inbox-pattern-for-idempotent-event-handling.md) | **Implemented** | 2026-06-13 | - |
+| ADR-0001 | [Adopt Architecture Decision Records](/docs/adr/0001-adopt-architecture-decision-records.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0001-adopt-architecture-decision-test-plan.md) |
+| ADR-0002 | [Initialize Modular Monolith Structure](/docs/adr/0002-initialize-project-structure.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0002-initialize-project-structure-for-modular-ddd.md) |
+| ADR-0003 | [Adopt TDD for Building Blocks](/docs/adr/0003-adopt-tdd-for-building-blocks.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0003-adopttest-driven-development-(TDD)-for-building-blocks.md) |
+| ADR-0004 | [Entity Base Class and Identity Strategy](/docs/adr/0004-entity-base-class-and-identity.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0004-entity-base-class-and-identity.md) |
+| ADR-0005 | [Introduce Domain Events](/docs/adr/0005-domain-events.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0005-introduce-domain-events.md) |
+| ADR-0006 | [Domain Exception Hierarchy](/docs/adr/0006-domain-exceptions.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0006-domain-exception-hierarchy.md) |
+| ADR-0007 | [Guard Pattern for Domain Invariants](/docs/adr/0007-guard-pattern-for-domain-invariants.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0007-use-guard-pattern-for-domain-invariants.md) |
+| ADR-0008 | [Use Strongly Typed IDs](/docs/adr/0008-strongly-typed-ids.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0008-use-strongly-typed-ids.md) |
+| ADR-0009 | [Strongly Typed IDs Enhancement](/docs/adr/0009-strongly-typed-ids-enhancement.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0009-strongly-typed-ids-enhancement.md) |
+| ADR-0010 | [Advanced Capabilities for Strongly Typed IDs](/docs/adr/0010-advanced-strongly-typed-id-capabilities.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0010-advanced-capabilities-for-strongly-typed-ids.md) |
+| ADR-0011 | [Eliminate Boilerplate in Strongly Typed IDs Using Self-Referencing Generics](/docs/adr/0011-eliminate-boilerplate-in-strongly-typed-ids-using-self-referencing-generics.md) | Superseded | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0011-eliminate-boilerplate-in-strongly-typed-ids-using-self-referencing-generics.md) |
+| ADR-0012 | [Automated Persistence Mapping for Strongly Typed IDs](/docs/adr/0012-automated-persistence-mapping-for-strongly-typed-ids.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0012-automated-persistence-mapping-for-strongly-typed-ids.md) |
+| ADR-0013 | [Base DbContext and Domain Event Dispatch Strategy](/docs/adr/0013-base-dbcontext-and-domain-event-dispatch-strategy.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0013-base-dbcontext-and-domain-event-dispatch-strategy.md) |
+| ADR-0014 | [Adopt Internal Mediator for CQRS](/docs/adr/0014-adopt-internal-mediator-for-CQRS.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0014-adopt-internal-mediator-for-cqrs.md) |
+| ADR-0015 | [Implement Mediator-Based Domain Event Dispatcher in Persistence](/docs/adr/0015-implement-mediator-based-domain-event-dispatcher.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0015-implement-mediator-based-domain-event-dispatcher-in-persistence.md) |
+| ADR-0016 | [Integrate Domain Event Dispatching with EF Core Save Pipeline](/docs/adr/0016-integrate-domain-event-dispatching-with-ef-core-save-pipeline.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0016-integrate-domain-event-dispatching-with-ef-core-save-pipeline.md) |
+| ADR-0017 | [Standardize Feature Module Structure](/docs/adr/0017-standardize-feature-module-structure.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0017-standardize-feature-module-structure.md) |
+| ADR-0018 | [Domain Identity Generation Policy](/docs/adr/0018-domain-identity-generation-policy.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0018-domain-identity-generation-policy.md) |
+| ADR-0019 | [Simplify StronglyTypedId and Use Assembly Scanning](/docs/adr/0019-simplify-strongly-typed-id-and-use-assembly-scanning.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0019-simplify-StronglyTypedId-and-use-assembly-scanning.md) |
+| ADR-0020 | [Adopt One DbContext per Feature Module](/docs/adr/0020-adopt-one-dbcontext-per-feature-module.md) | Accepted | 2026-06-07 | ❌[Test Plan](/docs/tests/adr-0020-adopt-one-DbContext-per-feature-module.md) |
+| ADR-0021 | [Adopt Transactional Outbox for Domain Event Publishing](/docs/adr/0021-adopt-transactional-outbox-for-domain-events.md) | Accepted | 2026-06-07 | ❌[Test Plan](/docs/tests/adr-0021-adopt-transactional-outbox-for-domain-event-publishing.md) |
+| ADR-0022 | [Implement Outbox Background Processor](/docs/adr/0022-outbox-background-processor.md) | Accepted | 2026-06-07 | ❌[Test Plan](/docs/tests/adr-0022-implement-outbox-background-processor.md) |
+| ADR-0023 | [Adopt Inbox Pattern for Idempotent Event Handling](/docs/adr/0023-adopt-inbox-pattern-for-idempotent-event-handling.md) | **Implemented** | 2026-06-13 | ❌[Test Plan](/docs/tests/adr-0023-adopt-inbox-pattern-for-idempotent-event-handling.md) |
 | ADR-0024 | [Adopt Distributed Locking for Outbox Processor](/docs/adr/0024-adopt-distributed-locking-for-outbox-processor.md) | **Implemented** | 2026-06-13 | - |
 | ADR-0025 | [Introduce Outbox Cleanup and Retention Policy](/docs/adr/0025-outbox-cleanup-and-retention-policy.md) | **Implemented** | 2026-06-13 | - |
 | ADR-0026 | [Define Event Serialization Strategy](/docs/adr/0026-event-serialization-strategy.md) | **Implemented** | 2026-06-14 | - |
