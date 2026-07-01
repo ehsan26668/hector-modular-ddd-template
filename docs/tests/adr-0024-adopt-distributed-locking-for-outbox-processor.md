@@ -1,4 +1,4 @@
-# Test Plan: ADR‑0023 Adopt Inbox Pattern for Idempotent Event Handling
+# Test Plan: ADR‑0024 Adopt Distributed Locking for Outbox Processor
 
 ## Status
 
@@ -6,59 +6,37 @@ Accepted
 
 ## Context
 
-This test plan validates [ADR‑0023](/docs/adr/0023-adopt-inbox-pattern-for-idempotent-event-handling.md): *Adopt Inbox Pattern for Idempotent Event Handling*.
+This test plan validates [ADR‑0024](/docs/adr/0024-adopt-distributed-locking-for-outbox-processor.md): *Adopt Distributed Locking for Outbox Processor*.
 
-After introducing the Transactional Outbox ([ADR‑0021](/docs/adr/0021-adopt-transactional-outbox-for-domain-events.md)) and Outbox Processor ([ADR‑0022](/docs/adr/0022-outbox-background-processor.md)), the system guarantees reliable production of events. However, distributed systems can still deliver messages multiple times due to:
+[ADR‑0021](/docs/adr/0021-adopt-transactional-outbox-for-domain-events.md) introduced the Transactional Outbox pattern, and [ADR‑0022](/docs/adr/0022-outbox-background-processor.md) introduced the background processor that polls and publishes pending outbox messages. In a multi-instance deployment, multiple processors may attempt to process the same pending messages concurrently. Without coordination, this leads to duplicate claims, duplicate publication attempts, and weakened delivery guarantees.
 
-- broker retries
-- network failures
-- consumer crashes
-- manual replay
-- outbox retry mechanisms
-
-Without protection, duplicate deliveries can cause:
-
-- repeated handler execution
-- duplicated records
-- inconsistent aggregate state
-- repeated external side effects
-
-The Inbox Pattern prevents these issues by **persistently tracking processed messages** before executing handlers.
+[ADR‑0024](/docs/adr/0024-adopt-distributed-locking-for-outbox-processor.md) addresses this by introducing a database-backed lease-based distributed locking mechanism using `LockId` and `LockedUntil` on outbox messages.
 
 This test plan validates that:
 
-- duplicate messages are detected
-- handlers execute only once per message
-- message recording and side effects occur in the same transaction
-- inbox persistence behaves correctly
-- mediator pipeline integrates the behavior transparently
+- only eligible messages are claimable
+- claims are atomic and ownership-safe
+- a processor only loads messages it successfully claimed
+- locks are released after success or failure
+- expired locks can be reclaimed
+- retry metadata is updated correctly
+- concurrent processors do not simultaneously own the same message
+
+This ADR is critical because it protects the correctness of outbox processing in horizontally scaled deployments while preserving the architecture’s EF Core-based, provider-agnostic design.
 
 ## Test Strategy
 
 ### Unit Tests
 
-#### Validate isolated behavior of the inbox pipeline and store abstraction
-
-Focus areas:
-
-- duplicate detection
-- correct invocation of handlers
-- correct interactions with `IInboxStore`
+#### Focus on isolated locking logic, eligibility rules, lease handling, retry state transitions, and ownership filtering
 
 Target project:
 
-- tests/UnitTests/Hector.BuildingBlocks.Application.UnitTests
 - tests/UnitTests/Hector.BuildingBlocks.Persistence.UnitTests
 
 ### Integration Tests
 
-#### Validate full pipeline behavior using EF Core persistence
-
-Focus areas:
-
-- persistence of inbox records
-- atomic transaction behavior
-- correct skipping of duplicate events
+#### Focus on concurrent processors, database-backed conditional claims, lock expiration, and end-to-end outbox processing correctness
 
 Target project:
 
@@ -72,21 +50,28 @@ List exactly what is included and excluded from this test plan to set clear boun
 
 ### Included
 
-- `InboxPipelineBehavior`
-- `IInboxStore`
-- `EfCoreInboxStore`
-- `InboxMessage` entity persistence
-- duplicate message detection
-- mediator pipeline integration
-- transactional consistency between handler and inbox persistence
-- consumer identification via `IInboxConsumerNameProvider`
+- Selection of eligible outbox messages for claiming
+- Filtering rules:
+  - `ProcessedOn == null`
+  - `RetryCount < MaxRetryCount`
+  - `LockedUntil == null || LockedUntil < UtcNow`
+- Atomic claim/update behavior
+- Assignment of LockId and LockedUntil
+- Loading messages by current LockId
+- Lock release after successful publish
+- Lock release after failed publish
+- Retry metadata updates on failure
+- Reclaiming messages after lease expiration
+- Concurrency safety with multiple processor instances
+- Ordering within claimed batch
 
 ### Excluded
 
-- external message brokers
-- message transport mechanisms
-- inbox cleanup policies (covered in later ADRs)
-- outbox message production (covered in [ADR‑0021](/docs/adr/0021-adopt-transactional-outbox-for-domain-events.md))
+- External distributed lock providers
+- Vendor-specific DB locking primitives
+- Poison-message handling beyond retry limit behavior
+- Cleanup/retention behavior from [ADR‑0025](/docs/adr/0025-outbox-cleanup-and-retention-policy.md)
+- Consumer-side idempotency beyond inbox integration assumptions
 
 ---
 
@@ -94,213 +79,292 @@ List exactly what is included and excluded from this test plan to set clear boun
 
 ### TC-01
 
-- #### Should_SkipHandlerExecution_When_MessageAlreadyProcessed
+- #### Should_SelectOnlyEligibleMessages_When_ClaimingBatch
 
 **Scenario:**
 
-- If a message identifier already exists in the inbox table, the handler must not execute.
+- The processor must only attempt to claim messages that are unprocessed, below retry limit, and unlocked or expired.
 
 **Arrange:**
 
-- Mock `IInboxStore`
-- Configure store to return `true` for `ExistsAsync(messageId, consumer)`
+- Create outbox messages with mixed states:
+  - unprocessed and unlocked
+  - processed
+  - retry exhausted
+  - currently locked
+  - expired lock
 
 **Act:**
 
-- Execute mediator pipeline with the same message
+- Execute claim selection logic
 
 **Assert:**
 
-- Handler is not executed
-- No additional store writes occur
+- Only eligible message identifiers are selected for claim
 
 ---
 
 ### TC-02
 
-- #### Should_RecordMessage_When_MessageIsProcessedFirstTime
+- #### Should_AssignLockIdAndLockedUntil_When_ClaimSucceeds
 
 **Scenario:**
 
-- When a message is processed for the first time, it must be recorded in the inbox.
+- When claiming eligible messages, the processor must assign its ownership metadata.
 
 **Arrange:**
 
-- `ExistsAsync` returns `false`
-- mock handler
+- Create eligible outbox messages
+- Generate processor `LockId`
 
 **Act:**
 
-- Execute mediator pipeline
+- Execute claim operation
 
 **Assert:**
 
-- handler executed exactly once
-- `IInboxStore.StoreAsync()` invoked
+- Claimed rows contain:
+  - current `LockId`
+  - non-null `LockedUntil`
 
 ---
 
 ### TC-03
 
-- #### Should_ExecuteHandler_When_MessageIsNew
+- #### Should_LoadOnlyClaimedMessages_When_ProcessingBatch
 
 **Scenario:**
 
-- A new message should pass through the pipeline and execute the handler.
+- After claiming, the processor must load only rows owned by the current processor instance.
 
 **Arrange:**
 
-- Inbox store indicates message does not exist
+- Insert messages claimed by different `LockId` values
 
 **Act:**
 
-- Send event through mediator
+- Load claimed batch for current processor
 
 **Assert:**
 
-- handler executed successfully
-- inbox record created
+- Only messages with matching `LockId` are loaded
 
 ---
 
 ### TC-04
 
-- #### Should_PersistInboxRecord_When_HandlerCompletes
+- #### Should_NotClaimMessage_When_AlreadyLockedByAnotherProcessor
 
 **Scenario:**
 
-- The inbox record must be persisted when handler execution succeeds.
+- A message with a non-expired lock must not be claimed by another processor.
 
 **Arrange:**
 
-- new message
-- valid handler
+- Create message with active `LockId` and future `LockedUntil`
 
 **Act:**
 
-- process message
+- Attempt claim from another processor
 
 **Assert:**
 
-- inbox record persisted with:
-  - messageId
-  - consumer
-  - processed timestamp
+- Claim count is zero
+- Ownership remains unchanged
 
 ---
 
 ### TC-05
 
-- #### Should_NotRecordInboxMessage_When_HandlerFails
+- #### Should_ReclaimMessage_When_LockHasExpired
 
 **Scenario:**
 
-- If the handler throws an exception, the inbox record should not be persisted.
+- If a lease expires, another processor may reclaim the message.
 
 **Arrange:**
 
-- new message
-- handler throws exception
+- Create message with expired `LockedUntil`
 
 **Act:**
 
-- process message
+- Attempt claim from a new processor
 
 **Assert:**
 
-- inbox record not persisted
-- transaction rolled back
+- Message is claimed by new `LockId`
+- `LockedUntil` is renewed
 
 ---
 
 ### TC-06
 
-- #### Should_ProcessMessageOnlyOnce_When_DuplicateEventsArrive
+- #### Should_ReleaseLockAndMarkProcessed_When_PublicationSucceeds
 
 **Scenario:**
 
-- Two identical messages arrive sequentially.
+- After successful publish, the processor must mark the message processed and release ownership.
 
 **Arrange:**
 
-- send event with same messageId twice
+- Create claimed message
+- Mock publisher success
 
 **Act:**
 
-- process both events
+- Process claimed message
 
 **Assert:**
 
-- handler executed once
-- second execution skipped
+- `ProcessedOn` is set
+- `LastAttemptedOn` is set
+- `Error` is cleared
+- `LockId` is null
+- `LockedUntil` is null
 
 ---
 
 ### TC-07
 
-- #### Should_UseConsumerName_When_RecordingInboxEntry
+- #### Should_ReleaseLockAndIncrementRetryCount_When_PublicationFails
 
 **Scenario:**
 
-- Inbox records must include the consumer name to support multiple handlers.
+- After failed publish, the processor must release the lock and record retry metadata.
 
 **Arrange:**
 
-- configure `IInboxConsumerNameProvider`
+- Create claimed message
+- Mock publisher failure
 
 **Act:**
 
-- process message
+- Process claimed message
 
 **Assert:**
 
-- inbox record contains correct consumer identifier
+- `RetryCount` incremented
+- `LastAttemptedOn` set
+- `Error` stored
+- `LockId` cleared
+- `LockedUntil` cleared
+- `ProcessedOn` remains null
 
 ---
 
 ### TC-08
 
-- #### Should_PersistInboxRecordAtomically_With_HandlerSideEffects
+- #### Should_NotProcessRetryExhaustedMessage_When_RetryLimitReached
 
 **Scenario:**
 
-- Inbox record and handler side effects must commit within the same transaction.
+- Messages that reached the retry limit must not be selected for claim.
 
 **Arrange:**
 
-- handler modifies database state
+- Create message with `RetryCount == MaxRetryCount`
 
 **Act:**
 
-- process message
+- Run claim selection
 
 **Assert:**
 
-- both changes committed together
-- no partial state
+- Message is excluded from claim set
 
 ---
 
 ### TC-09
 
-- #### Should_HandleConcurrentDuplicateMessagesSafely
+- #### Should_PreserveOccurrenceOrder_WithinClaimedBatch
 
 **Scenario:**
 
-- Two identical messages arrive concurrently.
+- Claimed messages must be published in occurrence order within the batch.
 
 **Arrange:**
 
-- simulate parallel processing
+- Create multiple eligible messages with ordered occurrence timestamps
 
 **Act:**
 
-- process both messages concurrently
+- Claim and process batch
 
 **Assert:**
 
-- only one handler execution occurs
-- inbox record prevents duplicate execution
+- Publisher invoked in expected order
+
+---
+
+### TC-10
+
+- #### Should_PreventSimultaneousOwnership_When_TwoProcessorsClaimSameBatch
+
+**Scenario:**
+
+- Two processors concurrently attempt to claim the same eligible messages.
+
+**Arrange:**
+
+- Seed shared pending outbox messages
+- Start two claim attempts concurrently
+
+**Act:**
+
+- Execute both claim operations
+
+**Assert:**
+
+- Each message is owned by at most one processor
+- No message ends up with overlapping active ownership
+
+---
+
+### TC-11
+
+- #### Should_ProcessOnlySuccessfullyClaimedMessages_When_ConcurrentClaimsOccur
+
+**Scenario:**
+
+- Even if both processors target the same candidates, each must process only its successfully claimed subset.
+
+**Arrange:**
+
+- Shared pending message set
+- Two concurrent processors with different `LockIds`
+
+**Act:**
+
+- Claim and load messages
+
+**Assert:**
+
+- Each processor loads only rows with its own `LockId`
+- No processor processes another processor’s claims
+
+---
+
+### TC-12
+
+- #### Should_ClearStaleErrorOnSuccessfulRetry_When_PreviousAttemptFailed
+
+**Scenario:**
+
+- A message that previously failed and is later processed successfully must clear old error state.
+
+**Arrange:**
+
+- Create retriable message with previous `Error` and `RetryCount > 0`
+
+**Act:**
+
+- Process successfully on retry
+
+**Assert:**
+
+- `ProcessedOn` set
+- `Error` cleared
+- lock released
 
 ---
 
@@ -308,20 +372,26 @@ List exactly what is included and excluded from this test plan to set clear boun
 
 ### 3.1 Security & Sanitization
 
-- message identifiers do not expose internal infrastructure details
-- inbox records contain only safe metadata
-- sensitive payload information is not logged
+Verify that:
+
+- lock metadata does not leak sensitive infrastructure details
+- error persistence does not expose stack traces beyond intended storage policy
+- logs do not expose connection data or internal secrets
 
 ### 3.2 Observability & Traceability
 
-- `messageId` appears in logs
-- `correlationId` flows through the mediator pipeline
-- skipped duplicates are logged for debugging
+Verify that:
+
+- logs include LockId, message identifier, and event type where relevant
+- claim counts and processing outcomes are observable
+- retry attempts and lock expiration behavior are traceable in structured logs
 
 ### 3.3 Contract Stability
 
-- message identifier format remains stable
-- inbox records remain compatible with future event versions
+Verify that:
+
+- outbox record schema changes remain backward compatible for locking fields
+- processing contract remains stable for future alternative publishers or processors
 
 ---
 
@@ -330,24 +400,21 @@ List exactly what is included and excluded from this test plan to set clear boun
 Define specific sample data, edge cases, or sanitized examples used during testing:
 
 - **Inputs:**
-  - integration events with messageId
-  - duplicated events
-  - simulated handler failures
-  - concurrent message deliveries
-
-Example event:
-
-```text
-ProjectCreatedIntegrationEvent
-MessageId: 9f3a8c3a-2e7c-41ab-9a7c-01a1c3c3c1ab
-Consumer: ProjectsModule
-```
+  - pending outbox messages
+  - processed outbox messages
+  - locked messages with active leases
+  - locked messages with expired leases
+  - retry-exhausted messages
+  - publisher success/failure scenarios
+  - concurrent processor instances with distinct `LockId`s
 
 - **Expected Outputs:**
-  - inbox record created on first processing
-  - duplicate events skipped
-  - handler executed once
-  - atomic persistence of inbox record and side effects
+  - only eligible rows claimed
+  - lock fields assigned on successful claim
+  - successful messages marked processed and unlocked
+  - failed messages retried and unlocked
+  - expired locks reclaimed safely
+  - no simultaneous ownership for the same row
 
 ---
 
@@ -356,22 +423,13 @@ Consumer: ProjectsModule
 Outline the steps for Red-Green-Refactor:
 
 1. **RED:**  
-   Write failing tests validating:
-   - duplicate detection
-   - pipeline behavior
-   - inbox persistence rules
+   Define failing tests for eligibility filtering, atomic claims, lease expiration, and concurrent claim safety.
 
 2. **GREEN:**  
-   Implement:
-   - `InboxPipelineBehavior`
-   - `EfCoreInboxStore`
-   - `InboxMessage` entity
+   Implement conditional claim/update logic, ownership-based loading, and lock release behavior.
 
 3. **REFACTOR:**  
-   Improve:
-   - pipeline integration
-   - transaction handling
-   - performance of existence checks
+   Improve clarity of locking policy, batch orchestration, and logging while preserving behavior and test coverage.
 
 ---
 
@@ -379,11 +437,11 @@ Outline the steps for Red-Green-Refactor:
 
 List the conditions that must be met for this ADR to be considered successfully validated:
 
-- [ ] All Unit Tests pass
-- [ ] All Integration Tests pass
-- [ ] Duplicate message handling verified
-- [ ] Transactional consistency verified
-- [ ] Documentation updated
+- [ ] All Unit Tests pass.
+- [ ] All Integration Tests pass.
+- [ ] Concurrency safety verified under competing processors.
+- [ ] Retry and lock release behavior verified.
+- [ ] Documentation updated.
 
 ---
 
@@ -392,27 +450,24 @@ List the conditions that must be met for this ADR to be considered successfully 
 ```text
 tests/
  ├── UnitTests/
- │   └── Hector.BuildingBlocks.Application.UnitTests/
- │       └── Messaging/
- │           ├── InboxBehaviorTests.cs
- │           ├── InboxPipelineBehaviorTests.cs
- │           └── InboxCorrelationBehaviorTests.cs
- │
- ├── UnitTests/
  │   └── Hector.BuildingBlocks.Persistence.UnitTests/
- │       └── Inbox/
- │           ├── InboxStoreTests.cs
- │           └── InboxPersistenceTests.cs
- │
+ │       └── Outbox/
+ │           ├── OutboxProcessingPolicyTests.cs
+ │           ├── OutboxProcessorLockingTests.cs
+ │           ├── OutboxProcessorRetryTests.cs
+ │           └── OutboxPublisherTests.cs
  └── IntegrationTests/
      └── Hector.BuildingBlocks.Persistence.IntegrationTests/
-         └── InboxProcessingTests.cs
+         ├── OutboxProcessorTests.cs
+         ├── OutboxConcurrentProcessingTests.cs
+         ├── OutboxLockExpirationTests.cs
+         └── OutboxRetryLockReleaseTests.cs
 ```
 
 ---
 
 ## Summary
 
-This test plan validates the **Inbox Pattern implementation that guarantees idempotent event processing**. By recording processed messages and integrating duplicate detection into the mediator pipeline, the system ensures that event handlers execute at most once per message. Combined with the Transactional Outbox pattern, this architecture provides reliable, fault‑tolerant event-driven communication within the modular DDD system.
+This test plan validates the distributed locking strategy that protects the Outbox Processor in multi-instance deployments. By verifying lease-based claiming, safe ownership boundaries, expiration-based reclamation, and correct release behavior on success and failure, the system can scale horizontally without allowing concurrent processors to simultaneously own the same outbox message. This preserves reliable at-least-once delivery semantics while aligning with the existing EF Core and Modular DDD architecture.
 
 ---

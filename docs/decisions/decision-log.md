@@ -25,34 +25,34 @@
 | ADR-0021 | [Adopt Transactional Outbox for Domain Event Publishing](/docs/adr/0021-adopt-transactional-outbox-for-domain-events.md) | Accepted | 2026-06-07 | ❌[Test Plan](/docs/tests/adr-0021-adopt-transactional-outbox-for-domain-event-publishing.md) |
 | ADR-0022 | [Implement Outbox Background Processor](/docs/adr/0022-outbox-background-processor.md) | Accepted | 2026-06-07 | ❌[Test Plan](/docs/tests/adr-0022-implement-outbox-background-processor.md) |
 | ADR-0023 | [Adopt Inbox Pattern for Idempotent Event Handling](/docs/adr/0023-adopt-inbox-pattern-for-idempotent-event-handling.md) | **Implemented** | 2026-06-13 | ❌[Test Plan](/docs/tests/adr-0023-adopt-inbox-pattern-for-idempotent-event-handling.md) |
-| ADR-0024 | [Adopt Distributed Locking for Outbox Processor](/docs/adr/0024-adopt-distributed-locking-for-outbox-processor.md) | **Implemented** | 2026-06-13 | - |
-| ADR-0025 | [Introduce Outbox Cleanup and Retention Policy](/docs/adr/0025-outbox-cleanup-and-retention-policy.md) | **Implemented** | 2026-06-13 | - |
-| ADR-0026 | [Define Event Serialization Strategy](/docs/adr/0026-event-serialization-strategy.md) | **Implemented** | 2026-06-14 | - |
-| ADR-0027 | [Domain Event to Integration Event Bridge](/docs/adr/0027-domain-event-to-integration-event-bridge.md) | **Implemented** | 2026-06-14 | - |
-| ADR-0028 | [Integration Event Bus Abstraction](/docs/adr/0028-integration-event-bus-abstraction.md) | Superseded | 2026-06-14 | - |
-| ADR-0029 | [Integration Event Versioning Strategy](/docs/adr/0029-integration-event-versioning-strategy.md) | Accepted | 2026-06-14 | - |
-| ADR-0030 | [Event Naming and Contract Stability Rules](/docs/adr/0030-event-naming-and-contract-stability-rules.md) | **Implemented** | 2026-06-15 | - |
-| ADR-0031 | [Event Schema Evolution Strategy](/docs/adr/0031-event-schema-evolution-strategy.md) | **Implemented** | 2026-06-15 | - |
-| ADR-0032 | [Event Metadata and Correlation Strategy](/docs/adr/0032-event-metadata-and-correlation-strategy.md) | **Implemented** | 2026-06-16 | - |
-| ADR-0033 | [Event Ordering and Delivery Guarantees](/docs/adr/0033-event-ordering-and-delivery-guarantees.md) | **Implemented** | 2026-06-07 | - |
-| ADR-0034 | [Dead Letter and Poison Message Handling](/docs/adr/0034-dead-letter-and-poison-message-handling.md) | **Implemented** | 2026-06-07 | - |
-| ADR-0035 | [Consumer Idempotency Strategy](/docs/adr/0035-consumer-idempotency-strategy.md) | **Implemented** | 2026-06-16 | - |
-| ADR-0036 | [Architecture Guard Tests](/docs/adr/0036-architecture-guard-tests.md) | Accepted | 2026-06-07 | - |
-| ADR-0037 | [Introduce ModuleLoader for Automatic Module Registration](/docs/adr/0037-introduce-module-loader-for-auto-registration.md) | Accepted | 2026-06-17 | - |
-| ADR-0038 | [Enforce Transactional Outbox for Integration Events](/docs/adr/0038-enforce-transactional-outbox-for-integration-events.md) | Accepted | 2026-06-07 | - |
-| ADR-0039 | [Separate Integration Event from Inbox Message](/docs/adr/0039-separate-integration-event-from-inbox-message.md) | **Implemented** | 2026-06-14 | - |
-| ADR-0040 | [Module-Level Registration of Integration Event Contract Assemblies for Outbox Resolution](/docs/adr/0040-module-level-outbox-event-contract-registration.md) | **Implemented** | 2026-06-15 | - |
-| ADR-0041 | [End-to-End Correlation Propagation](/docs/adr/0041-end-to-end-correlation-propagation.md) | **Implemented** | 2026-06-16 | - |
-| ADR-0043 | [Introduce Query Side for CQRS Read Models](/docs/adr/0043-introduce-query-side-for-cqrs-read-models.md) | **Implemented** | 2026-06-18 | - |
-| ADR-0044 | [Package Hector as a .NET SDK Template](/docs/adr/0044-package-hector-as-dotnet-template.md) | **Implemented** | 2026-06-18 | - |
-| ADR-0045 | [Publish Hector as an Installable .NET Template](/docs/adr/0045-publish-hector-template-as-installable-package.md) | Accepted | 2026-06-19 | - |
-| ADR-0046 | [Framework and Product Co‑Evolution Strategy](/docs/adr/0046-framework-product-coevolution-strategy.md) | Accepted | 2026-06-19 | - |
-| ADR-0047 | [Standardize Result Pattern for Application Layer](/docs/adr/ADR-0047-standardize-result-pattern.md) | Accepted | 2026-06-23 | - |
-| ADR-0048 | [Adopt Result-Based Validation Handling](/docs/adr/ADR-0048-adopt-result-based-validation-handling.md) | Accepted | 2026-06-23 | - |
-| ADR-0049 | [Adopt Result-Based Query Responses](/docs/adr/ADR-0049-adopt-result-based-query-responses.md) | Accepted | 2026-06-23 | - |
-| ADR-0050 | [Establish Application Error Taxonomy](/docs/adr/ADR-0050-establish-application-error-taxonomy.md) | Accepted | 2026-06-23 | - |
-| ADR-0051 | [Define Allowed Error Categories for Commands and Queries](/docs/adr/ADR-0051-define-allowed-error-categories-for-commands-and-queries.md) | Accepted | 2026-06-23 | - |
-| ADR-0052 | [Introduce Result Error Object Model](/docs/adr/ADR-0052-introduce-result-error-object-model.md) | Accepted | 2026-06-23 | - |
-| ADR-0053 | [Define Result Factory and Standard Error Codes](/docs/adr/ADR-0053-define-result-factory-and-standard-error.md) | Accepted | 2026-06-23 | - |
-| ADR-0054 | [Adopt Result‑Based Error Handling Architecture](/docs/adr/ADR‑0054-adopt-result‑based-error-handling-architecture.md) | Accepted | 2026-06-23 | - |
+| ADR-0024 | [Adopt Distributed Locking for Outbox Processor](/docs/adr/0024-adopt-distributed-locking-for-outbox-processor.md) | **Implemented** | 2026-06-13 | ❌[Test Plan](/docs/tests/adr-0024-adopt-distributed-locking-for-outbox-processor.md) |
+| ADR-0025 | [Introduce Outbox Cleanup and Retention Policy](/docs/adr/0025-outbox-cleanup-and-retention-policy.md) | **Implemented** | 2026-06-13 | ❌[Test Plan](/docs/tests/adr-0025-introduce-outbox-cleanup-and-retention-policy.md) |
+| ADR-0026 | [Define Event Serialization Strategy](/docs/adr/0026-event-serialization-strategy.md) | **Implemented** | 2026-06-14 | ❌[Test Plan](/docs/tests/adr-0026-define-event-serialization-strategy.md) |
+| ADR-0027 | [Domain Event to Integration Event Bridge](/docs/adr/0027-domain-event-to-integration-event-bridge.md) | **Implemented** | 2026-06-14 | ❌[Test Plan](/docs/tests/adr-0027-domain-event-integration-event-bridge.md) |
+| ADR-0028 | [Integration Event Bus Abstraction](/docs/adr/0028-integration-event-bus-abstraction.md) | Superseded | 2026-06-14 | ❌[Test Plan](/docs/tests/adr-0028-integration-event-bus-abstraction.md) |
+| ADR-0029 | [Integration Event Versioning Strategy](/docs/adr/0029-integration-event-versioning-strategy.md) | Accepted | 2026-06-14 | ❌[Test Plan](/docs/tests/adr-0029-integration-event-versioning-strategy.md) |
+| ADR-0030 | [Event Naming and Contract Stability Rules](/docs/adr/0030-event-naming-and-contract-stability-rules.md) | **Implemented** | 2026-06-15 | ❌[Test Plan](/docs/adr/0030-event-naming-and-contract-stability-rules.md) |
+| ADR-0031 | [Event Schema Evolution Strategy](/docs/adr/0031-event-schema-evolution-strategy.md) | **Implemented** | 2026-06-15 | ❌[Test Plan](/docs/tests/adr-0031-event-schema-evolution-strategy.md) |
+| ADR-0032 | [Event Metadata and Correlation Strategy](/docs/adr/0032-event-metadata-and-correlation-strategy.md) | **Implemented** | 2026-06-16 | ❌[Test Plan](/docs/tests/adr-0032-event-metadata-and-correlation-strategy.md) |
+| ADR-0033 | [Event Ordering and Delivery Guarantees](/docs/adr/0033-event-ordering-and-delivery-guarantees.md) | **Implemented** | 2026-06-07 | ❌[Test Plan](/docs/tests/adr-0033-event-ordering-and-delivery-guarantees.md) |
+| ADR-0034 | [Dead Letter and Poison Message Handling](/docs/adr/0034-dead-letter-and-poison-message-handling.md) | **Implemented** | 2026-06-07 | ❌[Test Plan](/docs/tests/adr-0034-dead-letter-and-poison-message-handling.md) |
+| ADR-0035 | [Consumer Idempotency Strategy](/docs/adr/0035-consumer-idempotency-strategy.md) | **Implemented** | 2026-06-16 | ❌[Test Plan](/docs/tests/adr-0035-consumer-idempotency-strategy.md) |
+| ADR-0036 | [Architecture Guard Tests](/docs/adr/0036-architecture-guard-tests.md) | Accepted | 2026-06-07 | ❌[Test Plan](/docs/tests/adr-0036-architecture-guard-tests.md) |
+| ADR-0037 | [Introduce ModuleLoader for Automatic Module Registration](/docs/adr/0037-introduce-module-loader-for-auto-registration.md) | Accepted | 2026-06-17 | ❌[Test Plan](/docs/tests/adr-0037-introduce-moduleLoader-for-automatic-module-registration.md) |
+| ADR-0038 | [Enforce Transactional Outbox for Integration Events](/docs/adr/0038-enforce-transactional-outbox-for-integration-events.md) | Accepted | 2026-06-07 | ❌[Test Plan](/docs/tests/adr-0038-enforce-transactional-outbox-for-integration-events.md) |
+| ADR-0039 | [Separate Integration Event from Inbox Message](/docs/adr/0039-separate-integration-event-from-inbox-message.md) | **Implemented** | 2026-06-14 | ❌[Test Plan](/docs/tests/adr-0039-separate-integration-event-from-inbox-message.md) |
+| ADR-0040 | [Module-Level Registration of Integration Event Contract Assemblies for Outbox Resolution](/docs/adr/0040-module-level-outbox-event-contract-registration.md) | **Implemented** | 2026-06-15 | ❌[Test Plan](/docs/tests/adr-0040-module-level-registration-of-integration-event-contract-assemblies-for-outbox-resolution.md) |
+| ADR-0041 | [End-to-End Correlation Propagation](/docs/adr/0041-end-to-end-correlation-propagation.md) | **Implemented** | 2026-06-16 | ❌[Test Plan](/docs/tests/adr-0041-end-to-end-correlation-propagation.md) |
+| ADR-0043 | [Introduce Query Side for CQRS Read Models](/docs/adr/0043-introduce-query-side-for-cqrs-read-models.md) | **Implemented** | 2026-06-18 | ❌[Test Plan](/docs/tests/adr-0043-introduce-query-side-for-CQRS-read-models.md) |
+| ADR-0044 | [Package Hector as a .NET SDK Template](/docs/adr/0044-package-hector-as-dotnet-template.md) | **Implemented** | 2026-06-18 | ❌[Test Plan](/docs/tests/adr-0044-package-Hector-as-a-NET-SDK-template.md) |
+| ADR-0045 | [Publish Hector as an Installable .NET Template](/docs/adr/0045-publish-hector-template-as-installable-package.md) | Accepted | 2026-06-19 | ❌[Test Plan](/docs/tests/adr-0045-publish-Hector-as-an-installable-NET-template.md) |
+| ADR-0046 | [Framework and Product Co‑Evolution Strategy](/docs/adr/0046-framework-product-coevolution-strategy.md) | Accepted | 2026-06-19 | ❌[Test Plan](/docs/tests/adr-0046-framework-and-product-co‑evolution-strategy.md) |
+| ADR-0047 | [Standardize Result Pattern for Application Layer](/docs/adr/0047-standardize-result-pattern.md) | Accepted | 2026-06-23 | ❌[Test Plan](/docs/tests/adr-0047-standardize-result-pattern-for-application-layer.md) |
+| ADR-0048 | [Adopt Result-Based Validation Handling](/docs/adr/0048-adopt-result-based-validation-handling.md) | Accepted | 2026-06-23 | ❌[Test Plan](/docs/tests/adr-0048-adopt-result-based-validation-handling.md) |
+| ADR-0049 | [Adopt Result-Based Query Responses](/docs/adr/0049-adopt-result-based-query-responses.md) | Accepted | 2026-06-23 | ❌[Test Plan](/docs/tests/adr-0049-adopt-result-bbased-query-responses.md) |
+| ADR-0050 | [Establish Application Error Taxonomy](/docs/adr/0050-establish-application-error-taxonomy.md) | Accepted | 2026-06-23 | ❌[Test Plan](/docs/tests/adr-0050-establish-application-error-taxonomy.md) |
+| ADR-0051 | [Define Allowed Error Categories for Commands and Queries](/docs/adr/0051-define-allowed-error-categories-for-commands-and-queries.md) | Accepted | 2026-06-23 | ❌[Test Plan](/docs/tests/adr-0051-define-allowed-error-categories-for-commands-and-queries.md) |
+| ADR-0052 | [Introduce Result Error Object Model](/docs/adr/0052-introduce-result-error-object-model.md) | Accepted | 2026-06-23 | ❌[Test Plan](/docs/tests/adr-0052-introduce-result-error-object-model.md) |
+| ADR-0053 | [Define Result Factory and Standard Error Codes](/docs/adr/0053-define-result-factory-and-standard-error.md) | Accepted | 2026-06-23 | ❌[Test Plan](/docs/tests/adr-0053-define-result-factory-and-standard-error-codes.md) |
+| ADR-0054 | [Adopt Result‑Based Error Handling Architecture](/docs/adr/0054-adopt-result-based-error-handling-architecture.md) | Accepted | 2026-06-23 | ❌[Test Plan](/docs/tests/adr-0054-adopt-result-based-error-handling-architecture.md) |
 | ADR-0055 | [Unified Error Handling and Exception Shielding](/docs/adr/0055-unified-error-handling-andexception-shielding.md) | **Implemented** | 2026-06-25 | ✅[Test Plan](/docs/tests/adr-0055-global-exception-handling-test-plan.md) |

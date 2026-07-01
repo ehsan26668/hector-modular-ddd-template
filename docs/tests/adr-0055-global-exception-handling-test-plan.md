@@ -222,12 +222,12 @@ An unexpected error occurred on the server.
 
 ## 6. Exit Criteria
 
-- [ ] All unit tests pass  
-- [ ] All integration tests pass  
-- [ ] No raw exception info leaked  
-- [ ] traceId present in responses  
-- [ ] Result-based failures maintain correct precedence  
-- [ ] Documentation updated  
+- [✅] All unit tests pass  
+- [✅] All integration tests pass  
+- [✅] No raw exception info leaked  
+- [✅] traceId present in responses  
+- [✅] Result-based failures maintain correct precedence  
+- [✅] Documentation updated  
 
 ---
 
