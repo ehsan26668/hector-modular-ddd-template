@@ -337,32 +337,36 @@ Architectural violations must fail the test suite.
 
 ## 6. Exit Criteria
 
-- [ ] All Architecture Tests pass.
-- [ ] All architectural boundaries verified.
-- [ ] CI/CD integration validated.
-- [ ] Documentation updated.
+- [✅] All Architecture Tests pass.
+- [✅] All architectural boundaries verified.
+- [✅] CI/CD integration validated.
+- [✅] Documentation updated.
 
 ---
 
 ## 7. Proposed Test File Layout
 
 ```text
-tests/
- └── ArchitectureTests/
-     └── Hector.ArchitectureTests/
-         ├── LayerDependencyTests.cs
-         ├── ModuleLayerRulesTests.cs
-         ├── ModuleCompositionArchitectureTests.cs
-         ├── DomainIdentityTests.cs
-         ├── StronglyTypedIdArchitectureTests.cs
-         ├── ApplicationArchitectureTests.cs
-         ├── CommandHandlerArchitectureTests.cs
-         ├── QueryHandlerArchitectureTests.cs
-         ├── QueryHandlerRepositoryUsageTests.cs
-         ├── QueryHandlerDbContextUsageTests.cs
-         ├── QueryHandlerSideEffectTests.cs
-         ├── QueryResponseTypeTests.cs
-         └── ArchitectureTestNamingConventionTests.cs
+tests/ArchitectureTests/Hector.ArchitectureTests/
+ ├── Common/                            # تعاریف پایه‌ای، ثابت‌ها و متدهای کمکی برای بارگذاری اسمبلی‌ها
+ │   ├── AssemblyReference.cs           # نگهدارنده اسمبلی‌های پروژه جهت دسترسی ساده در تست‌ها
+ │   └── BaseArchitectureTests.cs       # (اختیاری) کلاس پایه برای تعاریف مشترک
+ │
+ ├── LayerBoundaries/                   # تست‌های مربوط به مرزها و وابستگی‌های بین لایه‌ای (Clean Architecture)
+ │   ├── LayerDependencyTests.cs        # تست‌های عدم وابستگی Domain به Application/Infrastructure و ...
+ │   └── ModuleIsolationTests.cs        # تست‌های مربوط به ایزولاسیون کامل ماژول‌ها از همدیگر
+ │
+ ├── DomainRules/                       # قوانین و استانداردهای طراحی درون لایه Domain
+ │   ├── DomainIdentityTests.cs         # تست عدم استفاده از Guid.NewGuid و استانداردهای شناسه
+ │   └── StronglyTypedIdTests.cs        # تست ارث‌بری تمام شناسه‌ها از StronglyTypedId<>
+ │
+ ├── ApplicationRules/                  # قوانین مربوط به CQRS، هندلرها و الگوهای لایه Application
+ │   ├── CommandHandlerTests.cs         # الزامات طراحی کامندها (بازگشت Result، ساید افکت‌ها و...)
+ │   ├── QueryHandlerTests.cs           # الزامات طراحی کوئری‌ها (عدم تغییر وضعیت، عدم استفاده از مخازن نامعتبر)
+ │   └── QueryResponseTypeTests.cs      # بررسی نوع خروجی کوئری‌ها بر اساس Result pattern
+ │
+ └── CodingConventions/                 # تست‌های مربوط به سبک کدنویسی و قراردادهای ساختاری خود تست‌ها
+     └── ArchitectureTestNamingTests.cs # تست نام‌گذاری متدهای تست معماری بر اساس الگو
 ```
 
 ## Summary

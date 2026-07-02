@@ -1,16 +1,18 @@
 using FluentAssertions;
 using Hector.BuildingBlocks.Application.Messaging;
+using Hector.ArchitectureTests.Common;
 using NetArchTest.Rules;
 
 namespace Hector.ArchitectureTests.ResultRules;
 
-public sealed class CommandHandlerResultRuleTests
+public sealed class CommandHandlerResultRuleTests : ArchitectureTestBase
 {
     [Fact]
-    public void CommandHandlers_Should_Reside_In_ApplicationLayer()
+    public void Should_ResideInApplicationLayer_When_ImplementingCommandHandler()
     {
         // Arrange
-        var result = Types.InCurrentDomain()
+        var result = Types
+            .InAssemblies(ProductionAssemblies)
             .That()
             .ImplementInterface(typeof(ICommandHandler<,>))
             .Should()

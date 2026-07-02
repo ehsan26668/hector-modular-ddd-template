@@ -6,7 +6,7 @@ namespace Hector.BuildingBlocks.Persistence.UnitTests;
 public sealed class CompositeStronglyTypedIdAssemblyProviderTests
 {
     [Fact]
-    public void Should_ReturnUnionOfAssemblies_FromAllProviders()
+    public void Should_ReturnUnionOfAssemblies_When_MultipleProvidersAreRegistered()
     {
         // Arrange
         var assembly = Assembly.GetExecutingAssembly();

@@ -6,7 +6,7 @@ namespace Hector.BuildingBlocks.Persistence.UnitTests;
 public sealed class StronglyTypedIdAssemblyProviderArchitectureTests
 {
     [Fact]
-    public void Should_HaveExactlyOneStronglyTypedIdAssemblyProvider_PerModuleInfrastructureAssembly()
+    public void Should_HaveExactlyOneStronglyTypedIdAssemblyProvider_When_CheckingEachModuleInfrastructureAssembly()
     {
         // Arrange
         var infrastructureAssemblies = AppDomain.CurrentDomain

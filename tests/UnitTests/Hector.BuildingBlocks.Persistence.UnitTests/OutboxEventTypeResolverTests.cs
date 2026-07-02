@@ -74,7 +74,7 @@ public sealed class OutboxEventTypeResolverTests
     }
 
     [Fact]
-    public void Should_ResolveType_By_StableEventName_IndependentFromClrTypeName()
+    public void Should_ResolveType_When_StableEventNameIsProvidedRegardlessOfClrTypeName()
     {
         // Arrange
         var resolver = new AttributedOutboxEventTypeResolver(

@@ -7,7 +7,7 @@ namespace Hector.ArchitectureTests.ResultRules;
 public sealed class ApplicationShouldNotUseWebResultMapperTests
 {
     [Fact]
-    public void ApplicationLayer_Should_NotDependOn_WebResults()
+    public void Should_NotDependOnWebLayer_When_InApplicationAssembly()
     {
         // Arrange
         var applicationAssembly = typeof(ApplicationAssemblyMarker).Assembly;

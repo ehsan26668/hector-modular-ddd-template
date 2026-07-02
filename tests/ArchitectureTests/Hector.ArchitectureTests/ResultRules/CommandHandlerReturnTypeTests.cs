@@ -7,7 +7,7 @@ namespace Hector.ArchitectureTests.ResultRules;
 public sealed class CommandHandlerReturnTypeTests
 {
     [Fact]
-    public void CommandHandlers_Should_Return_TaskOfResult_Or_TaskOfResultOfT()
+    public void Should_ReturnTaskOfResultOrResultOfT_When_ImplementingCommandHandler()
     {
         // Arrange
         var handlerTypes = AppDomain.CurrentDomain.GetAssemblies()

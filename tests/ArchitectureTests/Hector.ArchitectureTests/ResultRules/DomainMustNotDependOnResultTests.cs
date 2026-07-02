@@ -7,7 +7,7 @@ namespace Hector.ArchitectureTests.ResultRules;
 public sealed class DomainMustNotDependOnResultTests
 {
     [Fact]
-    public void DomainLayer_Should_NotDependOn_ResultNamespace()
+    public void Should_NotDependOnResultNamespace_When_InDomainLayer()
     {
         // Arrange
         var domainAssembly = typeof(DomainAssemblyMarker).Assembly;

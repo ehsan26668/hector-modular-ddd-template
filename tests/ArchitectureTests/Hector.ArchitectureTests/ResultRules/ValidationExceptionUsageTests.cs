@@ -7,7 +7,7 @@ namespace Hector.ArchitectureTests.ResultRules;
 public class ValidationExceptionUsageTests
 {
     [Fact]
-    public void ApplicationLayer_Should_NotDependOn_FluentValidationException()
+    public void Should_NotDependOnFluentValidationException_When_InApplicationLayer()
     {
         // Arrange
         var applicationAssembly = typeof(ApplicationAssemblyMarker).Assembly;

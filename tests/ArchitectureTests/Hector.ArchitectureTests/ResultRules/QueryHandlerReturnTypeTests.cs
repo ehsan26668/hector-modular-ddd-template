@@ -7,7 +7,7 @@ namespace Hector.ArchitectureTests.ResultRules;
 public sealed class QueryHandlerReturnTypeTests
 {
     [Fact]
-    public void QueryHandlers_Should_Return_TaskOfResultOfT()
+    public void Should_ReturnTaskOfResultOfT_When_ImplementingQueryHandler()
     {
         // Arrange
         var handlerTypes = AppDomain.CurrentDomain.GetAssemblies()

@@ -27,7 +27,7 @@ public sealed class StronglyTypedIdRegistrationExtensionsTests
     }
 
     [Fact]
-    public void Should_DiscoverAssemblies_FromRegisteredProviders()
+    public void Should_DiscoverAssemblies_When_ProvidersAreRegistered()
     {
         // Arrange
         var services = new ServiceCollection();

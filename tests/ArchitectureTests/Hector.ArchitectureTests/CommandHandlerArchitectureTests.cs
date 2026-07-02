@@ -7,7 +7,7 @@ namespace Hector.ArchitectureTests;
 public sealed class CommandHandlerArchitectureTests
 {
     [Fact]
-    public void CommandHandlers_Should_DependOnTheirModuleDomainLayer()
+    public void Should_DependOnTheirModuleDomainLayer_When_AnalyzingCommandHandlers()
     {
         // Arrange
         var applicationAssemblies = LoadApplicationAssemblies();
@@ -29,7 +29,7 @@ public sealed class CommandHandlerArchitectureTests
     }
 
     [Fact]
-    public void CommandHandlers_Should_NotDependOnTheirModuleInfrastructureLayer()
+    public void Should_NotDependOnTheirModuleInfrastructureLayer_When_AnalyzingCommandHandlers()
     {
         // Arrange
         var applicationAssemblies = LoadApplicationAssemblies();

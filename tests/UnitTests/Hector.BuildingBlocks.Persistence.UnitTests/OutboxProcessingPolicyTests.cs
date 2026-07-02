@@ -6,7 +6,7 @@ namespace Hector.BuildingBlocks.Persistence.UnitTests;
 public class OutboxProcessingPolicyTests
 {
     [Fact]
-    public void IsProcessable_ShouldReturnFalse_WhenMessageIsPoisoned()
+    public void Should_ReturnFalse_When_MessageIsPoisoned()
     {
         // Arrange
         var message = new OutboxMessage
@@ -28,7 +28,7 @@ public class OutboxProcessingPolicyTests
     }
 
     [Fact]
-    public void IsProcessable_ShouldReturnFalse_WhenRetryCountExceeded()
+    public void Should_ReturnFalse_When_RetryCountExceeded()
     {
         // Arrange
         var message = new OutboxMessage
@@ -50,7 +50,7 @@ public class OutboxProcessingPolicyTests
     }
 
     [Fact]
-    public void IsProcessable_ShouldReturnTrue_WhenMessageIsValid()
+    public void Should_ReturnTrue_When_MessageIsValid()
     {
         // Arrange
         var message = new OutboxMessage

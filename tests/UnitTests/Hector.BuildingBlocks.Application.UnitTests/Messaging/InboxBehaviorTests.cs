@@ -73,7 +73,7 @@ public sealed class InboxBehaviorTests
     }
 
     [Fact]
-    public async Task Should_StoreMessageBeforeExecutingHandler()
+    public async Task Should_StoreMessageBeforeExecutingHandler_When_MessageHasNotBeenProcessed()
     {
         // Arrange
         var inbox = Substitute.For<IInboxStore>();

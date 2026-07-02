@@ -10,7 +10,7 @@ namespace Hector.BuildingBlocks.Persistence.UnitTests;
 public sealed class InboxPersistenceTests
 {
     [Fact]
-    public async Task Should_EnforceUniqueConstraint_OnMessageIdAndConsumer()
+    public async Task Should_EnforceUniqueConstraint_When_DuplicateMessageIdAndConsumerArePersisted()
     {
         // Arrange
         using var connection = PersistenceTestInfrastructure.CreateOpenSqliteConnection();

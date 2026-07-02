@@ -14,7 +14,7 @@ public sealed class QueryErrorCategoryPolicyTests
     ];
 
     [Fact]
-    public void QueryErrors_Should_Use_Allowed_Categories()
+    public void Should_UseAllowedCategories_When_DefiningQueryErrors()
     {
         // Arrange
         var assemblies = AppDomain.CurrentDomain.GetAssemblies();

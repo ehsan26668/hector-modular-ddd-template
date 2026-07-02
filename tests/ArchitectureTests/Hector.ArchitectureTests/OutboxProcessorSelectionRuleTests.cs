@@ -6,7 +6,7 @@ namespace Hector.ArchitectureTests;
 public class OutboxProcessorSelectionRuleTests
 {
     [Fact]
-    public void OutboxProcessor_Must_Use_OutboxProcessingPolicy()
+    public void Should_UseOutboxProcessingPolicy_When_SelectingOutboxProcessor()
     {
         // Arrange
         var processorType = typeof(OutboxProcessor);

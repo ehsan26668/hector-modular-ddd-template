@@ -7,7 +7,7 @@ namespace Hector.BuildingBlocks.Persistence.UnitTests;
 public sealed class StronglyTypedIdValueConverterTests
 {
     [Fact]
-    public void Should_ConvertStronglyTypedIdToGuid()
+    public void Should_ConvertStronglyTypedIdToGuid_When_StronglyTypedIdIsProvided()
     {
         // Arrange
         var converter = new StronglyTypedIdValueConverter<TestId>();
@@ -23,7 +23,7 @@ public sealed class StronglyTypedIdValueConverterTests
     }
 
     [Fact]
-    public void Should_ConvertGuidToStronglyTypedId()
+    public void Should_ConvertGuidToStronglyTypedId_When_GuidValueIsProvided()
     {
         // Arrange
         var converter = new StronglyTypedIdValueConverter<TestId>();

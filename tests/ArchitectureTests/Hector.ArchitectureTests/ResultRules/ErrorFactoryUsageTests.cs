@@ -8,7 +8,7 @@ namespace Hector.ArchitectureTests.ResultRules;
 public sealed class ErrorFactoryUsageTests
 {
     [Fact]
-    public void ApplicationLayer_Should_OnlyDefineErrors_In_CentralizedCatalogs()
+    public void Should_OnlyDefineErrorsInCentralizedCatalogs_When_InApplicationLayer()
     {
         // Arrange
         var applicationAssemblies = new[]
@@ -35,7 +35,7 @@ public sealed class ErrorFactoryUsageTests
     }
 
     [Fact]
-    public void ErrorCatalogs_Should_Be_Static_And_Public()
+    public void Should_BeStaticAndPublic_When_DefiningErrorCatalogs()
     {
         // Arrange & Act
         var result = Types

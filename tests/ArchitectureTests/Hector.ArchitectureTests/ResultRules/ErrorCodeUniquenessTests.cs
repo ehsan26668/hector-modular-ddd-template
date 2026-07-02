@@ -7,7 +7,7 @@ namespace Hector.ArchitectureTests.ResultRules;
 public sealed class ErrorCodeUniquenessTests
 {
     [Fact]
-    public void ErrorCodes_Should_BeUnique()
+    public void Should_BeUnique_When_DefiningErrorCodes()
     {
         // Arrange
         var assemblies = AppDomain.CurrentDomain.GetAssemblies();

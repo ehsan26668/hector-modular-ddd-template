@@ -13,7 +13,7 @@ public class TemplateGenerationTests
     ];
 
     [Fact(Skip = "Temporarily disabled")]
-    public async Task Template_All_Scenarios_Should_Restore_Build_And_Test()
+    public async Task Should_RestoreBuildAndTest_When_GeneratingTemplateScenarios()
     {
         // Arrange
         var workingDir = CreateShortWorkingDirectory();

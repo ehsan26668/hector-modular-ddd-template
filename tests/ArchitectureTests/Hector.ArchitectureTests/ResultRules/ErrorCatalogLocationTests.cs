@@ -7,7 +7,7 @@ namespace Hector.ArchitectureTests.ResultRules;
 public sealed class ErrorCatalogLocationTests
 {
     [Fact]
-    public void Errors_Should_BeDefined_In_ErrorCatalogClasses()
+    public void Should_BeDefinedInErrorCatalogClasses_When_DefiningErrors()
     {
         // Arrange
         var assemblies = AppDomain.CurrentDomain.GetAssemblies();

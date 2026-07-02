@@ -80,7 +80,7 @@ public sealed class InboxStoreTests
     }
 
     [Fact]
-    public async Task Should_AllowSameMessage_ForDifferentConsumers()
+    public async Task Should_AllowSameMessage_When_ConsumersAreDifferent()
     {
         // Arrange
         using var connection = PersistenceTestInfrastructure.CreateOpenSqliteConnection();

@@ -11,7 +11,7 @@ public sealed class ErrorCodeNamingConventionTests
         new(@"^[A-Z]+(_[A-Z]+)+$", RegexOptions.Compiled);
 
     [Fact]
-    public void ErrorCodes_Should_Follow_Naming_Convention()
+    public void Should_FollowNamingConvention_When_DefiningErrorCodes()
     {
         // Arrange
         var assemblies = AppDomain.CurrentDomain.GetAssemblies();

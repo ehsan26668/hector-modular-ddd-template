@@ -149,7 +149,7 @@ public sealed class ValidationBehaviorTests
     }
 
     [Fact]
-    public void Should_RegisterExpectedValidationPipelineAndValidators_Once()
+    public void Should_RegisterExpectedValidationPipelineAndValidators_When_ApplicationServicesAreRegistered()
     {
         // Arrange
         var fixture = CreateFixture(services =>
@@ -172,7 +172,7 @@ public sealed class ValidationBehaviorTests
     }
 
     [Fact]
-    public async Task Should_ReturnExpectedFailures_FromValidators_InIsolation()
+    public async Task Should_ReturnExpectedFailures_When_ValidatorsAreExecutedInIsolation()
     {
         // Arrange
         var validators = new IValidator<TestCommand>[]

@@ -40,7 +40,7 @@ public class OutboxIsPoisonedUsageTests
     }
 
     [Fact]
-    public void Only_OutboxProcessingPolicy_May_Access_IsPoisoned_Property()
+    public void Should_RestrictIsPoisonedPropertyAccess_ToOutboxProcessingPolicy_When_AnalyzingCode()
     {
         // Arrange
         var violations = FindIllegalIsPoisonedUsages();

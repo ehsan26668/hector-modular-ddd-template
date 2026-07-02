@@ -10,7 +10,7 @@ public sealed class ErrorContractSnapshotTests
     private const string ModuleApplicationAssemblySearchPattern = "Hector.Modules.*.Application.dll";
 
     [Fact]
-    public void ErrorContracts_Should_Match_Snapshot()
+    public void Should_MatchSnapshot_When_DefiningErrorContracts()
     {
         // Arrange
         var snapshotPath = GetSnapshotPath();

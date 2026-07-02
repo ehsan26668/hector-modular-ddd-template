@@ -20,7 +20,7 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <!-- Always present -->
+  <!-- Production Code Under Test -->
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Framework\Hector.BuildingBlocks.Application\Hector.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\..\..\src\Framework\Hector.BuildingBlocks.Domain\Hector.BuildingBlocks.Domain.csproj" />
@@ -40,5 +40,21 @@
     </None>
   </ItemGroup>
   <!--#endif -->
+
+  <!-- 
+    NOTE: 
+    Hector.ArchitectureTests acts as a static analysis engine.
+    It must reference ALL test projects to guarantee their DLLs are copied to the output folder.
+    This enables AssemblyCatalog to discover and scan them for architectural alignment.
+  -->
+  <ItemGroup>
+    <!-- Unit Test Projects Reference for Naming Conventions and Structure Guarding -->
+    <ProjectReference Include="..\..\UnitTests\Hector.BuildingBlocks.Application.UnitTests\Hector.BuildingBlocks.Application.UnitTests.csproj" />
+    <ProjectReference Include="..\..\UnitTests\Hector.BuildingBlocks.Domain.UnitTests\Hector.BuildingBlocks.Domain.UnitTests.csproj" />
+    <ProjectReference Include="..\..\UnitTests\Hector.BuildingBlocks.Persistence.UnitTests\Hector.BuildingBlocks.Persistence.UnitTests.csproj" />
+    <ProjectReference Include="..\..\UnitTests\Hector.BuildingBlocks.Web.UnitTests\Hector.BuildingBlocks.Web.UnitTests.csproj" />
+    <ProjectReference Include="..\..\UnitTests\Hector.Modules.Projects.Application.UnitTests\Hector.Modules.Projects.Application.UnitTests.csproj" />
+    <ProjectReference Include="..\..\UnitTests\Hector.Modules.Projects.Domain.UnitTests\Hector.Modules.Projects.Domain.UnitTests.csproj" />
+  </ItemGroup>
 
 </Project>

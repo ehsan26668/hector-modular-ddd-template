@@ -1,22 +1,19 @@
 using NetArchTest.Rules;
 using Hector.BuildingBlocks.Application.Messaging;
+using Hector.ArchitectureTests.Common;
 
 namespace Hector.ArchitectureTests;
 
-public sealed class QueryHandlerLocationTests
+public sealed class QueryHandlerLocationTests : ArchitectureTestBase
 {
     [Fact]
     public void Should_ResideInQueriesNamespace_When_ClassImplementsQueryHandler()
     {
         // Arrange
-        var applicationAssemblies = AppDomain.CurrentDomain
-            .GetAssemblies()
-            .Where(a =>
-                a.GetName().Name is not null &&
-                a.GetName().Name!.Contains(".Application"));
+        var assemblies = ApplicationAssemblies;
 
         // Act
-        var results = applicationAssemblies
+        var results = assemblies
             .Select(assembly => new
             {
                 AssemblyName = assembly.GetName().Name!,

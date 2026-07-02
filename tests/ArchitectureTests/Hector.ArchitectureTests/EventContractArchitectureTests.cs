@@ -52,35 +52,25 @@ public sealed class EventContractArchitectureTests
     }
 
     [Fact]
-    public void IntegrationEvents_Should_Not_Implement_IInboxMessage()
+    public void Should_NotImplementIInboxMessage_When_AnalyzingIntegrationEvents()
     {
         // Arrange
-        var assemblies = new[]
-        {
-            typeof(ProjectsContractsAssemblyMarker).Assembly
-        };
-
-        var integrationEventTypes = assemblies
-            .SelectMany(assembly => assembly.GetTypes())
-            .Where(type =>
-                typeof(IIntegrationEvent).IsAssignableFrom(type) &&
-                !type.IsAbstract &&
-                !type.IsInterface)
-            .ToArray();
+        var integrationEventAssemblies = LoadIntegrationEventAssemblies();
 
         // Act
-        var violations = integrationEventTypes
-            .Where(type => typeof(IInboxMessage).IsAssignableFrom(type))
-            .Select(type => type.FullName)
-            .ToArray();
+        var failures = integrationEventAssemblies
+            .SelectMany(FindIntegrationEventsImplementingIInboxMessage)
+            .ToList();
 
         // Assert
-        violations.Should().BeEmpty(
-            "integration events are external contracts, while inbox messages are consumer-specific persistence concerns");
+        failures.Should().BeEmpty(
+            "integration events must not implement IInboxMessage.{0}{1}",
+            Environment.NewLine,
+            FormatFailures(failures));
     }
 
     [Fact]
-    public void IntegrationEvents_Should_Not_Expose_Consumer_Property()
+    public void Should_NotExposeConsumerProperty_When_AnalyzingIntegrationEvents()
     {
         // Arrange
         var assemblies = new[]
@@ -105,5 +95,41 @@ public sealed class EventContractArchitectureTests
         // Assert
         violations.Should().BeEmpty(
             "consumer identity belongs to the subscriber or handler, not to the integration event contract");
+    }
+
+    private static IReadOnlyCollection<Assembly> LoadIntegrationEventAssemblies()
+    {
+        return Directory
+            .EnumerateFiles(
+                AppContext.BaseDirectory,
+                "Hector.Modules.*.Contracts.dll",
+                SearchOption.TopDirectoryOnly)
+            .OrderBy(static path => path)
+            .Select(Assembly.LoadFrom)
+            .ToList();
+    }
+
+    private static IEnumerable<string> FindIntegrationEventsImplementingIInboxMessage(
+        Assembly assembly)
+    {
+        return assembly.GetTypes()
+            .Where(type =>
+                typeof(IIntegrationEvent).IsAssignableFrom(type) &&
+                typeof(IInboxMessage).IsAssignableFrom(type) &&
+                !type.IsAbstract &&
+                !type.IsInterface)
+            .Select(type => type.FullName!)
+            .Distinct();
+    }
+
+    private static string FormatFailures(IEnumerable<string> failures)
+    {
+        var formattedFailures = failures.ToList();
+
+        return formattedFailures.Count == 0
+            ? string.Empty
+            : string.Join(
+                Environment.NewLine,
+                formattedFailures.Select(static failure => $"  - {failure}"));
     }
 }

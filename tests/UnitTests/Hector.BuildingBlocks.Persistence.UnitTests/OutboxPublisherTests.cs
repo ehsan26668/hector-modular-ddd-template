@@ -12,7 +12,7 @@ public sealed class OutboxPublisherTests
     private const int EventVersion = 1;
 
     [Fact]
-    public async Task Should_publish_unprocessed_messages()
+    public async Task Should_PublishUnprocessedMessages_When_UnpublishedMessagesExist()
     {
         // Arrange
         var mediator = Substitute.For<IMediator>();
@@ -46,7 +46,7 @@ public sealed class OutboxPublisherTests
     }
 
     [Fact]
-    public async Task Should_publish_multiple_messages()
+    public async Task Should_PublishMultipleMessages_When_MessagesAreAvailable()
     {
         // Arrange
         var mediator = Substitute.For<IMediator>();
@@ -93,7 +93,7 @@ public sealed class OutboxPublisherTests
     }
 
     [Fact]
-    public async Task Should_throw_when_deserialization_fails()
+    public async Task Should_Throw_When_DeserializationFails()
     {
         // Arrange
         var mediator = Substitute.For<IMediator>();
@@ -129,7 +129,7 @@ public sealed class OutboxPublisherTests
     }
 
     [Fact]
-    public async Task Should_publish_messages_in_order()
+    public async Task Should_PublishMessagesInOrder_When_MultipleMessagesExist()
     {
         // Arrange
         var mediator = Substitute.For<IMediator>();
@@ -192,7 +192,7 @@ public sealed class OutboxPublisherTests
     }
 
     [Fact]
-    public async Task Should_stop_publishing_when_a_message_fails()
+    public async Task Should_StopPublishing_When_AMessageFails()
     {
         // Arrange
         var mediator = Substitute.For<IMediator>();

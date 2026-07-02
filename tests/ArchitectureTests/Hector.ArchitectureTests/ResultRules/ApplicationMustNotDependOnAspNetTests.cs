@@ -7,7 +7,7 @@ namespace Hector.ArchitectureTests.ResultRules;
 public class ApplicationMustNotDependOnAspNetTests
 {
     [Fact]
-    public void ApplicationLayer_Should_NotDependOn_AspNetCore()
+    public void Should_NotDependOnAspNetCore_When_InApplicationAssembly()
     {
         // Arrange
         var applicationAssembly = typeof(ApplicationAssemblyMarker).Assembly;

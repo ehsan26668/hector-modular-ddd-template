@@ -14,7 +14,7 @@ public sealed class CommandErrorCategoryPolicyTests
     ];
 
     [Fact]
-    public void CommandErrors_Should_Use_Allowed_Categories()
+    public void Should_UseAllowedCategories_When_DefiningCommandErrors()
     {
         // Arrange
         var assemblies = AppDomain.CurrentDomain.GetAssemblies();
@@ -41,4 +41,5 @@ public sealed class CommandErrorCategoryPolicyTests
         invalidErrors.Should().BeEmpty(
             $"Command Errors must use only allowed categories. Violations: {string.Join(", ", invalidErrors)}");
     }
+
 }
