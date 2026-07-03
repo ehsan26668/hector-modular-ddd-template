@@ -1,6 +1,8 @@
 # ADR 0055: Unified Error Handling and Exception Shielding
 
-Status: Implemented
+## Status
+
+Implemented
 
 ## Context
 

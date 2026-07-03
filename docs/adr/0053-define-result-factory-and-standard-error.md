@@ -1,6 +1,8 @@
 # ADR-0053 — Define Result Factory and Standard Error Codes
 
-Status: Accepted
+## Status
+
+Accepted
 
 ## Context
 

@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted
+Implemented
+
+Implemented on: 2026-07-03
 
 ## Context
 
@@ -57,4 +59,3 @@ Negative:
 
 - Developers must spend additional time documenting decisions.
 - Creating an ADR introduces a small process overhead when making architectural changes.
-`

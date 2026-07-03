@@ -4,7 +4,7 @@
 
 Implemented
 
-## COntext
+## Context
 
 The system adopts CQRS and provides an internal mediator implementation within Hector.BuildingBlocks.Application.
 

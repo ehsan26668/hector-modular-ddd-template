@@ -1,6 +1,8 @@
 # ADR-0051: Define Allowed Error Categories for Commands and Queries
 
-Status: Accepted
+## Status
+
+Accepted
 
 ## Context
 

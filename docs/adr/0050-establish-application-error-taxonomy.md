@@ -1,6 +1,8 @@
 # ADR-0050: Establish Application Error Taxonomy
 
-Status: Accepted
+## Status
+
+Accepted
 
 ## Context
 

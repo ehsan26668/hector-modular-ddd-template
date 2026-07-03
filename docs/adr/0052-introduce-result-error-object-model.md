@@ -1,6 +1,8 @@
 # ADR-0052 — Introduce Result Error Object Model
 
-Status: Accepted
+## Status
+
+Accepted
 
 ## Context
 
