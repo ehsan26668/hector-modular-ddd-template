@@ -56,3 +56,4 @@
 | ADR-0053 | [Define Result Factory and Standard Error Codes](/docs/adr/0053-define-result-factory-and-standard-error.md) | Accepted | 2026-06-23 | ❌[Test Plan](/docs/tests/adr-0053-define-result-factory-and-standard-error-codes.md) |
 | ADR-0054 | [Adopt Result‑Based Error Handling Architecture](/docs/adr/0054-adopt-result-based-error-handling-architecture.md) | Accepted | 2026-06-23 | ❌[Test Plan](/docs/tests/adr-0054-adopt-result-based-error-handling-architecture.md) |
 | ADR-0055 | [Unified Error Handling and Exception Shielding](/docs/adr/0055-unified-error-handling-andexception-shielding.md) | **Implemented** | 2026-06-25 | ✅[Test Plan](/docs/tests/adr-0055-global-exception-handling-test-plan.md) |
+| ADR-0056 | [Introduce Architecture Testing DSL and Rule Builder](/docs/adr/0056-architecture-testing-dsl-and-rule-builder.md) | **Implemented** | 2026-07-03 | ✅[Test Plan](/docs/tests/adr-0056-architecture-testing-dsl-and-rule-builder.md) |

@@ -44,12 +44,14 @@ Transactional Outbox -> Outbox Processor -> Integration Event Bus -> Inbox Patte
 ## Core Building Blocks
 
 ### BuildingBlocks.Application
-- Result & Result<T>: Canonical response types for all application operations
-- Error & ErrorCategory: Rich error objects covering Validation, NotFound, Conflict, BusinessRule, etc.
+
+- `Result` & `Result<T>`: Canonical response types for all application operations
+- `Error` & `ErrorCategory`: Rich error objects covering Validation, NotFound, Conflict, BusinessRule, etc.
 - Messaging: `ICommand`, `IQuery`, and `IMediator` with built-in Result support
 - Pipeline Behaviors: Automated validation and transaction management
 
 ### BuildingBlocks.Domain
+
 - Primitives: `Entity`, `AggregateRoot`, `ValueObject`
 - Invariants: `Ensure` guard pattern for domain integrity
 - Identity: `StronglyTypedId` to eliminate primitive obsession

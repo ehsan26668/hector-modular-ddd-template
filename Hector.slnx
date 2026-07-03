@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/" />
   <Folder Name="/src/Framework/">
+    <Project Path="src/Framework/Hector.ArchitectureTests.Framework/Hector.ArchitectureTests.Framework.csproj" />
     <Project Path="src/Framework/Hector.BuildingBlocks.Application/Hector.BuildingBlocks.Application.csproj" />
     <Project Path="src/Framework/Hector.BuildingBlocks.Domain/Hector.BuildingBlocks.Domain.csproj" />
     <Project Path="src/Framework/Hector.BuildingBlocks.Persistence/Hector.BuildingBlocks.Persistence.csproj" />

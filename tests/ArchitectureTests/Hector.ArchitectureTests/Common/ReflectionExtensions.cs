@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Hector.ArchitectureTests.Framework;
 
 namespace Hector.ArchitectureTests.Common;
 
@@ -28,5 +29,15 @@ internal static class ReflectionExtensions
         {
             return exception.Types.Where(t => t is not null)!;
         }
+    }
+
+    public static ArchitectureRule Because(this ArchitectureRule rule, string reason)
+    {
+        return new ArchitectureRule(
+            rule.Id,
+            rule.Name,
+            reason,
+            rule.EvaluateWithResult
+        );
     }
 }

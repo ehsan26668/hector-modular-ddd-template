@@ -20,6 +20,11 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!-- Infrastructure & Framework References -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Framework\Hector.ArchitectureTests.Framework\Hector.ArchitectureTests.Framework.csproj" />
+  </ItemGroup>
+
   <!-- Production Code Under Test -->
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Framework\Hector.BuildingBlocks.Application\Hector.BuildingBlocks.Application.csproj" />
@@ -27,7 +32,6 @@
     <ProjectReference Include="..\..\..\src\Framework\Hector.BuildingBlocks.Persistence\Hector.BuildingBlocks.Persistence.csproj" />
   </ItemGroup>
 
-  <!--#if (sampleModule) -->
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Modules\Projects\Domain\Hector.Modules.Projects.Domain.csproj" />
     <ProjectReference Include="..\..\..\src\Modules\Projects\Contracts\Hector.Modules.Projects.Contracts.csproj" />
@@ -38,8 +42,10 @@
     <None Update="event-contracts.snapshot">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="error-contracts.snapshot">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
-  <!--#endif -->
 
   <!-- 
     NOTE: 
