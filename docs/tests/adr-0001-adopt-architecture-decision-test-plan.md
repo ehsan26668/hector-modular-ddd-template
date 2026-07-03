@@ -107,8 +107,8 @@ Ensure ADR files are committed to Git alongside the code changes they describe (
 
 ## 6. Exit Criteria
 
-- [ ] Architecture Guard tests for ADR structure pass.
-- [ ]  Existing ADRs (0001 to 0055) are compliant with the structure.
+- [x] Architecture Guard tests for ADR structure pass.
+- [x]  Existing ADRs (0001 to 0055) are compliant with the structure.
 
 ---
 

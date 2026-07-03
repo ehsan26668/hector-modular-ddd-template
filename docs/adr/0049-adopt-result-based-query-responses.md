@@ -1,6 +1,8 @@
 # ADR-0049: Adopt Result-Based Query Responses
 
-Status: Accepted
+## Status
+
+Accepted
 
 ## Context
 

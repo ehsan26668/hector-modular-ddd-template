@@ -1,7 +1,8 @@
 # ADR-0040: Module-Level Registration of Integration Event Contract Assemblies for Outbox Resolution
 
-- Status: Implemented  
-- Date: 2026-06-15
+## Status
+
+Implemented  
 
 ## Context
 

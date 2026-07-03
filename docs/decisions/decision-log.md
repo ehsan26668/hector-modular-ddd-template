@@ -2,7 +2,7 @@
 
 | ID | Title | Status | Date | Validation |
 | --- | --- | --- | --- | --- |
-| ADR-0001 | [Adopt Architecture Decision Records](/docs/adr/0001-adopt-architecture-decision-records.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0001-adopt-architecture-decision-test-plan.md) |
+| ADR-0001 | [Adopt Architecture Decision Records](/docs/adr/0001-adopt-architecture-decision-records.md) | **Implemented** | 2026-07-03 | ✅[Test Plan](/docs/tests/adr-0001-adopt-architecture-decision-test-plan.md) |
 | ADR-0002 | [Initialize Modular Monolith Structure](/docs/adr/0002-initialize-project-structure.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0002-initialize-project-structure-for-modular-ddd.md) |
 | ADR-0003 | [Adopt TDD for Building Blocks](/docs/adr/0003-adopt-tdd-for-building-blocks.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0003-adopttest-driven-development-(TDD)-for-building-blocks.md) |
 | ADR-0004 | [Entity Base Class and Identity Strategy](/docs/adr/0004-entity-base-class-and-identity.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0004-entity-base-class-and-identity.md) |

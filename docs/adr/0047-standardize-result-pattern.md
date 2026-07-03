@@ -1,6 +1,8 @@
 # ADR-0047 — Standardize Result Pattern for Application Layer
 
-Status: Accepted
+## Status
+
+Accepted
 
 ## Context
 

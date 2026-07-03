@@ -1,6 +1,8 @@
 # ADR-0048 — Adopt Result-Based Validation Handling
 
-Status: Accepted
+## Status
+
+Accepted
 
 ## Context
 

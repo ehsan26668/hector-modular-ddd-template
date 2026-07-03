@@ -1,6 +1,8 @@
 # ADR‑0054 — Adopt Result‑Based Error Handling Architecture
 
-Status: Accepted
+## Status
+
+Accepted
 
 ## Context
 
