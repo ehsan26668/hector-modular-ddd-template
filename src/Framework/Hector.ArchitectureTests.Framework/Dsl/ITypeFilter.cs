@@ -4,4 +4,5 @@ public interface ITypeFilter
 {
     ITypeFilter ResideInNamespace(string @namespace);
     IConstraintBuilder Should();
+    IEnumerable<Type> GetTypes();
 }

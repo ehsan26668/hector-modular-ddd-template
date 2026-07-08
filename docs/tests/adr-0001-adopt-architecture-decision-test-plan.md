@@ -10,9 +10,9 @@ This test plan validates the implementation of [ADR-0001](/docs/adr/0001-adopt-a
 
 ## Test Strategy
 
-Since this ADR is process-oriented, the validation relies on Architecture Guard Tests that inspect the file system and Markdown structure.
+Since this ADR is process-oriented, the validation relies on Architecture Guard Tests that inspect the file system and Markdown structure. The test is implemented using a custom fluent DSL (`ArchitectureRule`) to provide a single, readable, and comprehensive check.
 
-- **Architecture Tests**: Automated checks for directory existence, file naming conventions, and mandatory Markdown headers. (Target Project: `tests/ArchitectureTests/Hector.ArchitectureTests`)
+- **Architecture Tests**: A single, automated check for directory existence, file naming conventions, mandatory Markdown headers, and numbering integrity. (Target Project: `tests/ArchitectureTests/Hector.ArchitectureTests`)
 
 ---
 
@@ -21,64 +21,36 @@ Since this ADR is process-oriented, the validation relies on Architecture Guard 
 ### Included
 
 - The `docs/adr` directory structure.
-- File naming conventions (4-digit prefix).
+- File naming conventions: `NNNN-kebab-case-title.md`.
 - Presence of mandatory sections: `Status`, `Context`, `Decision`, `Consequences`.
-- Uniqueness and sequential integrity of ADR numbers.
+- Uniqueness and sequential integrity of ADR numbers, with a recognized exception for number `42`.
 
 ### Excluded
 
 - Qualitative analysis of the text/grammar within ADRs.
 - Other documentation files outside the `docs/adr` path.
 
-## 2. Test Cases (Architecture Guard Tests)
+## 2. Test Case (Architecture Guard Test)
 
-### TC-01: Should_FollowNamingConvention_When_ADRFileIsCreated
+### TC-01..03: Should_AdhereToDefinedStructure_When_EvaluatingAdrFiles
 
-**Scenario:**  Verify that every ADR file starts with a 4-digit index followed by a slug.
-
-**Arrange:**
-
-- Scan the `docs/adr` directory.
-
-**Act:**
-
-- Validate file names against the regex `^\d{4}-.*\.md$`.
-
-**Assert:**
-
-- All files must comply with the naming pattern.
-
-### TC-02: Should_ContainMandatorySections_When_ADRFileExists
-
-**Scenario:**  Ensure each ADR maintains the required structural headers.
+**Scenario:** Verify that all ADR files in the `docs/adr` directory collectively adhere to the project's structural and organizational standards. This single test case covers naming, content, and numbering rules.
 
 **Arrange:**
 
-- Load content of each `.md` file in the ADR folder.
+- The test uses the `ArchitectureRule` DSL to target documentation files of type ADR located in the `docs/adr` directory.
 
 **Act:**
 
-- Search for headers: `## Status`, `## Context`, `## Decision`, and `## Consequences`.
+- A chain of rule methods (`.FollowNamingConvention()`, `.ContainMandatorySections(...)`, `.HaveUniqueAndSequentialNumbers(...)`) defines the required structure.
+- The `.Check()` method is invoked, which triggers the evaluation of all specified rules against the target files.
 
 **Assert:**
 
-- All files must contain these four sections.
-
-### TC-03: Should_HaveUniqueAndSequentialNumbers_When_ScanningADRDirectory
-
-**Scenario:**  Prevent duplicate ADR numbers and ensure a logical timeline.
-
-**Arrange:**
-
-- Extract the numeric prefix from all ADR filenames.
-
-**Act:**
-
-- Check for duplicates and gaps in the sequence.
-
-**Assert:**
-
-- No duplicate IDs; sequence should be continuous (allowing for planned gaps if documented).
+- The test passes only if all three of the following conditions are met:
+  1. **Naming Convention:** All files must comply with the `'{number}-{kebab-case-title}.md'` pattern.
+  2. **Mandatory Sections:** All files must contain these four sections: `## Status`, `## Context`, `## Decision`, and `## Consequences`.
+  3. **Numbering Integrity:** All ADR numbers must be unique and sequential, except for the intentionally reserved number `42`.
 
 ---
 
@@ -93,22 +65,22 @@ Ensure ADR files are committed to Git alongside the code changes they describe (
 ## 4. Test Data
 
 - **Inputs:** Current files in `docs/adr/*.md`.
-- **Expected Outputs:** All Architecture Guard tests in the test suite pass.
+- **Expected Outputs:** The `Should_AdhereToDefinedStructure_When_EvaluatingAdrFiles` test passes successfully.
 
 ---
 
 ## 5. TDD Execution Plan
 
-1. **RED**: Create a test in `Hector.ArchitectureTests` that fails if the ADR directory is empty or if a file violates the naming convention.
-2. **GREEN**: Initialize the `docs/adr` directory and add ADR-0001 with the correct format.
-3. **REFACTOR**: Refine the Markdown parser logic to be more resilient to whitespace variations in headers.
+1. **RED**: Create a test in `Hector.ArchitectureTests` using the DSL that fails if the ADR directory is empty or if a file violates any of the structural rules.
+2. **GREEN**: Initialize the `docs/adr` directory and add ADR-0001 with the correct format, ensuring all rules in the chain pass.
+3. **REFACTOR**: Refine the rule implementation (e.g., the Markdown parser) to be more resilient to whitespace variations or other minor inconsistencies.
 
 ---
 
 ## 6. Exit Criteria
 
-- [x] Architecture Guard tests for ADR structure pass.
-- [x]  Existing ADRs (0001 to 0055) are compliant with the structure.
+- [x] The architecture guard test for ADR structure (`Should_AdhereToDefinedStructure_When_EvaluatingAdrFiles`) passes.
+- [x] Existing ADRs (0001 to 0057) are compliant with the structure.
 
 ---
 

@@ -6,4 +6,5 @@ public interface ITypesSelection
 {
     ITypeFilter That();
     ITypeFilter That(Assembly assembly);
+    ITypeFilter That(IEnumerable<Assembly> assemblies);
 }

@@ -18,4 +18,9 @@ internal sealed class TypeFilter(
     {
         return new ConstraintBuilder(types, _namespaces);
     }
+
+    public IEnumerable<Type> GetTypes()
+    {
+        return types.GetTypes();
+    }
 }

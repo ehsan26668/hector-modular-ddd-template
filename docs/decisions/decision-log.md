@@ -3,7 +3,7 @@
 | ID | Title | Status | Date | Validation |
 | --- | --- | --- | --- | --- |
 | ADR-0001 | [Adopt Architecture Decision Records](/docs/adr/0001-adopt-architecture-decision-records.md) | **Implemented** | 2026-07-03 | ✅[Test Plan](/docs/tests/adr-0001-adopt-architecture-decision-test-plan.md) |
-| ADR-0002 | [Initialize Modular Monolith Structure](/docs/adr/0002-initialize-project-structure.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0002-initialize-project-structure-for-modular-ddd.md) |
+| ADR-0002 | [Initialize Modular Monolith Structure](/docs/adr/0002-initialize-project-structure.md) | **Implemented** | 2026-06-08 | ✅[Test Plan](/docs/tests/adr-0002-initialize-project-structure-for-modular-ddd.md) |
 | ADR-0003 | [Adopt TDD for Building Blocks](/docs/adr/0003-adopt-tdd-for-building-blocks.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0003-adopttest-driven-development-(TDD)-for-building-blocks.md) |
 | ADR-0004 | [Entity Base Class and Identity Strategy](/docs/adr/0004-entity-base-class-and-identity.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0004-entity-base-class-and-identity.md) |
 | ADR-0005 | [Introduce Domain Events](/docs/adr/0005-domain-events.md) | Accepted | 2026-06-03 | ❌[Test Plan](/docs/tests/adr-0005-introduce-domain-events.md) |
@@ -57,3 +57,4 @@
 | ADR-0054 | [Adopt Result‑Based Error Handling Architecture](/docs/adr/0054-adopt-result-based-error-handling-architecture.md) | Accepted | 2026-06-23 | ❌[Test Plan](/docs/tests/adr-0054-adopt-result-based-error-handling-architecture.md) |
 | ADR-0055 | [Unified Error Handling and Exception Shielding](/docs/adr/0055-unified-error-handling-andexception-shielding.md) | **Implemented** | 2026-06-25 | ✅[Test Plan](/docs/tests/adr-0055-global-exception-handling-test-plan.md) |
 | ADR-0056 | [Introduce Architecture Testing DSL and Rule Builder](/docs/adr/0056-architecture-testing-dsl-and-rule-builder.md) | **Implemented** | 2026-07-03 | ✅[Test Plan](/docs/tests/adr-0056-architecture-testing-dsl-and-rule-builder.md) |
+| ADR-0057 | [Extend Architecture Testing DSL With Multi-Assembly Type Selection](/docs/adr/0057-extend-architecture-testing-dsl-with-multi-assembly-type-selection.md) | Accepted | 2026-07-05 | ❌[Test Plan](/docs/tests/adr-0057-extend-architecture-testing-dsl-with-multi-assembly-type-selection.md) |

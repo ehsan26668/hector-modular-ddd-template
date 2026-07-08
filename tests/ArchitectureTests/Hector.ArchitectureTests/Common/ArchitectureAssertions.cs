@@ -111,4 +111,54 @@ internal static class ArchitectureAssertions
 
         violations.Should().BeEmpty(because);
     }
+
+    public static void ShouldOnlyDependOnContractsAcrossModules(
+    IEnumerable<Assembly> moduleAssemblies,
+    string because)
+    {
+        var violations = new List<string>();
+
+        foreach (var sourceAssembly in moduleAssemblies)
+        {
+            var sourceAssemblyName = sourceAssembly.GetName().Name!;
+            var sourceModuleName = GetModuleName(sourceAssemblyName);
+
+            var forbiddenDependencies = moduleAssemblies
+                .Select(assembly => assembly.GetName().Name!)
+                .Where(targetAssemblyName =>
+                {
+                    var targetModuleName = GetModuleName(targetAssemblyName);
+
+                    if (string.Equals(sourceModuleName, targetModuleName, StringComparison.Ordinal))
+                    {
+                        return false;
+                    }
+
+                    return !targetAssemblyName.EndsWith(".Contracts", StringComparison.Ordinal);
+                })
+                .ToArray();
+
+            var result = Types.InAssemblies([sourceAssembly])
+                .ShouldNot()
+                .HaveDependencyOnAny(forbiddenDependencies)
+                .GetResult();
+
+            if (!result.IsSuccessful)
+            {
+                var failingTypes = result.FailingTypeNames?.Any() == true
+                    ? string.Join(", ", result.FailingTypeNames)
+                    : "<unknown types>";
+
+                violations.Add($"{sourceAssemblyName}: {failingTypes}");
+            }
+        }
+
+        violations.Should().BeEmpty(because);
+
+        static string GetModuleName(string assemblyName)
+        {
+            var parts = assemblyName.Split('.', StringSplitOptions.RemoveEmptyEntries);
+            return parts.Length >= 3 ? parts[2] : assemblyName;
+        }
+    }
 }

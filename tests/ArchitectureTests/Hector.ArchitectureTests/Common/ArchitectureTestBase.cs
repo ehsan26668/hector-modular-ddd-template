@@ -11,6 +11,7 @@ public abstract class ArchitectureTestBase
     protected static IReadOnlyCollection<Assembly> DomainAssemblies => AssemblyCatalog.Domain;
     protected static IReadOnlyCollection<Assembly> ApplicationAssemblies => AssemblyCatalog.Application;
     protected static IReadOnlyCollection<Assembly> InfrastructureAssemblies => AssemblyCatalog.Infrastructure;
+    protected static IReadOnlyCollection<Assembly> ContractAssemblies => AssemblyCatalog.Contracts;
 
     protected static IReadOnlyCollection<Assembly> ModuleAssemblies => AssemblyCatalog.Modules;
     protected static IReadOnlyCollection<Assembly> BuildingBlockAssemblies => AssemblyCatalog.BuildingBlocks;

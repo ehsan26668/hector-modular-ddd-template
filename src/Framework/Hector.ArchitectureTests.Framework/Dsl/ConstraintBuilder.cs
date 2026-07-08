@@ -64,7 +64,7 @@ internal sealed class ConstraintBuilder(
 
         for (int i = 1; i < namespaces.Count; i++)
         {
-            list = list.And().ResideInNamespace(namespaces[i]);
+            list = list.Or().ResideInNamespace(namespaces[i]);
         }
 
         return list;
