@@ -1,0 +1,132 @@
+name: PR Validation
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate-pr-governance:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate PR labels and template selections
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || "";
+            const labels = (pr.labels || []).map(label => label.name);
+
+            const typeLabels = labels.filter(label => label.startsWith("type: "));
+            const areaLabels = labels.filter(label => label.startsWith("area: "));
+
+            const errors = [];
+            const warnings = [];
+
+            const allowedTypeLabels = new Set([
+              "type: feat",
+              "type: fix",
+              "type: refactor",
+              "type: test",
+              "type: docs",
+              "type: chore"
+            ]);
+
+            const allowedAreaLabels = new Set([
+              "area: domain",
+              "area: application",
+              "area: infrastructure",
+              "area: web",
+              "area: architecture-tests",
+              "area: docs",
+              "area: unit-tests",
+              "area: integration-tests",
+              "area: e2e-tests",
+              "area: template-tests"
+            ]);
+
+            function escapeRegex(value) {
+              return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            }
+
+            function isChecked(label) {
+              const escaped = escapeRegex(label);
+
+              const patterns = [
+                new RegExp(`^\\s*-\\s*\\[x\\]\\s*\`${escaped}\`\\s*$`, "im"),
+                new RegExp(`^\\s*-\\s*\\[x\\]\\s*${escaped}\\s*$`, "im")
+              ];
+
+              return patterns.some(pattern => pattern.test(body));
+            }
+
+            function checkedLabelsFrom(set) {
+              return [...set].filter(label => isChecked(label));
+            }
+
+            const checkedTypeSelections = checkedLabelsFrom(allowedTypeLabels);
+            const checkedAreaSelections = checkedLabelsFrom(allowedAreaLabels);
+
+            if (typeLabels.length !== 1) {
+              errors.push(
+                `PR must have exactly one \`type:\` label, but found ${typeLabels.length}. Current: ${typeLabels.join(", ") || "(none)"}`
+              );
+            }
+
+            if (areaLabels.length < 1) {
+              errors.push("PR must have at least one `area:` label.");
+            }
+
+            if (checkedTypeSelections.length > 1) {
+              errors.push(
+                `PR template has multiple checked type selections: ${checkedTypeSelections.join(", ")}`
+              );
+            }
+
+            if (checkedTypeSelections.length === 0) {
+              warnings.push("No checked `type:` selection found in PR body.");
+            }
+
+            if (checkedAreaSelections.length === 0) {
+              warnings.push("No checked `area:` selection found in PR body.");
+            }
+
+            if (checkedTypeSelections.length === 1 && typeLabels.length === 1) {
+              if (checkedTypeSelections[0] !== typeLabels[0]) {
+                errors.push(
+                  `Checked type in PR body (${checkedTypeSelections[0]}) does not match applied type label (${typeLabels[0]}).`
+                );
+              }
+            }
+
+            const missingCheckedAreaLabels = checkedAreaSelections.filter(
+              checked => !areaLabels.includes(checked)
+            );
+
+            if (missingCheckedAreaLabels.length > 0) {
+              errors.push(
+                `Checked area selections missing from PR labels: ${missingCheckedAreaLabels.join(", ")}`
+              );
+            }
+
+            const summaryLines = [
+              `Labels on PR: ${labels.join(", ") || "(none)"}`,
+              `Type labels: ${typeLabels.join(", ") || "(none)"}`,
+              `Area labels: ${areaLabels.join(", ") || "(none)"}`,
+              `Checked type selections: ${checkedTypeSelections.join(", ") || "(none)"}`,
+              `Checked area selections: ${checkedAreaSelections.join(", ") || "(none)"}`
+            ];
+
+            core.info(summaryLines.join("\n"));
+
+            for (const warning of warnings) {
+              core.warning(warning);
+            }
+
+            if (errors.length > 0) {
+              core.setFailed(errors.join("\n"));
+            }
