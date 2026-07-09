@@ -1,0 +1,54 @@
+area: domain:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/Modules/*/Domain/**'
+          - 'src/Framework/Hector.BuildingBlocks.Domain/**'
+
+area: application:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/Modules/*/Application/**'
+          - 'src/Framework/Hector.BuildingBlocks.Application/**'
+
+area: infrastructure:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/Modules/*/Infrastructure/**'
+          - 'src/Framework/Hector.BuildingBlocks.Persistence/**'
+
+area: web:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/Host/**'
+          - 'src/Framework/Hector.BuildingBlocks.Web/**'
+
+area: architecture-tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tests/ArchitectureTests/**'
+          - 'src/Framework/Hector.ArchitectureTests.Framework/**'
+
+area: unit-tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tests/UnitTests/**'
+
+area: integration-tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tests/IntegrationTests/**'
+
+area: template-tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tests/TemplateTests/**'
+          - '.template.config/**'
+
+area: docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**'
+          - 'docs/templates/**'
+          - 'README.md'
+          - 'adr-template.md'
+          - 'test-plan-template.md'

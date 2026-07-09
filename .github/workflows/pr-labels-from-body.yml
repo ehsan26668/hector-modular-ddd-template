@@ -1,0 +1,92 @@
+name: PR Labels From Body
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  sync-labels-from-body:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Apply labels from PR body checkboxes
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || "";
+
+            const checkboxLabelMap = {
+              "type: feat": "type: feat",
+              "type: fix": "type: fix",
+              "type: refactor": "type: refactor",
+              "type: test": "type: test",
+              "type: docs": "type: docs",
+              "type: chore": "type: chore",
+
+              "area: domain": "area: domain",
+              "area: application": "area: application",
+              "area: infrastructure": "area: infrastructure",
+              "area: web": "area: web",
+              "area: architecture-tests": "area: architecture-tests",
+              "area: docs": "area: docs",
+              "area: unit-tests": "area: unit-tests",
+              "area: integration-tests": "area: integration-tests",
+              "area: e2e-tests": "area: e2e-tests",
+              "area: template-tests": "area: template-tests"
+            };
+
+            function escapeRegex(value) {
+              return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            }
+
+            function isChecked(label) {
+              const escaped = escapeRegex(label);
+
+              const patterns = [
+                new RegExp(`^\\s*-\\s*\\[x\\]\\s*\`${escaped}\`\\s*$`, "im"),
+                new RegExp(`^\\s*-\\s*\\[x\\]\\s*${escaped}\\s*$`, "im")
+              ];
+
+              return patterns.some(pattern => pattern.test(body));
+            }
+
+            const labelsToApply = [
+              ...new Set(
+                Object.entries(checkboxLabelMap)
+                  .filter(([checkboxText]) => isChecked(checkboxText))
+                  .map(([, label]) => label)
+              )
+            ];
+
+            const selectedTypeLabels = labelsToApply.filter(label => label.startsWith("type: "));
+            if (selectedTypeLabels.length > 1) {
+              core.warning(`Multiple type labels selected: ${selectedTypeLabels.join(", ")}`);
+            }
+
+            if (labelsToApply.length === 0) {
+              core.info("No checked label checkboxes found in PR body.");
+              return;
+            }
+
+            const existingLabels = pr.labels.map(label => label.name);
+            const newLabels = labelsToApply.filter(label => !existingLabels.includes(label));
+
+            if (newLabels.length === 0) {
+              core.info("All matching labels already exist on the PR.");
+              return;
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels: newLabels
+            });
+
+            core.info(`Added labels: ${newLabels.join(", ")}`);
