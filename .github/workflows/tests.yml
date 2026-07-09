@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore Hector.slnx
+
+      - name: Build test targets
+        run: dotnet build Hector.slnx --no-restore --configuration Release
+
+      - name: Run Unit Tests
+        run: dotnet test Hector.slnx --no-build --configuration Release --filter "FullyQualifiedName!~ArchitectureTests&FullyQualifiedName!~IntegrationTests&FullyQualifiedName!~TemplateTests"
+
+      - name: Run Integration Tests
+        run: dotnet test tests/IntegrationTests --no-build --configuration Release
+
+      - name: Run Template Tests
+        run: dotnet test tests/TemplateTests --no-build --configuration Release
