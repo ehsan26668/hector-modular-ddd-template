@@ -6,8 +6,18 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: architecture-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: 10.0.x
+  CONFIGURATION: Release
+  ARCHITECTURE_TEST_PROJECT: tests/ArchitectureTests/Hector.ArchitectureTests/Hector.ArchitectureTests.csproj
+
 jobs:
   architecture-tests:
+    name: Architecture Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -17,13 +27,37 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', '**/*.csproj', 'Hector.slnx') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-
+            ${{ runner.os }}-nuget-
+
+      - name: Restore solution
         run: dotnet restore Hector.slnx
 
-      - name: Build
-        run: dotnet build Hector.slnx --no-restore --configuration Release
+      - name: Build solution
+        run: dotnet build Hector.slnx --no-restore --configuration ${{ env.CONFIGURATION }}
 
-      - name: Run Architecture Tests
-        run: dotnet test tests/ArchitectureTests/Hector.ArchitectureTests/Hector.ArchitectureTests.csproj --no-build --configuration Release
+      - name: Run architecture tests
+        run: >
+          dotnet test ${{ env.ARCHITECTURE_TEST_PROJECT }}
+          --no-build
+          --configuration ${{ env.CONFIGURATION }}
+          --logger "trx;LogFileName=architecture-tests.trx"
+          --results-directory ./artifacts/test-results/architecture
+          --filter "(FullyQualifiedName!~Documentation)&(FullyQualifiedName!~Adr)&(FullyQualifiedName!~Structure)"
+
+      - name: Upload architecture test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: architecture-test-results
+          path: artifacts/test-results/architecture/**/*.trx
+          if-no-files-found: warn
+          retention-days: 14

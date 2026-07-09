@@ -6,8 +6,17 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: 10.0.x
+  CONFIGURATION: Release
+
 jobs:
-  tests:
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -17,19 +26,126 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', '**/*.csproj', 'Hector.slnx') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-
+            ${{ runner.os }}-nuget-
+
+      - name: Restore solution
         run: dotnet restore Hector.slnx
 
-      - name: Build test targets
-        run: dotnet build Hector.slnx --no-restore --configuration Release
+      - name: Build solution
+        run: dotnet build Hector.slnx --no-restore --configuration ${{ env.CONFIGURATION }}
 
-      - name: Run Unit Tests
-        run: dotnet test Hector.slnx --no-build --configuration Release --filter "FullyQualifiedName!~ArchitectureTests&FullyQualifiedName!~IntegrationTests&FullyQualifiedName!~TemplateTests"
+      - name: Run unit tests
+        run: >
+          dotnet test Hector.slnx
+          --no-build
+          --configuration ${{ env.CONFIGURATION }}
+          --logger "trx;LogFileName=unit-tests.trx"
+          --results-directory ./artifacts/test-results/unit
+          --filter "(FullyQualifiedName!~ArchitectureTests)&(FullyQualifiedName!~IntegrationTests)&(FullyQualifiedName!~TemplateTests)"
 
-      - name: Run Integration Tests
-        run: dotnet test tests/IntegrationTests --no-build --configuration Release
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: artifacts/test-results/unit/**/*.trx
+          if-no-files-found: warn
+          retention-days: 14
 
-      - name: Run Template Tests
-        run: dotnet test tests/TemplateTests --no-build --configuration Release
+  integration-tests:
+    name: Integration Tests - ${{ matrix.test_project.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test_project:
+          - name: Persistence
+            path: tests/IntegrationTests/Hector.BuildingBlocks.Persistence.IntegrationTests/Hector.BuildingBlocks.Persistence.IntegrationTests.csproj
+            trx: persistence-integration-tests.trx
+            results: ./artifacts/test-results/integration/persistence
+          - name: Web
+            path: tests/IntegrationTests/Hector.BuildingBlocks.Web.IntegrationTests/Hector.BuildingBlocks.Web.IntegrationTests.csproj
+            trx: web-integration-tests.trx
+            results: ./artifacts/test-results/integration/web
+          - name: Projects
+            path: tests/IntegrationTests/Hector.Modules.Projects.IntegrationTests/Hector.Modules.Projects.IntegrationTests.csproj
+            trx: projects-integration-tests.trx
+            results: ./artifacts/test-results/integration/projects
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', '**/*.csproj', 'Hector.slnx') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-
+            ${{ runner.os }}-nuget-
+
+      - name: Restore solution
+        run: dotnet restore Hector.slnx
+
+      - name: Build solution
+        run: dotnet build Hector.slnx --no-restore --configuration ${{ env.CONFIGURATION }}
+
+      - name: Run integration tests
+        run: >
+          dotnet test "${{ matrix.test_project.path }}"
+          --no-build
+          --configuration ${{ env.CONFIGURATION }}
+          --logger "trx;LogFileName=${{ matrix.test_project.trx }}"
+          --results-directory "${{ matrix.test_project.results }}"
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results-${{ matrix.test_project.name }}
+          path: ${{ matrix.test_project.results }}/**/*.trx
+          if-no-files-found: warn
+          retention-days: 14
+
+  template-tests:
+    name: Template Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', '**/*.csproj', 'Hector.slnx') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-
+            ${{ runner.os }}-nuget-
+
+      - name: Restore solution
+        run: dotnet restore Hector.slnx
+
+      - name: Build solution
+        run: 
