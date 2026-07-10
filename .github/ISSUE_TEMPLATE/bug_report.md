@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a defect in the template or framework
+about: Report a defect in the template, framework, or modules
 title: "[BUG] "
 labels: ["bug"]
 assignees: []
@@ -8,15 +8,28 @@ assignees: []
 
 ## Problem
 
-Describe the bug clearly.
+Provide a clear and concise description of the defect.
 
-## Expected Behavior
+## Affected Area
 
-What should happen?
+- **Module:**
+  - [ ] Projects
+  - [ ] Framework (Building Blocks)
+  - [ ] Host
+  - [ ] Cross-module
+- **Layer:**
+  - [ ] Domain
+  - [ ] Application
+  - [ ] Infrastructure / Persistence
+  - [ ] Web / Host
+  - [ ] Architecture Tests / Guard Rules
+  - [ ] CI/CD / Template Packaging
 
-## Actual Behavior
+## Environment Details
 
-What actually happened?
+- **Template Version / Commit Hash:**
+- **.NET SDK Version:**
+- **OS / IDE:**
 
 ## Reproduction Steps
 
@@ -24,64 +37,32 @@ What actually happened?
 2.
 3.
 
-## Impact
+## Expected Behavior
 
-What is affected? Describe user, developer, architectural, or delivery impact.
+What should have happened according to existing specifications, ADRs, or standards?
 
-## Affected Module
+## Actual Behavior
 
-- [ ] Projects
-- [ ] Framework
-- [ ] Host
-- [ ] Cross-module
+What actually happened? Include stack trace, logs, or failing test output if available.
 
-## Related Area
+Logs / stack trace / failing output:
 
-- [ ] Domain
-- [ ] Application
-- [ ] Infrastructure
-- [ ] Web
-- [ ] Architecture Tests
-- [ ] Documentation
-- [ ] Template Packaging
+```text
+// Paste logs, stack traces, or failing test output here
+```
 
-## Environment
+## Traceability & Root Cause Analysis
 
-- Template version:
-- Commit / Tag:
-- .NET SDK version:
-- OS:
+- **Suspected Root Cause:**
+- **Related ADR / Decision Log Entry:** <!-- If the bug stems from a design decision or ADR violation -->
+- **Existing Test Plan Reference:** <!-- Link to the test plan that failed to catch this -->
 
-## Evidence
+## Proposed Test Coverage & Fixing Checklist
 
-- Failing test:
-- Error message:
-- Stack trace / screenshot / log:
-
-## Suspected Root Cause
-
-What is the likely technical cause?
-
-## Related ADR / Test Plan
-
-- ADR reference(s):
-- Existing test plan:
-- Missing coverage identified in:
-
-## Proposed Test Coverage
-
-- [ ] Unit test needed
-- [ ] Integration test needed
-- [ ] Architecture test needed
-- [ ] Regression test needed
-
-### Notes
-
-- Unit:
-- Integration:
-- Architecture:
-- Regression:
-
-## Regression Risk
-
-What could break when fixing this issue?
+- [ ] **Test Types Needed:**
+  - [ ] Unit Test (for domain/application logic)
+  - [ ] Integration Test (for persistence/infrastructure)
+  - [ ] Architecture Test (for boundary/naming violations)
+  - [ ] Regression Test (to prevent recurrence)
+- [ ] Fix implemented
+- [ ] Regression risk assessed (Describe what else could be affected by this fix)
