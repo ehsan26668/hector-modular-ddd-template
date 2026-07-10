@@ -34,27 +34,17 @@ jobs:
             const repo = context.repo.repo;
             const pull_number = context.payload.pull_request.number;
 
-            const { data: pr } = await github.rest.pulls.get({
-              owner,
-              repo,
-              pull_number
-            });
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number });
 
             const body = stripComments(normalizeLineEndings(pr.body || ""));
             const labels = (pr.labels || []).map(label => label.name);
 
             const changedFiles = await github.paginate(
               github.rest.pulls.listFiles,
-              {
-                owner,
-                repo,
-                pull_number,
-                per_page: 100
-              }
+              { owner, repo, pull_number, per_page: 100 }
             );
 
             const changedPaths = changedFiles.map(file => file.filename);
-
             const errors = [];
             const warnings = [];
 
@@ -81,20 +71,58 @@ jobs:
 
             const requiredHeadings = [
               "Summary",
+              "Work Item Links",
               "Type",
               "Areas",
               "Scope",
+              "Expected Impact",
+              "Architecture / ADR Impact",
+              "Test Plan",
+              "Decision Log",
               "Verification",
-              "Docs / ADR Impact",
-              "Test Impact"
+              "Documentation Impact",
+              "Test Impact",
+              "Out of Scope / Follow-up Work",
+              "Workflow Exceptions"
             ];
 
-            const impactBinaryOptions = ["Yes", "No"];
+            const architectureImpactOptions = [
+              "No architectural or long-lived governance impact",
+              "Existing ADR applies",
+              "ADR created or updated"
+            ];
 
-            const ignoredPlaceholderPattern = /^\s*(n\/a|na|none|not applicable|todo|pending)\s*$/i;
-            const verificationPlaceholderPattern = /^\s*(not run|n\/a|na|none|todo|pending)\s*$/i;
+            const testPlanOptions = [
+              "No test plan required",
+              "Existing Test Plan applies",
+              "Test Plan created or updated"
+            ];
 
-            // Keep synchronized with path-based governance / labeler behavior.
+            const decisionLogOptions = [
+              "Not applicable",
+              "Existing entry remains current",
+              "Decision Log updated"
+            ];
+
+            const documentationImpactOptions = [
+              "No documentation changes required",
+              "Documentation created or updated"
+            ];
+
+            const testImpactOptions = [
+              "No test changes required",
+              "Tests added or updated",
+              "Test strategy or enforcement changed"
+            ];
+
+            const workflowExceptionOptions = [
+              "No exception",
+              "Exception used"
+            ];
+
+            const ignoredPlaceholderPattern = /^\s*(n\/a|na|none|not applicable|todo|pending|tbd)\s*$/i;
+            const verificationPlaceholderPattern = /^\s*(not run|n\/a|na|none|todo|pending|tbd)\s*$/i;
+
             const areaPathRules = [
               {
                 label: "area: domain",
@@ -189,26 +217,31 @@ jobs:
                 .trim();
             }
 
-            function stripDetailsPrefix(text) {
-              return (text || "")
-                .replace(/^\s*(Details|Note)\s*:\s*/im, "")
-                .trim();
+            function stripFieldPrefixes(text, fieldNames = []) {
+              let result = text || "";
+
+              for (const fieldName of fieldNames) {
+                const pattern = new RegExp(`^\\s*${escapeRegex(fieldName)}\\s*:\\s*`, "gim");
+                result = result.replace(pattern, "");
+              }
+
+              return result.trim();
             }
 
             function getSectionContent(heading) {
               const lines = splitLines(body);
               const headingPattern = new RegExp(`^##\\s+${escapeRegex(heading)}\\s*$`, "i");
               const anyHeadingPattern = /^##\s+.+$/i;
-
               const startIndex = lines.findIndex(line => headingPattern.test(line.trim()));
+
               if (startIndex === -1) {
                 return "";
               }
 
               let endIndex = lines.length;
-              for (let i = startIndex + 1; i < lines.length; i++) {
-                if (anyHeadingPattern.test(lines[i].trim())) {
-                  endIndex = i;
+              for (let index = startIndex + 1; index < lines.length; index++) {
+                if (anyHeadingPattern.test(lines[index].trim())) {
+                  endIndex = index;
                   break;
                 }
               }
@@ -221,16 +254,10 @@ jobs:
             }
 
             function getCheckedItemsFromSection(section) {
-              const content = getSectionContent(section);
-
-              return splitLines(content)
+              return splitLines(getSectionContent(section))
                 .map(line => line.match(/^\s*[-*]\s*\[\s*([xX])\s*\]\s+(.+?)\s*$/))
                 .filter(Boolean)
                 .map(match => match[2].replace(/^`|`$/g, "").trim());
-            }
-
-            function isCheckedInSection(section, item) {
-              return getCheckedItemsFromSection(section).includes(item);
             }
 
             function getCheckedLabels(section, allowedLabels) {
@@ -242,18 +269,45 @@ jobs:
               return getCheckedItemsFromSection(section).length > 0;
             }
 
-            function getDetailsText(section) {
-              const content = getSectionContent(section);
-              return stripDetailsPrefix(stripCheckboxLines(normalizeVisibleText(content)));
+            function getDetailsText(section, fieldNames = ["Details", "Note"]) {
+              return stripFieldPrefixes(
+                stripCheckboxLines(normalizeVisibleText(getSectionContent(section))),
+                fieldNames
+              );
             }
 
-            function isMeaningfulText(text, minimumLength = 10) {
-              const normalized = stripDetailsPrefix(normalizeVisibleText(text))
-                .replace(/\s+/g, " ")
-                .trim();
+            function getNamedFieldText(section, fieldName) {
+              const lines = splitLines(getSectionContent(section));
+              const fieldPattern = new RegExp(`^\\s*${escapeRegex(fieldName)}\\s*:\\s*$`, "i");
+              const startIndex = lines.findIndex(line => fieldPattern.test(line.trim()));
+
+              if (startIndex === -1) {
+                return "";
+              }
+
+              const collected = [];
+              for (let index = startIndex + 1; index < lines.length; index++) {
+                const line = lines[index];
+
+                if (/^\s*[A-Za-z][A-Za-z /-]*\s*:\s*$/.test(line.trim())) {
+                  break;
+                }
+
+                collected.push(line);
+              }
+
+              return normalizeVisibleText(collected.join("\n"));
+            }
+
+            function isMeaningfulText(text, minimumLength = 10, allowedExactValues = []) {
+              const normalized = normalizeVisibleText(text).replace(/\s+/g, " ").trim();
 
               if (!normalized) {
                 return false;
+              }
+
+              if (allowedExactValues.some(value => normalized.toLowerCase() === value.toLowerCase())) {
+                return true;
               }
 
               if (ignoredPlaceholderPattern.test(normalized)) {
@@ -293,9 +347,8 @@ jobs:
 
             function validatePrLabels() {
               const typeLabels = labels.filter(label => label.startsWith("type: "));
-              const invalidTypeLabels = typeLabels.filter(label => !allowedTypeLabels.includes(label));
-
               const areaLabels = labels.filter(label => label.startsWith("area: "));
+              const invalidTypeLabels = typeLabels.filter(label => !allowedTypeLabels.includes(label));
               const invalidAreaLabels = areaLabels.filter(label => !allowedAreaLabels.includes(label));
 
               if (invalidTypeLabels.length > 0) {
@@ -336,6 +389,19 @@ jobs:
               }
             }
 
+            function validateWorkItemLinks() {
+              const feature = getNamedFieldText("Work Item Links", "Feature");
+              const executionItem = getNamedFieldText("Work Item Links", "Task / Bug / Chore");
+
+              if (!isMeaningfulText(feature, 3)) {
+                addError("## Work Item Links must include a Feature link or identifier.");
+              }
+
+              if (!isMeaningfulText(executionItem, 3)) {
+                addError("## Work Item Links must include a Task / Bug / Chore link or identifier.");
+              }
+            }
+
             function validateTypeSection(typeLabels) {
               const checkedTypesInBody = getCheckedLabels("Type", allowedTypeLabels);
 
@@ -352,15 +418,11 @@ jobs:
                 typeLabels.length === 1 &&
                 checkedTypesInBody[0] !== typeLabels[0]
               ) {
-                addWarning(
-                  `Type label is not synced yet. Body selected "${checkedTypesInBody[0]}", but PR label is "${typeLabels[0]}".`
-                );
+                addWarning(`Type label is not synced yet. Body selected "${checkedTypesInBody[0]}", but PR label is "${typeLabels[0]}".`);
               }
 
               if (checkedTypesInBody.length === 1 && typeLabels.length === 0) {
-                addWarning(
-                  `Type label "${checkedTypesInBody[0]}" is selected in the PR body but is not present on the PR yet.`
-                );
+                addWarning(`Type label "${checkedTypesInBody[0]}" is selected in the PR body but is not present on the PR yet.`);
               }
             }
 
@@ -416,35 +478,182 @@ jobs:
               return { hasChecked, details };
             }
 
-            function validateImpactSection(sectionName) {
+            function validateExpectedImpact() {
+              const text = getSectionContent("Expected Impact");
+
+              if (!isMeaningfulText(text, 20)) {
+                addError("## Expected Impact must describe the expected effect with at least 20 meaningful characters.");
+              }
+            }
+
+            function validateSingleChoiceSection(sectionName, allowedOptions) {
               const checkedItems = getCheckedItemsFromSection(sectionName);
-              const validSelections = checkedItems.filter(item => impactBinaryOptions.includes(item));
-              const details = getDetailsText(sectionName);
+              const validSelections = allowedOptions.filter(option => checkedItems.includes(option));
 
-              const isYes = validSelections.includes("Yes");
-              const isNo = validSelections.includes("No");
-
-              if (validSelections.length !== 1 || (isYes && isNo)) {
-                addError(`## ${sectionName} must check exactly one of 'Yes' or 'No'.`);
-                return { isYes: false, isNo: false, details };
+              if (validSelections.length !== 1) {
+                addError(
+                  `## ${sectionName} must check exactly one of: ${allowedOptions.map(option => `"${option}"`).join(", ")}.`
+                );
+                return null;
               }
 
-              if (isYes && !isMeaningfulText(details, 10)) {
-                addError(`## ${sectionName} has 'Yes' checked, so meaningful details are required.`);
+              return validSelections[0];
+            }
+
+            function validateArchitectureAdrImpact() {
+              const selection = validateSingleChoiceSection("Architecture / ADR Impact", architectureImpactOptions);
+              const adrText = getNamedFieldText("Architecture / ADR Impact", "ADR");
+              const rationaleText = getNamedFieldText("Architecture / ADR Impact", "Rationale");
+
+              if (!selection) {
+                return { selection: null };
               }
 
-              return { isYes, isNo, details };
+              if (!isMeaningfulText(rationaleText, 15)) {
+                addError("## Architecture / ADR Impact must include a meaningful Rationale.");
+              }
+
+              if (
+                selection === "Existing ADR applies" ||
+                selection === "ADR created or updated"
+              ) {
+                if (!isMeaningfulText(adrText, 3)) {
+                  addError(`## Architecture / ADR Impact selected "${selection}", so ADR must be linked or identified.`);
+                }
+              }
+
+              if (
+                selection === "No architectural or long-lived governance impact" &&
+                !isMeaningfulText(adrText, 10)
+              ) {
+                addError("## Architecture / ADR Impact selected 'No architectural or long-lived governance impact', so ADR must explain why no ADR is required.");
+              }
+
+              return { selection };
+            }
+
+            function validateTestPlan() {
+              const selection = validateSingleChoiceSection("Test Plan", testPlanOptions);
+              const testPlanText = getNamedFieldText("Test Plan", "Test Plan");
+              const rationaleText = getNamedFieldText("Test Plan", "Rationale");
+
+              if (!selection) {
+                return { selection: null };
+              }
+
+              if (
+                selection === "Existing Test Plan applies" ||
+                selection === "Test Plan created or updated"
+              ) {
+                if (!isMeaningfulText(testPlanText, 3)) {
+                  addError(`## Test Plan selected "${selection}", so a Test Plan link or identifier is required.`);
+                }
+              }
+
+              if (selection === "No test plan required" && !isMeaningfulText(rationaleText, 10)) {
+                addError("## Test Plan selected 'No test plan required', so Rationale must explain why no test plan is required.");
+              }
+
+              return { selection };
+            }
+
+            function validateDecisionLog() {
+              const selection = validateSingleChoiceSection("Decision Log", decisionLogOptions);
+              const details = getDetailsText("Decision Log");
+
+              if (!selection) {
+                return { selection: null };
+              }
+
+              if (
+                selection === "Existing entry remains current" ||
+                selection === "Decision Log updated"
+              ) {
+                if (!isMeaningfulText(details, 10)) {
+                  addError(`## Decision Log selected "${selection}", so meaningful details are required.`);
+                }
+              }
+
+              return { selection };
             }
 
             function validateVerificationContent() {
               const verification = validateFlexibleSection("Verification", 10);
 
               if (verificationPlaceholderPattern.test(verification.details)) {
-                addError("## Verification cannot contain only placeholder text such as 'not run', 'n/a', 'none', 'todo', or 'pending'.");
+                addError("## Verification cannot contain only placeholder text such as 'not run', 'n/a', 'none', 'todo', 'pending', or 'tbd'.");
               }
             }
 
-            function validateChangedFileImpact(docsImpact, testImpact) {
+            function validateDocumentationImpact() {
+              const selection = validateSingleChoiceSection("Documentation Impact", documentationImpactOptions);
+              const details = getDetailsText("Documentation Impact");
+
+              if (!selection) {
+                return { selection: null, details };
+              }
+
+              if (selection === "Documentation created or updated" && !isMeaningfulText(details, 10)) {
+                addError("## Documentation Impact selected 'Documentation created or updated', so meaningful details are required.");
+              }
+
+              return { selection, details };
+            }
+
+            function validateTestImpact() {
+              const selection = validateSingleChoiceSection("Test Impact", testImpactOptions);
+              const details = getDetailsText("Test Impact");
+
+              if (!selection) {
+                return { selection: null, details };
+              }
+
+              if (
+                (
+                  selection === "Tests added or updated" ||
+                  selection === "Test strategy or enforcement changed"
+                ) &&
+                !isMeaningfulText(details, 10)
+              ) {
+                addError(`## Test Impact selected "${selection}", so meaningful details are required.`);
+              }
+
+              return { selection, details };
+            }
+
+            function validateOutOfScope() {
+              const text = normalizeVisibleText(getSectionContent("Out of Scope / Follow-up Work")).replace(/\s+/g, " ").trim();
+
+              if (!text) {
+                addError("## Out of Scope / Follow-up Work must explain deferred work or explicitly say 'None'.");
+                return;
+              }
+
+              if (/^none$/i.test(text)) {
+                return;
+              }
+
+              if (!isMeaningfulText(text, 10, ["None"])) {
+                addError("## Out of Scope / Follow-up Work must include meaningful deferred-work details or 'None'.");
+              }
+            }
+
+            function validateWorkflowExceptions() {
+              const selection = validateSingleChoiceSection("Workflow Exceptions", workflowExceptionOptions);
+              const details = getDetailsText("Workflow Exceptions");
+
+              if (!selection) {
+                return { selection: null, details };
+              }
+
+              if (selection === "Exception used" && !isMeaningfulText(details, 10)) {
+                addError("## Workflow Exceptions selected 'Exception used', so details and follow-up are required.");
+              }
+
+              return { selection, details };
+            }
+
+            function validateChangedFileImpact(documentationImpact, testImpact) {
               const docsChanged =
                 hasChangedPath(/^docs\/.+/i) ||
                 hasChangedPath(/\.md$/i) ||
@@ -454,20 +663,35 @@ jobs:
                 hasChangedPath(/^tests\/.+/i) ||
                 hasChangedPath(/^src\/Framework\/Hector\.ArchitectureTests\.Framework\/.+/i);
 
-              if (docsChanged && docsImpact.isNo) {
-                addError("Documentation files changed, but ## Docs / ADR Impact is marked as 'No'.");
+              if (
+                docsChanged &&
+                documentationImpact.selection === "No documentation changes required"
+              ) {
+                addError("Documentation-related files changed, but ## Documentation Impact is marked as 'No documentation changes required'.");
               }
 
-              if (!docsChanged && docsImpact.isYes) {
-                addWarning("## Docs / ADR Impact is marked as 'Yes', but no documentation path was changed. Keep it only if the impact is indirect.");
+              if (
+                !docsChanged &&
+                documentationImpact.selection === "Documentation created or updated"
+              ) {
+                addWarning("## Documentation Impact is marked as 'Documentation created or updated', but no documentation path was changed. Keep it only if the impact is indirect.");
               }
 
-              if (testChanged && testImpact.isNo) {
-                addError("Test-related files changed, but ## Test Impact is marked as 'No'.");
+              if (
+                testChanged &&
+                testImpact.selection === "No test changes required"
+              ) {
+                addError("Test-related files changed, but ## Test Impact is marked as 'No test changes required'.");
               }
 
-              if (!testChanged && testImpact.isYes) {
-                addWarning("## Test Impact is marked as 'Yes', but no test path was changed. Keep it only if the impact is indirect.");
+              if (
+                !testChanged &&
+                (
+                  testImpact.selection === "Tests added or updated" ||
+                  testImpact.selection === "Test strategy or enforcement changed"
+                )
+              ) {
+                addWarning("## Test Impact indicates test changes, but no test path was changed. Keep it only if the impact is indirect.");
               }
             }
 
@@ -476,15 +700,22 @@ jobs:
             const { typeLabels, areaLabels } = validatePrLabels();
 
             validateSummary();
+            validateWorkItemLinks();
             validateTypeSection(typeLabels);
             validateAreasSection(areaLabels);
             validateFlexibleSection("Scope", 10);
+            validateExpectedImpact();
+            validateArchitectureAdrImpact();
+            validateTestPlan();
+            validateDecisionLog();
             validateVerificationContent();
 
-            const docsImpact = validateImpactSection("Docs / ADR Impact");
-            const testImpact = validateImpactSection("Test Impact");
+            const documentationImpact = validateDocumentationImpact();
+            const testImpact = validateTestImpact();
 
-            validateChangedFileImpact(docsImpact, testImpact);
+            validateOutOfScope();
+            validateWorkflowExceptions();
+            validateChangedFileImpact(documentationImpact, testImpact);
 
             if (warnings.length > 0) {
               core.warning(`PR Governance Warnings:\n- ${warnings.join("\n- ")}`);
