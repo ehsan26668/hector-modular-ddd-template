@@ -1,48 +1,80 @@
 ---
 name: Architecture Change
-about: Propose a change to architecture, conventions, or governance rules
+about: Propose a change to architecture, contracts, boundaries, conventions, or governance
 title: "[ARCH] "
-labels: ["architecture"]
+labels: ["architecture", "area: governance"]
 assignees: []
 ---
 
+## Summary
+
+Provide a concise statement of the proposed architecture or governance change.
+
+## Problem Statement
+
+Describe the current limitation, inconsistency, risk, or design pressure that motivates this change.
+
 ## Proposed Change
 
-Describe the architectural, framework, or governance change.
+Explain the proposed solution in concrete terms.
 
-## Motivation
+## Expected Benefits
 
-Why is this change necessary? What long-term engineering or product value does it bring?
-
-## Current Constraint or Problem
-
-What limitation exists in the current design, conventions, or template structure today?
+Describe the engineering, architectural, or operational benefits expected from this change.
 
 ## Alternatives Considered
 
-- **Option 1 (Describe & Trade-offs):**
-- **Option 2 (Describe & Trade-offs):**
+- **Option 1:**
+  - **Pros:**
+  - **Cons:**
+- **Option 2:**
+  - **Pros:**
+  - **Cons:**
 
 ## Impacted Areas
 
-- [ ] ADR (Architecture Decision Record)
-- [ ] Decision Log (Must register new/updated ADRs)
-- [ ] Module Boundaries & Dependency Rules
-- [ ] Architecture Guard Tests (ADR-0036 / ADR-0056 DSL)
-- [ ] Result Pattern & Application Error Taxonomy
-- [ ] Documentation & Standards
-- [ ] CI/CD Quality Gates & Workflows
+- [ ] Module boundaries
+- [ ] Contracts / integration events
+- [ ] Domain model
+- [ ] Application layer conventions
+- [ ] Persistence strategy
+- [ ] Web/API behavior
+- [ ] Architecture testing rules
+- [ ] CI/CD quality gates
+- [ ] Documentation standards
+- [ ] Backlog / PR governance
+
+## Traceability
+
+- **Related Epic:**
+- **Related Feature / Task:**
+- **ADR Reference:**
+- **Decision Log Entry:**
+- **Test Plan Location:**
+- **Related PR(s):**
+
+## Validation Plan
+
+Describe how this change will be validated.
+
+- **Unit Tests:**
+- **Integration Tests:**
+- **Architecture Tests:**
+- **Documentation Verification:**
+- **CI Validation:**
 
 ## Acceptance Criteria
 
-- [ ] ADR created/updated and registered in the Decision Log (`docs/decisions/decision-log.md`)
-- [ ] Test Plan created/updated using the standard template (`docs/tests/`)
-- [ ] Architecture tests implemented or updated to enforce the new rule
-- [ ] Code/Framework implementation is complete and passes all quality gates
-- [ ] Template packaging and metadata updated if applicable
+- [ ] The architectural decision is clearly documented.
+- [ ] ADR is created or updated and linked.
+- [ ] Test Plan is created or updated and linked.
+- [ ] Required architecture or validation tests are implemented.
+- [ ] Documentation and governance artifacts are updated consistently.
 
-## Traceability & References
+## Risks / Trade-offs
 
-- **Proposed ADR Reference:**
-- **Matching Test Plan Location:**
-- **Related Issue / Task:**
+Describe known trade-offs, migration concerns, compatibility risks, or operational implications.
+
+## Notes
+
+Add any additional decision context, migration notes, or sequencing constraints.
