@@ -1,0 +1,63 @@
+name: Docs Validation
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: docs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: 10.0.x
+  CONFIGURATION: Release
+  ARCHITECTURE_TEST_PROJECT: tests/ArchitectureTests/Hector.ArchitectureTests/Hector.ArchitectureTests.csproj
+
+jobs:
+  docs-validation:
+    name: Documentation and ADR Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', '**/*.csproj', 'Hector.slnx') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-
+            ${{ runner.os }}-nuget-
+
+      - name: Restore solution
+        run: dotnet restore Hector.slnx
+
+      - name: Build solution
+        run: dotnet build Hector.slnx --no-restore --configuration ${{ env.CONFIGURATION }}
+
+      - name: Run documentation and ADR tests
+        run: >
+          dotnet test ${{ env.ARCHITECTURE_TEST_PROJECT }}
+          --no-build
+          --configuration ${{ env.CONFIGURATION }}
+          --logger "trx;LogFileName=docs-validation.trx"
+          --results-directory ./artifacts/test-results/docs
+          --filter "(FullyQualifiedName~Documentation)|(FullyQualifiedName~Adr)|(FullyQualifiedName~Structure)"
+
+      - name: Upload docs validation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-validation-results
+          path: artifacts/test-results/docs/**/*.trx
+          if-no-files-found: warn
+          retention-days: 14

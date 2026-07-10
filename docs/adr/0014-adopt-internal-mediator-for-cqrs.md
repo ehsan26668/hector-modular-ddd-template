@@ -54,4 +54,4 @@ Negative:
 
 - Requires internal implementation and maintenance
 - Slight increase in framework complexity
-- Future improvements must be implemented internally instead of relying on external library updates
+- Future improvements must be implemented internally instead of relying on external library updates.
