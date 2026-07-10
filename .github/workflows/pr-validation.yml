@@ -40,7 +40,7 @@ jobs:
               pull_number
             });
 
-            const body = normalizeLineEndings(pr.body || "");
+            const body = stripComments(normalizeLineEndings(pr.body || ""));
             const labels = (pr.labels || []).map(label => label.name);
 
             const changedFiles = await github.paginate(
@@ -157,7 +157,7 @@ jobs:
                 patterns: [
                   /^docs\/.+/i,
                   /\.md$/i,
-                  /^\.github\/governance\/.+/i
+                  /^\.github\/.+/i
                 ]
               }
             ];
@@ -195,7 +195,7 @@ jobs:
 
             function getSectionContent(heading) {
               const pattern = new RegExp(
-                `^##\\s+${escapeRegex(heading)}\\s*$([\\s\\S]*?)(?=^##\\s+.+$|$)`,
+                `^##\\s+${escapeRegex(heading)}\\s*\\n+([\\s\\S]*?)(?=\\n^##\\s+.+|$)`,
                 "im"
               );
 
@@ -204,14 +204,14 @@ jobs:
             }
 
             function hasHeading(heading) {
-              return new RegExp(`^##\\s+${escapeRegex(heading)}\\s*$`, "im").test(body);
+              return new RegExp(`^##\\s+${escapeRegex(heading)}\\s*`, "im").test(body);
             }
 
             function getCheckedItemsFromSection(section) {
               const content = getSectionContent(section);
 
               return splitLines(content)
-                .map(line => line.match(/^\s*[-*]\s*\[([xX])\]\s+(.+?)\s*$/))
+                .map(line => line.match(/^\s*[-*]\s*\[\s*([xX])\s*\]\s+(.+?)\s*$/))
                 .filter(Boolean)
                 .map(match => match[2].replace(/^`|`$/g, "").trim());
             }
@@ -435,7 +435,7 @@ jobs:
               const docsChanged =
                 hasChangedPath(/^docs\/.+/i) ||
                 hasChangedPath(/\.md$/i) ||
-                hasChangedPath(/^\.github\/governance\/.+/i);
+                hasChangedPath(/^\.github\/.+/i);
 
               const testChanged =
                 hasChangedPath(/^tests\/.+/i) ||
