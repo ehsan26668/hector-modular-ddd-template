@@ -190,21 +190,34 @@ jobs:
             }
 
             function stripDetailsPrefix(text) {
-              return (text || "").replace(/^\s*Details:\s*/im, "").trim();
+              return (text || "")
+                .replace(/^\s*(Details|Note)\s*:\s*/im, "")
+                .trim();
             }
 
             function getSectionContent(heading) {
-              const pattern = new RegExp(
-                `^##\\s+${escapeRegex(heading)}\\s*\\n+([\\s\\S]*?)(?=\\n^##\\s+.+|$)`,
-                "im"
-              );
+              const lines = splitLines(body);
+              const headingPattern = new RegExp(`^##\\s+${escapeRegex(heading)}\\s*$`, "i");
+              const anyHeadingPattern = /^##\s+.+$/i;
 
-              const match = body.match(pattern);
-              return match ? match[1].trim() : "";
+              const startIndex = lines.findIndex(line => headingPattern.test(line.trim()));
+              if (startIndex === -1) {
+                return "";
+              }
+
+              let endIndex = lines.length;
+              for (let i = startIndex + 1; i < lines.length; i++) {
+                if (anyHeadingPattern.test(lines[i].trim())) {
+                  endIndex = i;
+                  break;
+                }
+              }
+
+              return lines.slice(startIndex + 1, endIndex).join("\n").trim();
             }
 
             function hasHeading(heading) {
-              return new RegExp(`^##\\s+${escapeRegex(heading)}\\s*`, "im").test(body);
+              return new RegExp(`^##\\s+${escapeRegex(heading)}\\s*$`, "im").test(body);
             }
 
             function getCheckedItemsFromSection(section) {
