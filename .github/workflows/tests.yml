@@ -43,7 +43,7 @@ jobs:
               - '**/*.props'
               - '**/*.targets'
               - '**/*.slnx'
-              - '.github/workflows/tests.yml'
+              - '.github/workflows/**'
               - '.template.config/**'
               - 'src/**'
               - 'tests/**'
