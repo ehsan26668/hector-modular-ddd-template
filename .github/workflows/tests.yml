@@ -3,32 +3,8 @@ name: Tests
 on:
   pull_request:
     branches: [main]
-    paths:
-      - '**/*.cs'
-      - '**/*.csproj'
-      - '**/*.props'
-      - '**/*.targets'
-      - '**/*.slnx'
-      - '.github/workflows/tests.yml'
-      - '.template.config/**'
-      - 'src/**'
-      - 'tests/**'
-      - 'Directory.Build.props'
-      - 'Directory.Packages.props'
   push:
     branches: [main]
-    paths:
-      - '**/*.cs'
-      - '**/*.csproj'
-      - '**/*.props'
-      - '**/*.targets'
-      - '**/*.slnx'
-      - '.github/workflows/tests.yml'
-      - '.template.config/**'
-      - 'src/**'
-      - 'tests/**'
-      - 'Directory.Build.props'
-      - 'Directory.Packages.props'
   workflow_dispatch:
 
 concurrency:
@@ -47,8 +23,37 @@ env:
   DOTNET_NOLOGO: true
 
 jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      src: ${{ steps.filter.outputs.src }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for code changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            src:
+              - '**/*.cs'
+              - '**/*.csproj'
+              - '**/*.props'
+              - '**/*.targets'
+              - '**/*.slnx'
+              - '.github/workflows/tests.yml'
+              - '.template.config/**'
+              - 'src/**'
+              - 'tests/**'
+              - 'Directory.Build.props'
+              - 'Directory.Packages.props'
+
   unit-tests:
     name: Unit Tests
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.src == 'true' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -97,6 +102,8 @@ jobs:
 
   integration-tests:
     name: Integration Tests - ${{ matrix.test_project.name }}
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.src == 'true' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
@@ -160,6 +167,8 @@ jobs:
 
   template-tests:
     name: Template Tests
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.src == 'true' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
