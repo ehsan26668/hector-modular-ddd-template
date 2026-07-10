@@ -2,55 +2,55 @@ schemaVersion: 1
 
 types:
   labels:
-    - name: type: feat
+    - name: "type: feat"
       description: Introduces new behavior or capability
       color: 0E8A16
-    - name: type: fix
+    - name: "type: fix"
       description: Corrects a defect or unintended behavior
       color: D73A4A
-    - name: type: refactor
+    - name: "type: refactor"
       description: Improves internal design without changing behavior
       color: 5319E7
-    - name: type: test
+    - name: "type: test"
       description: Adds or updates automated tests
       color: 1D76DB
-    - name: type: docs
+    - name: "type: docs"
       description: Adds or updates documentation
       color: 0075CA
-    - name: type: chore
+    - name: "type: chore"
       description: Repository maintenance or non-functional work
       color: BFD4F2
 
 areas:
   labels:
-    - name: area: domain
+    - name: "area: domain"
       description: Domain model, rules, invariants, entities, value objects
       color: FBCA04
-    - name: area: application
+    - name: "area: application"
       description: Application layer, commands, queries, handlers, orchestration
       color: C2E0C6
-    - name: area: infrastructure
+    - name: "area: infrastructure"
       description: Persistence, external integrations, outbox, inbox, background processing
       color: FEF2C0
-    - name: area: web
+    - name: "area: web"
       description: Host, HTTP pipeline, API endpoints, web concerns
       color: BFDADC
-    - name: area: architecture-tests
+    - name: "area: architecture-tests"
       description: Architecture testing DSL, rule enforcement, structural governance
       color: D4C5F9
-    - name: area: docs
+    - name: "area: docs"
       description: ADRs, standards, templates, and repository documentation
       color: 0E8A16
-    - name: area: unit-tests
+    - name: "area: unit-tests"
       description: Unit test coverage and test doubles
       color: 1D76DB
-    - name: area: integration-tests
+    - name: "area: integration-tests"
       description: Integration test coverage and cross-boundary verification
       color: 0052CC
-    - name: area: e2e-tests
+    - name: "area: e2e-tests"
       description: End-to-end or full workflow verification
       color: 5319E7
-    - name: area: template-tests
+    - name: "area: template-tests"
       description: Template packaging and template generation validation
       color: F9D0C4
 
@@ -74,13 +74,13 @@ exports:
     - type: chore
 
   areaNames:
-    - area: domain
-    - area: application
-    - area: infrastructure
-    - area: web
-    - area: architecture-tests
-    - area: docs
-    - area: unit-tests
-    - area: integration-tests
-    - area: e2e-tests
-    - area: template-tests
+    - area: "domain"
+    - area: "application"
+    - area: "infrastructure"
+    - area: "web"
+    - area: "architecture-tests"
+    - area: "docs"
+    - area: "unit-tests"
+    - area: "integration-tests"
+    - area: "e2e-tests"
+    - area: "template-tests"
