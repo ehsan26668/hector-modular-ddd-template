@@ -2,7 +2,14 @@ name: PR Validation
 
 on:
   pull_request:
-    types: [opened, edited, reopened, synchronize, labeled, unlabeled, ready_for_review]
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+      - labeled
+      - unlabeled
+      - ready_for_review
 
 permissions:
   contents: read
@@ -33,7 +40,7 @@ jobs:
               pull_number
             });
 
-            const body = pr.body || "";
+            const body = normalizeLineEndings(pr.body || "");
             const labels = (pr.labels || []).map(label => label.name);
 
             const changedFiles = await github.paginate(
@@ -82,7 +89,12 @@ jobs:
               "Test Impact"
             ];
 
-            // Synchronized strictly with area-path-rules.yml configurations
+            const impactBinaryOptions = ["Yes", "No"];
+
+            const ignoredPlaceholderPattern = /^\s*(n\/a|na|none|not applicable|todo|pending)\s*$/i;
+            const verificationPlaceholderPattern = /^\s*(not run|n\/a|na|none|todo|pending)\s*$/i;
+
+            // Keep synchronized with path-based governance / labeler behavior.
             const areaPathRules = [
               {
                 label: "area: domain",
@@ -159,29 +171,35 @@ jobs:
             }
 
             function stripComments(text) {
-              return (text || "").replace(/<!--[\s\S]*?-->/g, "").trim();
+              return (text || "").replace(/<!--[\s\S]*?-->/g, "");
+            }
+
+            function normalizeVisibleText(text) {
+              return stripComments(text || "").trim();
+            }
+
+            function splitLines(text) {
+              return normalizeLineEndings(text || "").split("\n");
             }
 
             function stripCheckboxLines(text) {
-              return (text || "")
-                .split("\n")
-                .filter(line => !/^\s*[-*]\s*\[[ xX]\]\s*/.test(line))
+              return splitLines(text)
+                .filter(line => !/^\s*[-*]\s*\[[ xX]\]\s+/.test(line))
                 .join("\n")
                 .trim();
             }
 
             function stripDetailsPrefix(text) {
-              return (text || "").replace(/^Details:\s*/im, "").trim();
+              return (text || "").replace(/^\s*Details:\s*/im, "").trim();
             }
 
             function getSectionContent(heading) {
-              const normalizedBody = normalizeLineEndings(body);
               const pattern = new RegExp(
                 `^##\\s+${escapeRegex(heading)}\\s*$([\\s\\S]*?)(?=^##\\s+.+$|$)`,
                 "im"
               );
 
-              const match = normalizedBody.match(pattern);
+              const match = body.match(pattern);
               return match ? match[1].trim() : "";
             }
 
@@ -189,42 +207,45 @@ jobs:
               return new RegExp(`^##\\s+${escapeRegex(heading)}\\s*$`, "im").test(body);
             }
 
-            function isCheckedInContent(content, item) {
-              const escaped = escapeRegex(item);
+            function getCheckedItemsFromSection(section) {
+              const content = getSectionContent(section);
 
-              const patterns = [
-                new RegExp(`^\\s*[-*]\\s*\\[[xX]\\]\\s*\`${escaped}\`\\s*$`, "im"),
-                new RegExp(`^\\s*[-*]\\s*\\[[xX]\\]\\s*${escaped}\\s*$`, "im")
-              ];
-
-              return patterns.some(pattern => pattern.test(content || ""));
+              return splitLines(content)
+                .map(line => line.match(/^\s*[-*]\s*\[([xX])\]\s+(.+?)\s*$/))
+                .filter(Boolean)
+                .map(match => match[2].replace(/^`|`$/g, "").trim());
             }
 
             function isCheckedInSection(section, item) {
-              return isCheckedInContent(getSectionContent(section), item);
+              return getCheckedItemsFromSection(section).includes(item);
             }
 
             function getCheckedLabels(section, allowedLabels) {
-              const content = getSectionContent(section);
-              return allowedLabels.filter(label => isCheckedInContent(content, label));
+              const checkedItems = getCheckedItemsFromSection(section);
+              return allowedLabels.filter(label => checkedItems.includes(label));
             }
 
             function hasAnyCheckedCheckbox(section) {
-              return /^\s*[-*]\s*\[[xX]\]\s*/im.test(getSectionContent(section));
+              return getCheckedItemsFromSection(section).length > 0;
             }
 
             function getDetailsText(section) {
-              return stripDetailsPrefix(stripCheckboxLines(stripComments(getSectionContent(section))));
+              const content = getSectionContent(section);
+              return stripDetailsPrefix(stripCheckboxLines(normalizeVisibleText(content)));
             }
 
             function isMeaningfulText(text, minimumLength = 10) {
-              const normalized = stripDetailsPrefix(stripComments(text))
-                .replace(/^n\/a$/im, "")
-                .replace(/^na$/im, "")
-                .replace(/^none$/im, "")
-                .replace(/^not applicable$/im, "")
-                .replace(/^todo$/im, "")
+              const normalized = stripDetailsPrefix(normalizeVisibleText(text))
+                .replace(/\s+/g, " ")
                 .trim();
+
+              if (!normalized) {
+                return false;
+              }
+
+              if (ignoredPlaceholderPattern.test(normalized)) {
+                return false;
+              }
 
               return normalized.length >= minimumLength;
             }
@@ -241,184 +262,223 @@ jobs:
               return changedPaths.some(path => pattern.test(path));
             }
 
-            for (const heading of requiredHeadings) {
-              if (!hasHeading(heading)) {
-                errors.push(`Missing required section: ## ${heading}`);
+            function addError(message) {
+              errors.push(message);
+            }
+
+            function addWarning(message) {
+              warnings.push(message);
+            }
+
+            function validateRequiredHeadings() {
+              for (const heading of requiredHeadings) {
+                if (!hasHeading(heading)) {
+                  addError(`Missing required section: ## ${heading}`);
+                }
               }
             }
 
-            const typeLabels = labels.filter(label => label.startsWith("type: "));
-            const invalidTypeLabels = typeLabels.filter(label => !allowedTypeLabels.includes(label));
-            const areaLabels = labels.filter(label => label.startsWith("area: "));
-            const invalidAreaLabels = areaLabels.filter(label => !allowedAreaLabels.includes(label));
+            function validatePrLabels() {
+              const typeLabels = labels.filter(label => label.startsWith("type: "));
+              const invalidTypeLabels = typeLabels.filter(label => !allowedTypeLabels.includes(label));
 
-            if (invalidTypeLabels.length > 0) {
-              errors.push(`Invalid type label(s): ${invalidTypeLabels.join(", ")}.`);
+              const areaLabels = labels.filter(label => label.startsWith("area: "));
+              const invalidAreaLabels = areaLabels.filter(label => !allowedAreaLabels.includes(label));
+
+              if (invalidTypeLabels.length > 0) {
+                addError(`Invalid type label(s) on PR: ${invalidTypeLabels.join(", ")}.`);
+              }
+
+              if (invalidAreaLabels.length > 0) {
+                addError(`Invalid area label(s) on PR: ${invalidAreaLabels.join(", ")}.`);
+              }
+
+              return { typeLabels, areaLabels };
             }
 
-            if (invalidAreaLabels.length > 0) {
-              errors.push(`Invalid area label(s): ${invalidAreaLabels.join(", ")}.`);
+            function validateSummary() {
+              const summary = getSectionContent("Summary");
+              const normalizedSummary = normalizeVisibleText(summary).toLowerCase();
+
+              const weakSummaryValues = [
+                "update",
+                "changes",
+                "fix",
+                "bug fix",
+                "refactor",
+                "test",
+                "minor changes",
+                "n/a",
+                "na",
+                "none"
+              ];
+
+              if (!isMeaningfulText(summary, 20)) {
+                addError("## Summary must contain a meaningful description with at least 20 characters.");
+                return;
+              }
+
+              if (weakSummaryValues.includes(normalizedSummary)) {
+                addError("## Summary is too vague. Explain what changed and why.");
+              }
             }
 
-            const summary = getSectionContent("Summary");
-            if (!isMeaningfulText(summary, 20)) {
-              errors.push("## Summary must contain a meaningful description with at least 20 characters.");
-            }
+            function validateTypeSection(typeLabels) {
+              const checkedTypesInBody = getCheckedLabels("Type", allowedTypeLabels);
 
-            const weakSummaryValues = [
-              "update",
-              "changes",
-              "fix",
-              "bug fix",
-              "refactor",
-              "test",
-              "minor changes",
-              "n/a",
-              "na",
-              "none"
-            ];
+              if (checkedTypesInBody.length !== 1) {
+                addError(`## Type must check exactly one type label. Found ${checkedTypesInBody.length}.`);
+              }
 
-            if (weakSummaryValues.includes(stripComments(summary).toLowerCase())) {
-              errors.push("## Summary is too vague. Explain what changed and why.");
-            }
+              if (typeLabels.length > 1) {
+                addError(`PR must not have multiple type labels. Found: ${typeLabels.join(", ")}.`);
+              }
 
-            const checkedTypesInBody = getCheckedLabels("Type", allowedTypeLabels);
+              if (
+                checkedTypesInBody.length === 1 &&
+                typeLabels.length === 1 &&
+                checkedTypesInBody[0] !== typeLabels[0]
+              ) {
+                addWarning(
+                  `Type label is not synced yet. Body selected "${checkedTypesInBody[0]}", but PR label is "${typeLabels[0]}".`
+                );
+              }
 
-            if (checkedTypesInBody.length !== 1) {
-              errors.push(`## Type must check exactly one type label. Found ${checkedTypesInBody.length}.`);
-            }
-
-            if (typeLabels.length > 1) {
-              errors.push(`PR must not have multiple type labels. Found: ${typeLabels.join(", ")}.`);
-            }
-
-            if (
-              checkedTypesInBody.length === 1 &&
-              typeLabels.length === 1 &&
-              checkedTypesInBody[0] !== typeLabels[0]
-            ) {
-              warnings.push(
-                `Type label is not synced yet. Body selected "${checkedTypesInBody[0]}", PR has "${typeLabels[0]}".`
-              );
-            }
-
-            if (checkedTypesInBody.length === 1 && typeLabels.length === 0) {
-              warnings.push(
-                `Type label "${checkedTypesInBody[0]}" is selected in the body but not present on the PR yet. The label sync workflow should add it.`
-              );
-            }
-
-            const checkedAreasInBody = getCheckedLabels("Areas", allowedAreaLabels);
-
-            if (checkedAreasInBody.length < 1) {
-              errors.push("## Areas must check at least one area label.");
-            }
-
-            const requiredAreasFromPaths = areaPathRules
-              .filter(rule => pathMatchesAny(rule.patterns))
-              .map(rule => rule.label);
-
-            for (const requiredArea of requiredAreasFromPaths) {
-              if (!checkedAreasInBody.includes(requiredArea)) {
-                const rule = areaPathRules.find(item => item.label === requiredArea);
-                const matchingPaths = changedPathsFor(rule.patterns).slice(0, 5);
-
-                errors.push(
-                  `## Areas must include "${requiredArea}" because matching files changed: ${matchingPaths.join(", ")}${matchingPaths.length === 5 ? ", ..." : ""}`
+              if (checkedTypesInBody.length === 1 && typeLabels.length === 0) {
+                addWarning(
+                  `Type label "${checkedTypesInBody[0]}" is selected in the PR body but is not present on the PR yet.`
                 );
               }
             }
 
-            const checkedAreasWithoutPathMatch = checkedAreasInBody.filter(area => {
-              const rule = areaPathRules.find(item => item.label === area);
-              return rule && !pathMatchesAny(rule.patterns);
-            });
+            function validateAreasSection(areaLabels) {
+              const checkedAreasInBody = getCheckedLabels("Areas", allowedAreaLabels);
 
-            if (checkedAreasWithoutPathMatch.length > 0) {
-              warnings.push(
-                `The following areas are checked but no matching path was detected: ${checkedAreasWithoutPathMatch.join(", ")}. Keep them only if the PR has a cross-cutting impact.`
-              );
-            }
-
-            const missingAreaLabels = requiredAreasFromPaths.filter(area => !areaLabels.includes(area));
-            if (missingAreaLabels.length > 0) {
-              warnings.push(
-                `Area labeler has not applied these required area labels yet: ${missingAreaLabels.join(", ")}. If this persists, check labeler.yml.`
-              );
-            }
-
-            const scopeHasChecked = hasAnyCheckedCheckbox("Scope");
-            const scopeDetails = getDetailsText("Scope");
-
-            if (!scopeHasChecked && !isMeaningfulText(scopeDetails, 10)) {
-              errors.push("## Scope must include checked scope items or meaningful details.");
-            }
-
-            const verificationHasChecked = hasAnyCheckedCheckbox("Verification");
-            const verificationDetails = getDetailsText("Verification");
-
-            if (!verificationHasChecked && !isMeaningfulText(verificationDetails, 10)) {
-              errors.push("## Verification must include at least one checked verification method or meaningful details.");
-            }
-
-            if (/^\s*(not run|n\/a|na|none|todo|pending)\s*$/im.test(verificationDetails)) {
-              errors.push("## Verification cannot contain only placeholder text such as 'not run', 'n/a', 'none', 'todo', or 'pending'.");
-            }
-
-            const impactSections = [
-              "Docs / ADR Impact",
-              "Test Impact"
-            ];
-
-            for (const section of impactSections) {
-              const isYes = isCheckedInSection(section, "Yes");
-              const isNo = isCheckedInSection(section, "No");
-
-              if ((isYes && isNo) || (!isYes && !isNo)) {
-                errors.push(`## ${section} must check exactly one of 'Yes' or 'No'.`);
+              if (checkedAreasInBody.length < 1) {
+                addError("## Areas must check at least one area label.");
               }
 
-              if (isYes && !isMeaningfulText(getDetailsText(section), 10)) {
-                errors.push(`## ${section} has 'Yes' checked, so meaningful details are required.`);
+              const requiredAreasFromPaths = areaPathRules
+                .filter(rule => pathMatchesAny(rule.patterns))
+                .map(rule => rule.label);
+
+              for (const requiredArea of requiredAreasFromPaths) {
+                if (!checkedAreasInBody.includes(requiredArea)) {
+                  const rule = areaPathRules.find(item => item.label === requiredArea);
+                  const matchingPaths = changedPathsFor(rule.patterns).slice(0, 5);
+
+                  addError(
+                    `## Areas must include "${requiredArea}" because these changed files match it: ${matchingPaths.join(", ")}${matchingPaths.length === 5 ? ", ..." : ""}`
+                  );
+                }
+              }
+
+              const checkedAreasWithoutPathMatch = checkedAreasInBody.filter(area => {
+                const rule = areaPathRules.find(item => item.label === area);
+                return rule && !pathMatchesAny(rule.patterns);
+              });
+
+              if (checkedAreasWithoutPathMatch.length > 0) {
+                addWarning(
+                  `The following areas are checked but no matching path was detected: ${checkedAreasWithoutPathMatch.join(", ")}. Keep them only if the PR has cross-cutting impact.`
+                );
+              }
+
+              const missingAreaLabels = requiredAreasFromPaths.filter(area => !areaLabels.includes(area));
+              if (missingAreaLabels.length > 0) {
+                addWarning(
+                  `Required PR area labels are missing: ${missingAreaLabels.join(", ")}. If this persists, check the labeler workflow.`
+                );
               }
             }
 
-            const docsImpactYes = isCheckedInSection("Docs / ADR Impact", "Yes");
-            const docsImpactNo = isCheckedInSection("Docs / ADR Impact", "No");
-            const testImpactYes = isCheckedInSection("Test Impact", "Yes");
-            const testImpactNo = isCheckedInSection("Test Impact", "No");
+            function validateFlexibleSection(sectionName, minimumLength = 10) {
+              const hasChecked = hasAnyCheckedCheckbox(sectionName);
+              const details = getDetailsText(sectionName);
 
-            const docsChanged =
-              hasChangedPath(/^docs\/.+/i) ||
-              hasChangedPath(/\.md$/i) ||
-              hasChangedPath(/^\.github\/governance\/.+/i);
+              if (!hasChecked && !isMeaningfulText(details, minimumLength)) {
+                addError(`## ${sectionName} must include checked items or meaningful details.`);
+              }
 
-            if (docsChanged && docsImpactNo) {
-              errors.push("Documentation files changed, but ## Docs / ADR Impact is marked as 'No'.");
+              return { hasChecked, details };
             }
 
-            if (!docsChanged && docsImpactYes) {
-              warnings.push("## Docs / ADR Impact is marked as 'Yes', but no documentation path was changed. Keep it only if the impact is indirect.");
+            function validateImpactSection(sectionName) {
+              const checkedItems = getCheckedItemsFromSection(sectionName);
+              const validSelections = checkedItems.filter(item => impactBinaryOptions.includes(item));
+              const details = getDetailsText(sectionName);
+
+              const isYes = validSelections.includes("Yes");
+              const isNo = validSelections.includes("No");
+
+              if (validSelections.length !== 1 || (isYes && isNo)) {
+                addError(`## ${sectionName} must check exactly one of 'Yes' or 'No'.`);
+                return { isYes: false, isNo: false, details };
+              }
+
+              if (isYes && !isMeaningfulText(details, 10)) {
+                addError(`## ${sectionName} has 'Yes' checked, so meaningful details are required.`);
+              }
+
+              return { isYes, isNo, details };
             }
 
-            const testChanged =
-              hasChangedPath(/^tests\/.+/i) ||
-              hasChangedPath(/^src\/Framework\/Hector\.ArchitectureTests\.Framework\/.+/i);
+            function validateVerificationContent() {
+              const verification = validateFlexibleSection("Verification", 10);
 
-            if (testChanged && testImpactNo) {
-              errors.push("Test-related files changed, but ## Test Impact is marked as 'No'.");
+              if (verificationPlaceholderPattern.test(verification.details)) {
+                addError("## Verification cannot contain only placeholder text such as 'not run', 'n/a', 'none', 'todo', or 'pending'.");
+              }
             }
 
-            if (!testChanged && testImpactYes) {
-              warnings.push("## Test Impact is marked as 'Yes', but no test path was changed. Keep it only if the impact is indirect.");
+            function validateChangedFileImpact(docsImpact, testImpact) {
+              const docsChanged =
+                hasChangedPath(/^docs\/.+/i) ||
+                hasChangedPath(/\.md$/i) ||
+                hasChangedPath(/^\.github\/governance\/.+/i);
+
+              const testChanged =
+                hasChangedPath(/^tests\/.+/i) ||
+                hasChangedPath(/^src\/Framework\/Hector\.ArchitectureTests\.Framework\/.+/i);
+
+              if (docsChanged && docsImpact.isNo) {
+                addError("Documentation files changed, but ## Docs / ADR Impact is marked as 'No'.");
+              }
+
+              if (!docsChanged && docsImpact.isYes) {
+                addWarning("## Docs / ADR Impact is marked as 'Yes', but no documentation path was changed. Keep it only if the impact is indirect.");
+              }
+
+              if (testChanged && testImpact.isNo) {
+                addError("Test-related files changed, but ## Test Impact is marked as 'No'.");
+              }
+
+              if (!testChanged && testImpact.isYes) {
+                addWarning("## Test Impact is marked as 'Yes', but no test path was changed. Keep it only if the impact is indirect.");
+              }
             }
+
+            validateRequiredHeadings();
+
+            const { typeLabels, areaLabels } = validatePrLabels();
+
+            validateSummary();
+            validateTypeSection(typeLabels);
+            validateAreasSection(areaLabels);
+            validateFlexibleSection("Scope", 10);
+            validateVerificationContent();
+
+            const docsImpact = validateImpactSection("Docs / ADR Impact");
+            const testImpact = validateImpactSection("Test Impact");
+
+            validateChangedFileImpact(docsImpact, testImpact);
 
             if (warnings.length > 0) {
-              core.warning("PR Governance Warnings:\n- " + warnings.join("\n- "));
+              core.warning(`PR Governance Warnings:\n- ${warnings.join("\n- ")}`);
             }
 
             if (errors.length > 0) {
-              core.setFailed("PR Governance Failed:\n- " + errors.join("\n- "));
+              core.setFailed(`PR Governance Failed:\n- ${errors.join("\n- ")}`);
               return;
             }
 
