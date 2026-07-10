@@ -26,7 +26,14 @@ What actually happened?
 
 ## Impact
 
-What is affected?
+What is affected? Describe user, developer, architectural, or delivery impact.
+
+## Affected Module
+
+- [ ] Projects
+- [ ] Framework
+- [ ] Host
+- [ ] Cross-module
 
 ## Related Area
 
@@ -38,14 +45,43 @@ What is affected?
 - [ ] Documentation
 - [ ] Template Packaging
 
+## Environment
+
+- Template version:
+- Commit / Tag:
+- .NET SDK version:
+- OS:
+
+## Evidence
+
+- Failing test:
+- Error message:
+- Stack trace / screenshot / log:
+
+## Suspected Root Cause
+
+What is the likely technical cause?
+
 ## Related ADR / Test Plan
 
-- ADR:
-- Test Plan:
+- ADR reference(s):
+- Existing test plan:
+- Missing coverage identified in:
 
 ## Proposed Test Coverage
+
+- [ ] Unit test needed
+- [ ] Integration test needed
+- [ ] Architecture test needed
+- [ ] Regression test needed
+
+### Notes
 
 - Unit:
 - Integration:
 - Architecture:
 - Regression:
+
+## Regression Risk
+
+What could break when fixing this issue?

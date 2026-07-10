@@ -6,14 +6,21 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
+  pull-requests: read
+  issues: write
+
+concurrency:
+  group: pr-labels-from-body-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
-  sync-labels-from-body:
+  sync-type-label-from-body:
+    name: Sync PR Type Label From Body
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
-      - name: Apply labels from PR body checkboxes
+      - name: Sync type label from PR body checkbox
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -21,25 +28,14 @@ jobs:
             const pr = context.payload.pull_request;
             const body = pr.body || "";
 
-            const checkboxLabelMap = {
-              "type: feat": "type: feat",
-              "type: fix": "type: fix",
-              "type: refactor": "type: refactor",
-              "type: test": "type: test",
-              "type: docs": "type: docs",
-              "type: chore": "type: chore",
-
-              "area: domain": "area: domain",
-              "area: application": "area: application",
-              "area: infrastructure": "area: infrastructure",
-              "area: web": "area: web",
-              "area: architecture-tests": "area: architecture-tests",
-              "area: docs": "area: docs",
-              "area: unit-tests": "area: unit-tests",
-              "area: integration-tests": "area: integration-tests",
-              "area: e2e-tests": "area: e2e-tests",
-              "area: template-tests": "area: template-tests"
-            };
+            const managedTypeLabels = [
+              "type: feat",
+              "type: fix",
+              "type: refactor",
+              "type: test",
+              "type: docs",
+              "type: chore"
+            ];
 
             function escapeRegex(value) {
               return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -49,44 +45,58 @@ jobs:
               const escaped = escapeRegex(label);
 
               const patterns = [
-                new RegExp(`^\\s*-\\s*\\[x\\]\\s*\`${escaped}\`\\s*$`, "im"),
-                new RegExp(`^\\s*-\\s*\\[x\\]\\s*${escaped}\\s*$`, "im")
+                new RegExp(`^\\s*[-*]\\s*\\[[xX]\\]\\s*\`${escaped}\`\\s*$`, "m"),
+                new RegExp(`^\\s*[-*]\\s*\\[[xX]\\]\\s*${escaped}\\s*$`, "m")
               ];
 
               return patterns.some(pattern => pattern.test(body));
             }
 
-            const labelsToApply = [
-              ...new Set(
-                Object.entries(checkboxLabelMap)
-                  .filter(([checkboxText]) => isChecked(checkboxText))
-                  .map(([, label]) => label)
-              )
-            ];
+            const selectedTypeLabels = managedTypeLabels.filter(isChecked);
 
-            const selectedTypeLabels = labelsToApply.filter(label => label.startsWith("type: "));
-            if (selectedTypeLabels.length > 1) {
-              core.warning(`Multiple type labels selected: ${selectedTypeLabels.join(", ")}`);
-            }
-
-            if (labelsToApply.length === 0) {
-              core.info("No checked label checkboxes found in PR body.");
+            if (selectedTypeLabels.length !== 1) {
+              core.setFailed(
+                `Exactly one type label must be selected in the PR body. Found ${selectedTypeLabels.length}: ${selectedTypeLabels.join(", ") || "(none)"}`
+              );
               return;
             }
 
+            const desiredTypeLabel = selectedTypeLabels[0];
             const existingLabels = pr.labels.map(label => label.name);
-            const newLabels = labelsToApply.filter(label => !existingLabels.includes(label));
+            const existingManagedTypeLabels = existingLabels.filter(label => managedTypeLabels.includes(label));
 
-            if (newLabels.length === 0) {
-              core.info("All matching labels already exist on the PR.");
-              return;
+            const labelsToAdd = existingLabels.includes(desiredTypeLabel) ? [] : [desiredTypeLabel];
+            const labelsToRemove = existingManagedTypeLabels.filter(label => label !== desiredTypeLabel);
+
+            core.info(`Desired type label: ${desiredTypeLabel}`);
+            core.info(`Existing managed type labels: ${existingManagedTypeLabels.join(", ") || "(none)"}`);
+            core.info(`Type labels to add: ${labelsToAdd.join(", ") || "(none)"}`);
+            core.info(`Type labels to remove: ${labelsToRemove.join(", ") || "(none)"}`);
+
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: labelsToAdd
+              });
             }
 
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: pr.number,
-              labels: newLabels
-            });
+            for (const label of labelsToRemove) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  name: label
+                });
+              } catch (error) {
+                if (error.status === 404) {
+                  core.info(`Label "${label}" was already removed.`);
+                } else {
+                  throw error;
+                }
+              }
+            }
 
-            core.info(`Added labels: ${newLabels.join(", ")}`);
+            core.info("PR type label synchronized successfully.");

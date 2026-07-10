@@ -3,21 +3,54 @@ name: Tests
 on:
   pull_request:
     branches: [main]
+    paths:
+      - '**/*.cs'
+      - '**/*.csproj'
+      - '**/*.props'
+      - '**/*.targets'
+      - '**/*.slnx'
+      - '.github/workflows/tests.yml'
+      - '.template.config/**'
+      - 'src/**'
+      - 'tests/**'
+      - 'Directory.Build.props'
+      - 'Directory.Packages.props'
   push:
     branches: [main]
+    paths:
+      - '**/*.cs'
+      - '**/*.csproj'
+      - '**/*.props'
+      - '**/*.targets'
+      - '**/*.slnx'
+      - '.github/workflows/tests.yml'
+      - '.template.config/**'
+      - 'src/**'
+      - 'tests/**'
+      - 'Directory.Build.props'
+      - 'Directory.Packages.props'
+  workflow_dispatch:
 
 concurrency:
   group: tests-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
   DOTNET_VERSION: 10.0.x
   CONFIGURATION: Release
+  SOLUTION_FILE: Hector.slnx
+  TEST_RESULTS_ROOT: ./artifacts/test-results
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: true
 
 jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -32,24 +65,25 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', '**/*.csproj', 'Hector.slnx') }}
+          key: ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', '**/*.csproj', '**/*.props', '**/*.targets', 'Hector.slnx') }}
           restore-keys: |
             ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-
             ${{ runner.os }}-nuget-
 
       - name: Restore solution
-        run: dotnet restore Hector.slnx
+        run: dotnet restore ${{ env.SOLUTION_FILE }} --verbosity minimal
 
       - name: Build solution
-        run: dotnet build Hector.slnx --no-restore --configuration ${{ env.CONFIGURATION }}
+        run: dotnet build ${{ env.SOLUTION_FILE }} --no-restore --configuration ${{ env.CONFIGURATION }} --verbosity minimal
 
       - name: Run unit tests
         run: >
-          dotnet test Hector.slnx
+          dotnet test ${{ env.SOLUTION_FILE }}
           --no-build
           --configuration ${{ env.CONFIGURATION }}
           --logger "trx;LogFileName=unit-tests.trx"
-          --results-directory ./artifacts/test-results/unit
+          --results-directory ${{ env.TEST_RESULTS_ROOT }}/unit
+          --verbosity minimal
           --filter "(FullyQualifiedName!~ArchitectureTests)&(FullyQualifiedName!~IntegrationTests)&(FullyQualifiedName!~TemplateTests)"
 
       - name: Upload unit test results
@@ -57,13 +91,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-results
-          path: artifacts/test-results/unit/**/*.trx
+          path: ${{ env.TEST_RESULTS_ROOT }}/unit/**/*.trx
           if-no-files-found: warn
           retention-days: 14
 
   integration-tests:
     name: Integration Tests - ${{ matrix.test_project.name }}
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -94,16 +129,16 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', '**/*.csproj', 'Hector.slnx') }}
+          key: ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', '**/*.csproj', '**/*.props', '**/*.targets', 'Hector.slnx') }}
           restore-keys: |
             ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-
             ${{ runner.os }}-nuget-
 
       - name: Restore solution
-        run: dotnet restore Hector.slnx
+        run: dotnet restore ${{ env.SOLUTION_FILE }} --verbosity minimal
 
       - name: Build solution
-        run: dotnet build Hector.slnx --no-restore --configuration ${{ env.CONFIGURATION }}
+        run: dotnet build ${{ env.SOLUTION_FILE }} --no-restore --configuration ${{ env.CONFIGURATION }} --verbosity minimal
 
       - name: Run integration tests
         run: >
@@ -112,6 +147,7 @@ jobs:
           --configuration ${{ env.CONFIGURATION }}
           --logger "trx;LogFileName=${{ matrix.test_project.trx }}"
           --results-directory "${{ matrix.test_project.results }}"
+          --verbosity minimal
 
       - name: Upload integration test results
         if: always()
@@ -125,6 +161,7 @@ jobs:
   template-tests:
     name: Template Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
@@ -139,13 +176,31 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', '**/*.csproj', 'Hector.slnx') }}
+          key: ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', '**/*.csproj', '**/*.props', '**/*.targets', 'Hector.slnx') }}
           restore-keys: |
             ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-
             ${{ runner.os }}-nuget-
 
       - name: Restore solution
-        run: dotnet restore Hector.slnx
+        run: dotnet restore ${{ env.SOLUTION_FILE }} --verbosity minimal
 
       - name: Build solution
-        run: 
+        run: dotnet build ${{ env.SOLUTION_FILE }} --no-restore --configuration ${{ env.CONFIGURATION }} --verbosity minimal
+
+      - name: Run template tests
+        run: >
+          dotnet test tests/TemplateTests/Hector.TemplateTests/Hector.TemplateTests.csproj
+          --no-build
+          --configuration ${{ env.CONFIGURATION }}
+          --logger "trx;LogFileName=template-tests.trx"
+          --results-directory ${{ env.TEST_RESULTS_ROOT }}/template
+          --verbosity minimal
+
+      - name: Upload template test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: template-test-results
+          path: ${{ env.TEST_RESULTS_ROOT }}/template/**/*.trx
+          if-no-files-found: warn
+          retention-days: 14

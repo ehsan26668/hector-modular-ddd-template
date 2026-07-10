@@ -48,7 +48,6 @@ area: docs:
   - changed-files:
       - any-glob-to-any-file:
           - 'docs/**'
-          - 'docs/templates/**'
           - 'README.md'
           - 'adr-template.md'
           - 'test-plan-template.md'

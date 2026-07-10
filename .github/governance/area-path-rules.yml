@@ -1,0 +1,42 @@
+# Area mapping for GitHub Actions labeler
+# Uses glob patterns to match file changes in the repository
+
+area: domain:
+  - 'src/**/Domain/**/*'
+  - 'tests/**/Domain/**/*'
+
+area: application:
+  - 'src/**/Application/**/*'
+  - 'src/**/Contracts/**/*'
+  - 'tests/**/Application/**/*'
+
+area: infrastructure:
+  - 'src/**/Infrastructure/**/*'
+  - 'src/Framework/Hector.BuildingBlocks.Persistence/**/*'
+  - 'tests/**/Persistence/**/*'
+
+area: web:
+  - 'src/Host/**/*'
+  - 'src/Framework/Hector.BuildingBlocks.Web/**/*'
+  - 'tests/**/Web/**/*'
+
+area: architecture-tests:
+  - 'tests/ArchitectureTests/**/*'
+  - 'src/Framework/Hector.ArchitectureTests.Framework/**/*'
+
+area: docs:
+  - 'docs/**/*'
+  - '**/*.md'
+  - '.github/governance/*.yml'
+
+area: unit-tests:
+  - 'tests/UnitTests/**/*'
+
+area: integration-tests:
+  - 'tests/IntegrationTests/**/*'
+
+area: e2e-tests:
+  - 'tests/E2ETests/**/*'
+
+area: template-tests:
+  - 'tests/TemplateTests/**/*'
