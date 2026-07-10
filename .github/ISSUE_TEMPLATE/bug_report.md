@@ -1,37 +1,22 @@
 ---
 name: Bug Report
-about: Report a defect in the template, framework, or modules
+about: Report a defect, regression, or unexpected behavior
 title: "[BUG] "
 labels: ["bug"]
 assignees: []
 ---
 
-## Problem
+## Summary
 
-Provide a clear and concise description of the defect.
+Provide a short and clear description of the defect.
 
 ## Affected Area
 
-- **Module:**
-  - [ ] Projects
-  - [ ] Framework (Building Blocks)
-  - [ ] Host
-  - [ ] Cross-module
-- **Layer:**
-  - [ ] Domain
-  - [ ] Application
-  - [ ] Infrastructure / Persistence
-  - [ ] Web / Host
-  - [ ] Architecture Tests / Guard Rules
-  - [ ] CI/CD / Template Packaging
+- **Module / Area:**
+- **Layer:** Domain / Application / Infrastructure / Web / Architecture Tests / CI
+- **Environment:** Local / CI / Test / Production-like
 
-## Environment Details
-
-- **Template Version / Commit Hash:**
-- **.NET SDK Version:**
-- **OS / IDE:**
-
-## Reproduction Steps
+## Steps to Reproduce
 
 1.
 2.
@@ -39,30 +24,52 @@ Provide a clear and concise description of the defect.
 
 ## Expected Behavior
 
-What should have happened according to existing specifications, ADRs, or standards?
+Describe what should have happened.
 
 ## Actual Behavior
 
-What actually happened? Include stack trace, logs, or failing test output if available.
+Describe what actually happened.
 
-Logs / stack trace / failing output:
+## Evidence
 
-```text
-// Paste logs, stack traces, or failing test output here
-```
+Include any relevant logs, screenshots, error messages, stack traces, or failing test names.
 
-## Traceability & Root Cause Analysis
+## Impact Assessment
+
+Describe the severity and effect of this issue.
+
+- [ ] Blocks development
+- [ ] Breaks CI
+- [ ] Causes incorrect business behavior
+- [ ] Causes data inconsistency risk
+- [ ] Documentation or governance mismatch
+- [ ] Minor defect
+
+## Traceability & Analysis
 
 - **Suspected Root Cause:**
-- **Related ADR / Decision Log Entry:** <!-- If the bug stems from a design decision or ADR violation -->
-- **Existing Test Plan Reference:** <!-- Link to the test plan that failed to catch this -->
+- **Related Epic:**
+- **Related Feature / Task:**
+- **Related ADR(s):**
+- **Related Test Plan(s):**
+- **Related PR(s):**
 
-## Proposed Test Coverage & Fixing Checklist
+## Proposed Validation
 
-- [ ] **Test Types Needed:**
-  - [ ] Unit Test (for domain/application logic)
-  - [ ] Integration Test (for persistence/infrastructure)
-  - [ ] Architecture Test (for boundary/naming violations)
-  - [ ] Regression Test (to prevent recurrence)
-- [ ] Fix implemented
-- [ ] Regression risk assessed (Describe what else could be affected by this fix)
+Describe how the fix should be verified.
+
+- **Unit Tests:**
+- **Integration Tests:**
+- **Architecture Tests:**
+- **Manual Verification:**
+
+## Acceptance Criteria
+
+- [ ] Root cause is identified or narrowed sufficiently.
+- [ ] The defect is fixed.
+- [ ] Regression coverage is added or updated.
+- [ ] Related documentation or governance artifacts are updated if needed.
+
+## Notes
+
+Add any extra context, reproduction constraints, or investigation notes.
