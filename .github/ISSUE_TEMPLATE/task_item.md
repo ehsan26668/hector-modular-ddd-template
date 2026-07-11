@@ -1,19 +1,13 @@
 ---
-name: Backlog Item
-about: Create a Feature or Task with full traceability and delivery expectations
-title: "[ITEM] "
-labels: ["backlog"]
+name: Task Item
+about: Create a Task with full traceability and delivery expectations
+title: "[TASK] "
+labels: ["backlog", "task"]
 assignees: []
 ---
 
-## Item Type
-
-- [ ] Feature
-- [ ] Task
-
 ## Hierarchy & Traceability
 
-- **Parent Epic:**
 - **Parent Feature:**
 - **Related ADR(s):**
 - **Related Test Plan(s):**
@@ -22,19 +16,15 @@ assignees: []
 
 ## Goal
 
-Describe the concrete outcome this backlog item must deliver.
+Describe the concrete outcome this task must deliver.
 
 ## Context
 
-Explain why this work is needed and how it fits into the broader initiative.
+Explain why this task is needed and how it supports the parent feature.
 
-## Scope
+## Implementation Notes
 
-- **In Scope:**
-  -
-
-- **Explicitly Out of Scope:**
-  -
+Describe the expected implementation approach, constraints, or important technical considerations.
 
 ## Architecture Evaluation (ADR-First Policy)
 
@@ -46,7 +36,7 @@ Explain why this work is needed and how it fits into the broader initiative.
 
 ## Validation Strategy
 
-Describe how this work will be validated in alignment with the project testing standards.
+Describe how this task will be validated in alignment with the project testing standards.
 
 - **Unit Tests:**
 - **Integration Tests:**
