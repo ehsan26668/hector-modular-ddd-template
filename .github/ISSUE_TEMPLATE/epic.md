@@ -16,11 +16,13 @@ Explain why this epic matters now, what problem it solves, or what capability it
 
 ## Scope
 
-- **In Scope:**
-  -
+### In Scope
 
-- **Out of Scope:**
-  -
+-
+
+### Out of Scope
+
+-
 
 ## Traceability
 

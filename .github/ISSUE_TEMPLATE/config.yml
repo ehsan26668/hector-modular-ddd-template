@@ -1,0 +1,16 @@
+# GitHub Issue Chooser Configuration
+# This file governs the entry point for project contributions and backlog management.
+blank_issues_enabled: false # Enforce template usage to ensure traceability and metadata consistency.
+
+contact_links:
+  - name: Architecture Decision Records (ADRs)
+    url: https://github.com/ehsan26668/hector-modular-ddd-template/tree/main/docs/adr
+    about: Review existing architectural decisions before proposing changes or starting new features.
+
+  - name: Testing Standards
+    url: https://github.com/ehsan26668/hector-modular-ddd-template/blob/main/docs/standards/testing-standards.md
+    about: Review TDD methodology and project-specific testing standards.
+
+  - name: Project Documentation
+    url: https://github.com/ehsan26668/hector-modular-ddd-template/blob/main/README.md
+    about: General project overview, domain context, and contribution guidelines.
