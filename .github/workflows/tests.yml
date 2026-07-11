@@ -43,6 +43,7 @@ jobs:
               - '**/*.props'
               - '**/*.targets'
               - '**/*.slnx'
+              - '.github/ISSUE_TEMPLATE/**'
               - '.github/workflows/**'
               - '.template.config/**'
               - 'src/**'
