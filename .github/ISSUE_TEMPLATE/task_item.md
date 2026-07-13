@@ -6,13 +6,21 @@ labels: ["backlog", "task"]
 assignees: []
 ---
 
+<!-- 
+  NOTE: To ensure link traceability, use absolute repository links:
+  Example: https://github.com/ehsan26668/hector-modular-ddd-template/blob/main/docs/adr/0000-example.md
+  DO NOT use relative paths like 'docs/adr/...' as they break in GitHub issues.
+-->
+
 ## Hierarchy & Traceability
 
-- **Parent Feature:**
+- **Parent Feature:** #
 - **Related ADR(s):**
+  - [ ] <https://github.com/ehsan26668/hector-modular-ddd-template/blob/main/docs/adr/XXXX-title.md>
 - **Related Test Plan(s):**
-- **Related PR(s):**
-- **Target Module / Area:**
+  - [ ] <https://github.com/ehsan26668/hector-modular-ddd-template/blob/main/docs/tests/adr-XXXX-title.md>
+- **Related PR(s):** #
+- **Target Module / Area:** `src/Modules/ModuleName`
 
 ## Goal
 
@@ -28,20 +36,23 @@ Describe the expected implementation approach, constraints, or important technic
 
 ## Architecture Evaluation (ADR-First Policy)
 
-- [ ] This change does **not** impact architecture, contracts, boundaries, conventions, or testing strategy.
-- [ ] This change impacts architecture, contracts, boundaries, conventions, or testing strategy and requires an ADR.
-  - **Linked ADR:**
-  - **Decision Log Status:** Proposed / Approved / Superseded
-  - **Linked Test Plan:**
+- [ ] No architecture impact.
+- [ ] Architecture impact exists and is covered by a related ADR.
+  - **Linked ADR:** <https://github.com/ehsan26668/hector-modular-ddd-template/blob/main/docs/adr/XXXX-title.md>
 
 ## Validation Strategy
 
 Describe how this task will be validated in alignment with the project testing standards.
 
-- **Unit Tests:**
-- **Integration Tests:**
-- **Architecture Tests:**
-- **Manual Verification:**
+### Automated Verification
+
+- Unit Tests:
+- Integration Tests:
+- Architecture Tests:
+
+### Manual Verification
+
+-
 
 ## Acceptance Criteria
 
@@ -52,10 +63,11 @@ Describe how this task will be validated in alignment with the project testing s
 ## Definition of Done (DoD)
 
 - [ ] Implementation follows DDD, Clean Architecture, and repository conventions.
-- [ ] Required tests are added or updated and pass locally.
-- [ ] ADR / Test Plan / Decision Log is updated and linked where required.
-- [ ] Related documentation is updated and kept in sync.
-- [ ] Pull Request includes complete traceability links.
+- [ ] Required tests are added/updated and passing in CI.
+- [ ] Related ADR / Test Plan / Decision Log is updated and linked with Absolute URLs.
+- [ ] Related documentation is updated and synchronized.
+- [ ] Pull Request includes complete traceability links (Parent Feature + ADR).
+- [ ] Changes satisfy repository governance standards.
 - [ ] Self-review is completed before requesting review.
 
 ## Notes

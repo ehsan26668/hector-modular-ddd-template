@@ -6,13 +6,20 @@ labels: ["backlog", "feature"]
 assignees: []
 ---
 
-## Hierarchy & Traceability
+<!-- 
+  NOTE: To ensure link traceability, use absolute repository links:
+  Example: https://github.com/ehsan26668/hector-modular-ddd-template/blob/main/docs/adr/0000-example.md
+  DO NOT use relative paths like 'docs/adr/...' as they break in GitHub issues.
+-->
 
-- **Parent Epic:**
+## Traceability
+
+- **Parent Epic:** #
 - **Related ADR(s):**
+  - [ ] <https://github.com/ehsan26668/hector-modular-ddd-template/blob/main/docs/adr/XXXX-title.md>
 - **Related Test Plan(s):**
-- **Related PR(s):**
-- **Target Module / Area:**
+  - [ ] <https://github.com/ehsan26668/hector-modular-ddd-template/blob/main/docs/tests/adr-XXXX-title.md>
+- **Target Module / Area:** `src/Modules/ModuleName`
 
 ## Goal
 
@@ -20,7 +27,7 @@ Describe the concrete outcome this feature must deliver.
 
 ## Context
 
-Explain why this feature is needed and how it fits into the broader initiative.
+Explain why this feature is needed and how it contributes to the parent Epic.
 
 ## Scope
 
@@ -32,22 +39,26 @@ Explain why this feature is needed and how it fits into the broader initiative.
 
 -
 
-## Architecture Evaluation (ADR-First Policy)
+## Architecture Impact Assessment
 
-- [ ] This change does **not** impact architecture, contracts, boundaries, conventions, or testing strategy.
-- [ ] This change impacts architecture, contracts, boundaries, conventions, or testing strategy and requires an ADR.
-  - **Linked ADR:**
-  - **Decision Log Status:** Proposed / Approved / Superseded
-  - **Linked Test Plan:**
+- [ ] No architecture impact.
+- [ ] Architecture impact exists and is covered by a related ADR.
+  - **Linked ADR:** <https://github.com/ehsan26668/hector-modular-ddd-template/blob/main/docs/adr/XXXX-title.md>
 
 ## Validation Strategy
 
-Describe how this feature will be validated in alignment with the project testing standards.
+Describe how this feature will be validated.
 
-- **Unit Tests:**
-- **Integration Tests:**
-- **Architecture Tests:**
-- **Manual Verification:**
+### Automated Verification
+
+- Unit Tests:
+- Integration Tests:
+- Architecture Tests:
+- CI Validation:
+
+### Manual Verification
+
+-
 
 ## Acceptance Criteria
 
@@ -55,20 +66,22 @@ Describe how this feature will be validated in alignment with the project testin
 - [ ] Criterion 2
 - [ ] Criterion 3
 
-## Tasks
+## Child Work Items
 
-- [ ] #123 Task: ...
-- [ ] #124 Task: ...
+List planned Tasks or Architecture Changes.
+
+- [ ] Task: #
+- [ ] Task: #
 
 ## Definition of Done (DoD)
 
-- [ ] Implementation follows DDD, Clean Architecture, and repository conventions.
-- [ ] Required tests are added or updated and pass locally.
-- [ ] ADR / Test Plan / Decision Log is updated and linked where required.
-- [ ] Related documentation is updated and kept in sync.
-- [ ] Pull Request includes complete traceability links.
-- [ ] Self-review is completed before requesting review.
+- [ ] Acceptance Criteria are satisfied and verified.
+- [ ] Required tests are implemented and passing in CI.
+- [ ] Related ADRs and Test Plans are updated, linked, and merged.
+- [ ] Traceability links use absolute repository URLs as per Governance Policy.
+- [ ] Pull Request references this Feature using `Closes #<issue-number>`.
+- [ ] Changes satisfy repository governance standards and DDD conventions.
 
 ## Notes
 
-Add any dependencies, rollout notes, sequencing details, or implementation considerations.
+Dependencies, sequencing constraints, rollout considerations, or implementation notes.

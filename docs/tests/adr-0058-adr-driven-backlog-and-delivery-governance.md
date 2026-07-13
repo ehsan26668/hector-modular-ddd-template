@@ -1,75 +1,183 @@
-# Test Plan: ADR-0058 ADR-Driven Backlog and Delivery Governance
+# Test Plan: ADR-0058 Adopt ADR-Driven Backlog and Delivery Governance
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
-This test plan validates the backlog and delivery governance model described in ADR-0058.
-The goal is to ensure that architectural decisions are traceable to backlog items,
-validation strategy, and pull requests.
+This test plan validates the **GitHub-native governance and enforcement mechanisms** described in [ADR-0058](/docs/adr/0058-adopt-adr-driven-backlog-and-delivery-governance.md).  
+The goal is to ensure that the "Separation of Concerns" between governance definition (docs) and governance enforcement (GitHub) is operationally sound. This is critical to ensure that architectural decisions are machine-traceable to backlog items, Features, and Pull Requests without polluting the application codebase.
 
 ## Test Strategy
 
-Validation for this ADR is performed through documentation standards, GitHub templates,
-and governance workflow checks.
+Define the layers of testing to be used:
 
-## Scope
+- **Governance Workflow Validation:**
+  - Focus on GitHub Actions, YAML schema, and automated enforcement of required fields/labels.
+  - Target: `.github/workflows/` and `.github/governance/`
 
-### Included
+- **Template Conformance Testing:**
+  - Focus on Issue and PR templates ensuring they capture mandatory metadata (ADR refs, linkage).
+  - Target: `.github/ISSUE_TEMPLATE/` and `.github/pull_request_template.md`
 
-- ADR traceability rules
-- decision log registration
-- backlog structure definition
-- issue template standardization
-- PR template traceability
-- governance workflow validation
+- **Repository Structure Guard (BAG):**
+  - Focus on ensuring `backlog.md` and `decision-log.md` remain consistent with the repository state.
+  - Target Project: `tests/ArchitectureTests/Hector.ArchitectureTests`
 
-### Excluded
+---
 
-- external project management tools
-- sprint planning automation
-- release automation
-- advanced GitHub Project custom field automation
+## 1. Scope
 
-## Unit-Level Validation
+- **Included:**
+  - ADR traceability and numbering rules.
+  - Automated labeling taxonomy (e.g., `area/*`, `status/*`).
+  - GitHub Issue Template enforcement (Feature, Task, ADR).
+  - PR Template traceability (linkage to Issues/ADRs).
+  - Backlog Architecture Guard (BAG) validation logic.
 
-The following governance artifacts must exist and be internally consistent:
+- **Excluded:**
+  - External PM tools (Jira, Trello).
+  - Sprint-level manual planning.
+  - Advanced GitHub Project V2 UI custom fields.
 
-- ADR-0058 document exists and follows ADR template structure
-- decision log contains ADR-0058 entry
-- backlog governance standard is documented
-- development workflow standard is documented
-- issue templates exist for epic, feature, task, and ADR proposal
-- pull request template includes traceability sections
+---
 
-## Integration-Level Validation
+## 2. Test Cases (Governance / Automation)
 
-The governance flow should support the following end-to-end scenario:
+### TC-01: Should_BlockMerge_When_PRMissingTraceabilityLink
 
-1. An ADR is created.
-2. The ADR is registered in the decision log.
-3. A feature or task references the ADR.
-4. A pull request references the issue and ADR.
-5. Governance validation confirms required metadata exists.
+**Scenario:** A developer attempts to merge a PR without referencing a governed Issue or ADR.
 
-## Test Cases
+**Arrange:**
 
-- TC-01 Should_RegisterADRInDecisionLog_When_NewGovernanceDecisionIsCreated
-- TC-02 Should_DefineBacklogHierarchy_When_GovernanceStandardIsDocumented
-- TC-03 Should_RequireADRReference_When_ArchitecturalWorkItemIsCreated
-- TC-04 Should_RequireAcceptanceCriteria_When_FeatureIsDefined
-- TC-05 Should_RequireTraceabilitySections_When_PullRequestIsOpened
-- TC-06 Should_DefineStandardIssueMetadata_When_CreatingBacklogItems
+- Create a PR branch.
+- Ensure the PR body is empty or lacks mandatory "Ref: #" or "Closes #" links.
 
-## Exit Criteria
+**Act:**
 
-This ADR is considered validated when:
+- Trigger the `governance-pr-check` workflow.
 
-- ADR-0058 exists and is linked in the decision log
-- backlog governance documentation is added
-- development workflow documentation is added
-- GitHub issue templates are added
-- pull request template is updated
-- governance validation automation is implemented or explicitly deferred
+**Assert:**
+
+- Verify workflow fails and blocks the merge button.
+
+### TC-02: Should_AssignGovernanceLabels_When_IssueCreatedFromTemplate
+
+**Scenario:** A new Feature is proposed using the standardized Issue Template.
+
+**Arrange:**
+
+- Select "Feature Request" template in GitHub UI.
+- Fill in mandatory "Architecture Ref" field.
+
+**Act:**
+
+- Submit the Issue.
+
+**Assert:**
+
+- Verify `governance/feature` and `status/proposed` labels are automatically applied.
+
+### TC-03: Should_FailBAGCheck_When_BacklogReferencesNonExistentADR
+
+**Scenario:** `backlog.md` is updated to include a feature referencing an ADR that doesn't exist.
+
+**Arrange:**
+
+- Edit `docs/backlog/backlog.md` adding a line with `[ADR-9999]`.
+
+**Act:**
+
+- Run the BAG (Backlog Architecture Guard) automated test.
+
+**Assert:**
+
+- Verify a descriptive failure message: "ADR-9999 not found in /docs/adr/".
+
+---
+
+## 3. Non-Functional Validation Points
+
+### 3.1 Security & Sanitization
+
+- Verify that workflow secrets are masked.
+- Ensure `CODEOWNERS` protects the `.github/` folder from unauthorized changes.
+
+### 3.2 Observability & Traceability
+
+- Verify that the path from ADR -> Feature Issue -> Pull Request -> Code is fully auditable through GitHub's linked-item graph.
+
+### 3.3 Contract Stability
+
+- Verify that the label taxonomy remains stable and follows the `docs/backlog/backlog.md` definitions.
+
+---
+
+## 4. Test Data
+
+- **Inputs:**
+  - Sample `backlog.md` entries.
+  - Compliant vs. Malformed ADR files.
+  - PR payloads with and without required metadata.
+
+- **Expected Outputs:**
+  - Standardized error comments on PRs for failed governance.
+  - Automated project board movements on status label changes.
+
+---
+
+## 5. TDD Execution Plan
+
+1. **RED**
+   - Implement a failing BAG test in `Hector.ArchitectureTests` that checks for mandatory ADR sections.
+   - Run CI to confirm failure.
+
+2. **GREEN**
+   - Update `adr-template.md` and existing ADRs to comply.
+   - Adjust GitHub Action to enforce the check.
+
+3. **REFACTOR**
+   - Optimize workflow triggers to run only on relevant path changes (e.g., `docs/**` or `.github/**`).
+
+---
+
+## 6. Exit Criteria
+
+- [x] ADR-0058 is linked in the `decision-log.md`.
+- [ ] Issue templates for ADR, Feature, and Task are operational in `.github/`.
+- [ ] PR template includes mandatory "Traceability" section.
+- [ ] BAG (Backlog Architecture Guard) basic automation is running in CI.
+
+---
+
+## 7. Proposed Test File Layout
+
+```text
+.github/
+ ├── governance/
+ │   ├── area-path-rules.yml        # Logic for path-based ownership
+ │   └── labels.yml                 # Taxonomy definition
+ ├── ISSUE_TEMPLATE/
+ │   ├── architecture_change.md     # ADR Proposal template
+ │   ├── bug_report.md              # Standard bug report
+ │   ├── epic.md                    # Epic/Initiative template
+ │   ├── feature_item.md            # Feature template
+ │   ├── task_item.md               # Task template
+ │   └── config.yml                 # Template chooser configuration
+ ├── workflows/
+ │   ├── architecture-tests.yml     # Architecture Guard execution
+ │   ├── build.yml                  # CI Build & Compile
+ │   ├── docs-validation.yml        # Documentation & Link integrity
+ │   ├── labeler.yml                # Path-to-label automation logic
+ │   ├── pr-labels-from-body.yml    # Metadata-to-label automation
+ │   ├── pr-validation.yml          # Traceability & Governance enforcement
+ │   └── tests.yml                  # Main CI Pipeline (Unit/Integration)
+ ├── CODEOWNERS                      # Path-based approval rules
+ ├── labeler.yml                    # (Redundant - Potential Cleanup Candidate)
+ └── pull_request_template.md       # PR structure with Ref sections
+```
+
+## Summary
+
+This test plan ensures that ADR-0058 is validated as a **living governance system** where GitHub acts as the runtime enforcement agent.
